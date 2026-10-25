@@ -6,7 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.asmrhelper.ui.theme.appleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -151,7 +151,7 @@ fun ProfileScreen(
                             .clip(CircleShape)
                             .background(LocalAccentColor.current.copy(alpha = 0.2f))
                             .then(
-                                if (isLoggedIn) Modifier.clickable { showEditDialog = true }
+                                if (isLoggedIn) Modifier.appleClickable { showEditDialog = true }
                                 else Modifier
                             ),
                         contentAlignment = Alignment.Center
@@ -183,7 +183,7 @@ fun ProfileScreen(
                     if (isLoggedIn) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { showEditDialog = true }
+                            modifier = Modifier.appleClickable { showEditDialog = true }
                         ) {
                             Text(
                                 username.ifEmpty { stringResource(R.string.profile_default_user) },
@@ -550,7 +550,7 @@ private fun EditProfileDialog(
                         .size(72.dp)
                         .clip(CircleShape)
                         .background(LocalAccentColor.current.copy(alpha = 0.2f))
-                        .clickable { avatarPickerLauncher.launch("image/*") },
+                        .appleClickable { avatarPickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
                     if (avatarPath.isNotEmpty() && File(avatarPath).exists()) {
@@ -680,7 +680,7 @@ private fun MusicPlatformRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = canLogin) { onAction(loggedIn) }
+            .appleClickable(enabled = canLogin) { onAction(loggedIn) }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

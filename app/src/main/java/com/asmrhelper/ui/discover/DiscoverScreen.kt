@@ -3,7 +3,7 @@ package com.asmrhelper.ui.discover
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.asmrhelper.ui.theme.appleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -338,7 +338,7 @@ private fun DiscoverTabRow(selectedIndex: Int, onOpenPlatformSwitch: () -> Unit,
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (selected) accent.copy(alpha = 0.18f) else Color.Transparent)
-                    .clickable { onSelect(i) }
+                    .appleClickable { onSelect(i) }
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
@@ -403,7 +403,7 @@ private fun SearchTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (selected) accent.copy(alpha = 0.18f) else Color.Transparent)
-                    .clickable { onSelect(i) }
+                    .appleClickable { onSelect(i) }
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
@@ -470,7 +470,7 @@ private fun ArtistRow(artist: RemoteArtist, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .appleClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -493,7 +493,7 @@ private fun SearchPlaylistRow(name: String, coverUrl: String?, onClick: () -> Un
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .appleClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -716,7 +716,7 @@ private fun PlatformSwitchDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
+                            .appleClickable {
                                 when {
                                     isActive -> onDismiss()
                                     canSelect -> { onSelect(config.id); onDismiss() }
@@ -969,7 +969,7 @@ private fun ChartHeader(name: String, expanded: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .appleClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1007,7 +1007,7 @@ private fun PlaylistRow(name: String, coverUrl: String?, expanded: Boolean, onCl
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .appleClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1044,7 +1044,7 @@ private fun MusicSongRow(song: RemoteSong, onPlay: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPlay)
+            .appleClickable(onClick = onPlay)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1084,7 +1084,7 @@ private fun VideoRow(song: RemoteSong, onPlay: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPlay)
+            .appleClickable(onClick = onPlay)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1163,7 +1163,7 @@ private fun VideoCard(song: RemoteSong, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(150.dp)
-            .clickable(onClick = onClick)
+            .appleClickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
@@ -1222,7 +1222,7 @@ private fun RecentRow(entry: PlayHistoryEntity, onPlay: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPlay)
+            .appleClickable(onClick = onPlay)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
