@@ -106,7 +106,31 @@ class BilibiliMusicSource(
         BilibiliJson.parseView(get("x/web-interface/view", "bvid=$songId"))?.let { emit(it) }
     }
 
-    override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flowOf(RemotePlaylist(playlistId, ""))
+    override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow {
+        // 收藏夹（media_id）内视频；普通歌单/榜单无此概念，返回空。
+        val songs = BilibiliJson.parseFavMedia(get("x/v3/fav/resource/list", "media_id=$playlistId&pn=1&ps=50"))
+        emit(RemotePlaylist(playlistId, "", songs = songs))
+    }
+
+    /** 当前登录用户收藏夹列表（需登录）；匿名/失败返回空。 */
+    override fun getUserPlaylists(): Flow<List<RemotePlaylist>> = flow {
+        val mid = resolveUid()
+        if (mid <= 0) {
+            emit(emptyList())
+            return@flow
+        }
+        emit(BilibiliJson.parseFavFolders(get("x/v3/fav/folder/created/list-all", "up_mid=$mid")))
+    }
+
+    /** 动态（feed）视频（需登录）；匿名/失败返回空。 */
+    override fun getRadio(): Flow<List<RemoteSong>> = flow {
+        emit(BilibiliJson.parseDynamicFeed(get("x/polymer/web-dynamic/v1/feed/all", "type=video&page=1")))
+    }
+
+    /** 每日推荐：B站无对应匿名接口，复用热门视频作为兜底。 */
+    override fun getDailyRecommendSongs(): Flow<List<RemoteSong>> = flow {
+        emit(BilibiliJson.parsePopular(get("x/web-interface/popular", "ps=20&pn=1")))
+    }
 
     // ── 登录 ───────────────────────────────────────────
 
@@ -174,6 +198,10 @@ class BilibiliMusicSource(
 
     private suspend fun fetchViewCid(bvid: String): Long =
         BilibiliJson.parseViewCid(get("x/web-interface/view", "bvid=$bvid"))
+
+    /** 当前登录用户 UID（nav `data.mid`），未登录返回 0。 */
+    private suspend fun resolveUid(): Long =
+        BilibiliJson.parseUid(get("x/web-interface/nav", ""))
 
     private fun refererFor(query: String): String {
         val bvid = Regex("bvid=([a-zA-Z0-9]+)").find(query)?.groupValues?.get(1)

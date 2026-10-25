@@ -3,6 +3,7 @@ package com.asmrhelper.player
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import com.asmrhelper.R
+import com.asmrhelper.data.music.bilibili.BilibiliWbi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -163,8 +164,7 @@ class VideoAudioExtractor @Inject constructor(
         android.util.Log.d("Extractor", "B站视频: title=$title cid=$cid dur=${durSec}s")
         if (cid < 0) { lastError = context.getString(R.string.video_extract_bili_no_part); return null }
 
-        val playResp = bilibiliApi("x/player/playurl", "bvid=$bvid&cid=$cid&fnval=16&qn=0&fnver=0&fourk=1")
-            ?: return null
+        val playResp = bilibiliPlayurlApi(bvid, cid) ?: return null
         val dash = playResp.optJSONObject("data")?.optJSONObject("dash")
         val audioArray: JSONArray? = dash?.optJSONArray("audio")
         if (audioArray == null || audioArray.length() == 0) {
@@ -236,6 +236,32 @@ class VideoAudioExtractor @Inject constructor(
         } catch (_: Exception) {
             null to null
         }
+    }
+
+    /** WBI 签名后请求 `x/player/wbi/playurl`（B站取流接口现在必须带 w_rid，否则风控拦 412/-403）。 */
+    private fun bilibiliPlayurlApi(bvid: String, cid: Long): JSONObject? {
+        val mixin = fetchMixinKey()
+        val params = mapOf(
+            "bvid" to bvid,
+            "cid" to cid.toString(),
+            "fnval" to "16",
+            "fnver" to "0",
+            "fourk" to "1",
+            "qn" to "0"
+        )
+        val query = if (mixin != null) BilibiliWbi.sign(mixin, params)
+            else params.entries.joinToString("&") { "${it.key}=${it.value}" }
+        return bilibiliApi("x/player/wbi/playurl", query)
+    }
+
+    /** 拉取 WBI mixinKey（nav `data.wbi_img`），失败返回 null。 */
+    private fun fetchMixinKey(): String? {
+        val nav = bilibiliApi("x/web-interface/nav", "") ?: return null
+        val wbi = nav.optJSONObject("data")?.optJSONObject("wbi_img") ?: return null
+        val img = wbi.optString("img_url", "")
+        val sub = wbi.optString("sub_url", "")
+        if (img.isBlank() || sub.isBlank()) return null
+        return BilibiliWbi.mixinKey(img, sub)
     }
 
     private fun bilibiliApi(path: String, query: String): JSONObject? {
