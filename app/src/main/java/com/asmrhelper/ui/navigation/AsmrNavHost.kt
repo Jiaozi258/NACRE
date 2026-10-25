@@ -242,6 +242,7 @@ private fun PlayPage(
                                             playViewModel.setPlaybackMode(next)
                                         },
                                         onToggleMusicStyle = toggleMusicStyle,
+                                        onNavigateToBackground = navigateToBackground,
                                         onSearch = onSearch
                                     )
                                 } else {

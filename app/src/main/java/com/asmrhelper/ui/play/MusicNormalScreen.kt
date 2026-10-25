@@ -104,6 +104,7 @@ import com.asmrhelper.player.HeadphonePresets
 import com.asmrhelper.player.V3ReverbPreset
 import com.asmrhelper.ui.components.FrostedAlertDialog
 import com.asmrhelper.ui.components.ModeToggleButton
+import com.asmrhelper.ui.play.folia.AudioReactiveBackground
 import com.asmrhelper.ui.play.folia.rememberCoverPalette
 import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
@@ -117,6 +118,7 @@ import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.util.LyricCaptionMode
 import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.WordLyricLine
+import com.asmrhelper.util.captionFor
 import com.asmrhelper.util.currentLineIndex
 import kotlinx.coroutines.launch
 
@@ -133,12 +135,15 @@ import kotlinx.coroutines.launch
 fun MusicNormalScreen(
     onToggleMode: () -> Unit = {},
     onToggleMusicStyle: () -> Unit = {},
+    onNavigateToBackground: () -> Unit = {},
     onSearch: (String) -> Unit = {}
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
+    val translatedLyrics by viewModel.translatedLyrics.collectAsStateWithLifecycle()
+    val romanizedLyrics by viewModel.romanizedLyrics.collectAsStateWithLifecycle()
     val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
     val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
@@ -149,12 +154,22 @@ fun MusicNormalScreen(
     val songNotes by viewModel.songNotes.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
+    val captionLines = when (lyricCaptionMode) {
+        LyricCaptionMode.TRANSLATION -> translatedLyrics
+        LyricCaptionMode.ROMANIZATION -> romanizedLyrics
+        LyricCaptionMode.OFF -> emptyList()
+    }
     val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
     val backgroundMode by viewModel.backgroundMode.collectAsStateWithLifecycle()
+    val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
+    val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
+    val waveform by viewModel.waveformBytes.collectAsStateWithLifecycle()
+    val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
 
     val currentAudio = state.playerState.currentAudio
     val coverUrl = currentAudio?.coverUrl
+    val coverFilePath = currentAudio?.takeIf { !it.isRemoteSong() }?.filePath
     val progressMs = state.playerState.progressMs
     val durationMs = state.playerState.durationMs
     val lyricProgress = (progressMs + lyricOffsetMs).coerceAtLeast(0L)
@@ -189,12 +204,23 @@ fun MusicNormalScreen(
             .background(DarkSurface)
     ) {
         // 磨砂封面背景提升到页面容器层，让上滑/下滑面板（歌词页、音效页）也共享磨砂背景，
-        // 而非露出纯色底。
-        NormalCoverBackground(coverUrl = coverUrl, accent = LocalAccentColor.current)
+        // 而非露出纯色底。背景跟随「背景」菜单所选模式（含自定义图片）。
+        AudioReactiveBackground(
+            coverUrl = coverUrl,
+            waveform = waveform,
+            fft = fft,
+            mode = backgroundMode,
+            contrastMode = backgroundContrastMode,
+            coverFilePath = coverFilePath,
+            customImagePath = state.backgroundImagePath,
+            blurCustomImage = blurBackgroundImage,
+            modifier = Modifier.fillMaxSize()
+        )
         VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             when (page) {
                 0 -> FullScreenLyrics(
                     lines = lyrics,
+                    captionLines = captionLines,
                     progressMs = lyricProgress,
                     fontSize = lyricsFontSize,
                     lineSpacing = lyricsLineSpacing,
@@ -220,6 +246,7 @@ fun MusicNormalScreen(
                     coverUrl = coverUrl,
                     coverTitle = currentAudio?.title,
                     lines = lyrics,
+                    captionLines = captionLines,
                     progressMs = lyricProgress,
                     lyricsFontSize = lyricsFontSize,
                     lyricsLineSpacing = lyricsLineSpacing,
@@ -538,6 +565,23 @@ fun MusicNormalScreen(
                             )
                         }
                     }
+                    // 自定义图片：跳转背景图库上传/选用
+                    val customSelected = backgroundMode == PlaybackBackgroundMode.CUSTOM_IMAGE
+                    TextButton(
+                        onClick = {
+                            viewModel.setBackgroundMode(PlaybackBackgroundMode.CUSTOM_IMAGE)
+                            showBackgroundDialog = false
+                            onNavigateToBackground()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (customSelected) "▶ ${stringResource(R.string.bg_custom_image)}" else stringResource(R.string.bg_custom_image),
+                            color = if (customSelected) LocalAccentColor.current else TextSecondary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             },
             confirmButton = {},
@@ -801,6 +845,7 @@ fun MusicNormalScreen(
 @Composable
 private fun FullScreenLyrics(
     lines: List<WordLyricLine>,
+    captionLines: List<WordLyricLine>,
     progressMs: Long,
     fontSize: Int,
     lineSpacing: Float,
@@ -827,6 +872,7 @@ private fun FullScreenLyrics(
     ) {
         ScrollingLyrics(
             lines = lines,
+            captionLines = captionLines,
             progressMs = progressMs,
             fontSize = fontSize,
             lineSpacing = lineSpacing,
@@ -895,6 +941,7 @@ private fun NormalModeContent(
     coverUrl: String?,
     coverTitle: String?,
     lines: List<WordLyricLine>,
+    captionLines: List<WordLyricLine>,
     progressMs: Long,
     lyricsFontSize: Int,
     lyricsLineSpacing: Float,
@@ -976,6 +1023,7 @@ private fun NormalModeContent(
             // 中下上：滚动歌词（默认不可拖动，占比减小让位控制栏）
             ScrollingLyrics(
                 lines = lines,
+                captionLines = captionLines,
                 progressMs = progressMs,
                 fontSize = lyricsFontSize,
                 lineSpacing = lyricsLineSpacing,
@@ -1298,6 +1346,7 @@ private fun AlbumCover(coverUrl: String?, title: String?) {
 @Composable
 private fun ScrollingLyrics(
     lines: List<WordLyricLine>,
+    captionLines: List<WordLyricLine> = emptyList(),
     progressMs: Long,
     modifier: Modifier = Modifier,
     fontSize: Int = 16,
@@ -1341,18 +1390,36 @@ private fun ScrollingLyrics(
         ) {
             itemsIndexed(lines, key = { i, _ -> i }) { index, line ->
                 val isCurrent = index == currentIndex
-                Text(
-                    text = line.text,
-                    color = if (isCurrent) accent else TextSecondary,
-                    fontSize = if (isCurrent) fontSize.sp else (fontSize - 2).coerceAtLeast(10).sp,
-                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                    textAlign = textAlign,
-                    lineHeight = (fontSize * lineSpacing).sp,
+                val caption = if (captionLines.isEmpty()) null else captionLines.captionFor(line)
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(enabled = onLineClick != null) { onLineClick?.invoke(line.startMs) }
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                )
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = line.text,
+                        color = if (isCurrent) accent else TextSecondary,
+                        fontSize = if (isCurrent) fontSize.sp else (fontSize - 2).coerceAtLeast(10).sp,
+                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                        textAlign = textAlign,
+                        lineHeight = (fontSize * lineSpacing).sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (!caption.isNullOrBlank()) {
+                        Text(
+                            text = caption,
+                            color = if (isCurrent) TextSecondary else TextSecondary.copy(alpha = 0.6f),
+                            fontSize = (fontSize - 4).coerceAtLeast(10).sp,
+                            textAlign = textAlign,
+                            lineHeight = (fontSize * lineSpacing).sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 2.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -1495,51 +1562,6 @@ private fun formatTime(ms: Long): String {
 
 private fun formatDate(ms: Long): String =
     java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(ms))
-
-/** 整页封面取色晕影 + 磨砂背景（封面模糊放大 + 双色调叠加）。 */
-@Composable
-private fun NormalCoverBackground(coverUrl: String?, accent: Color) {
-    val fallback = accent.toArgb().toLong() and 0xFFFFFFFFL
-    val (primaryLong, secondaryLong) = rememberCoverPalette(coverUrl, fallback, fallback)
-    val primary = Color(primaryLong.toInt())
-    val secondary = Color(secondaryLong.toInt())
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().background(primary))
-        if (!coverUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = coverUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .blur(48.dp)
-                    .alpha(0.45f)
-            )
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            primary.copy(alpha = 0.70f),
-                            secondary.copy(alpha = 0.30f),
-                            primary.copy(alpha = 0.62f)
-                        )
-                    )
-                )
-        )
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.30f))
-                    )
-                )
-        )
-    }
-}
 
 /** 菜单行：左标签 + 可选右值，整行可点。 */
 @Composable

@@ -113,12 +113,13 @@ class V3ReverbController @Inject constructor(
 
     private fun paramsOf(preset: V3ReverbPreset): V3Params = when (preset) {
         V3ReverbPreset.NONE -> V3Params(0, 0, 0, 1000, 0, 0, 0, 0, 1000, 1000)
-        // 空间感参数整体上调（较原版更靠近 0 dB / 更长衰减），让各预设差异更明显、可闻。
-        V3ReverbPreset.STUDIO -> V3Params(-1200, -1400, 250, 500, -800, 5, -1200, 15, 800, 800)
-        V3ReverbPreset.CHAMBER -> V3Params(-1000, -1200, 450, 600, -700, 8, -1000, 12, 750, 850)
-        V3ReverbPreset.HALL -> V3Params(-500, -700, 1500, 600, -400, 25, -700, 35, 900, 1000)
-        V3ReverbPreset.CATHEDRAL -> V3Params(-250, -500, 3500, 700, -300, 40, -500, 50, 1000, 1000)
-        V3ReverbPreset.PLATE -> V3Params(-700, -400, 700, 900, -500, 5, -900, 8, 1000, 1000)
+        // 混响湿声（room/reflections/reverb 电平）刻意压到 -8～-22 dB，避免湿声叠在干声上
+        // 造成「响度被调大」、切换预设瞬间突然大声吓到用户；衰减时间保留以区分各预设空间感。
+        V3ReverbPreset.STUDIO -> V3Params(-2200, -2400, 250, 500, -1800, 5, -2200, 15, 800, 800)
+        V3ReverbPreset.CHAMBER -> V3Params(-2000, -2200, 450, 600, -1600, 8, -2000, 12, 750, 850)
+        V3ReverbPreset.HALL -> V3Params(-1300, -1500, 1500, 600, -1100, 25, -1400, 35, 900, 1000)
+        V3ReverbPreset.CATHEDRAL -> V3Params(-900, -1100, 3500, 700, -800, 40, -1000, 50, 1000, 1000)
+        V3ReverbPreset.PLATE -> V3Params(-1700, -1400, 700, 900, -1500, 5, -1900, 8, 1000, 1000)
     }
 
     private fun release() {
