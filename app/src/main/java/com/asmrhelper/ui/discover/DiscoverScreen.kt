@@ -1,6 +1,7 @@
 package com.asmrhelper.ui.discover
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -49,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +75,7 @@ import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.SuccessGreen
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
@@ -726,6 +730,18 @@ private fun PlatformSwitchDialog(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val stateColor = when {
+                            isActive -> LocalAccentColor.current
+                            isLoggedIn -> SuccessGreen
+                            else -> TextHint
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isActive || isLoggedIn) stateColor else TextHint.copy(alpha = 0.4f))
+                        )
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             stringResource(config.displayNameRes),
                             color = TextPrimary,
@@ -737,7 +753,7 @@ private fun PlatformSwitchDialog(
                             if (isLoggedIn) stringResource(R.string.profile_logged_in)
                             else if (!source.requiresLogin) stringResource(R.string.discover_anonymous)
                             else stringResource(R.string.profile_not_logged_in),
-                            color = if (isLoggedIn) LocalAccentColor.current else TextHint,
+                            color = stateColor,
                             fontSize = 12.sp
                         )
                     }
@@ -957,17 +973,31 @@ private fun ChartHeader(name: String, expanded: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (expanded) {
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(14.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(LocalAccentColor.current)
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             name,
-            color = TextSecondary,
+            color = if (expanded) TextPrimary else TextSecondary,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
         )
-        Text(
-            text = if (expanded) "▾" else "▸",
-            color = TextHint,
-            fontSize = 13.sp
+        val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chartChevron")
+        Icon(
+            Icons.Filled.ExpandMore,
+            contentDescription = null,
+            tint = if (expanded) LocalAccentColor.current else TextHint,
+            modifier = Modifier
+                .size(18.dp)
+                .rotate(rotation)
         )
     }
 }
@@ -991,10 +1021,14 @@ private fun PlaylistRow(name: String, coverUrl: String?, expanded: Boolean, onCl
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        Text(
-            text = if (expanded) "▾" else "▸",
-            color = TextHint,
-            fontSize = 13.sp
+        val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "playlistChevron")
+        Icon(
+            Icons.Filled.ExpandMore,
+            contentDescription = null,
+            tint = if (expanded) LocalAccentColor.current else TextHint,
+            modifier = Modifier
+                .size(18.dp)
+                .rotate(rotation)
         )
     }
 }

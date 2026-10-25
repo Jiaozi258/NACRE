@@ -15,7 +15,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -91,6 +90,8 @@ import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.GlassSurface
+import com.asmrhelper.ui.theme.HairlineBorder
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
@@ -196,7 +197,7 @@ fun AudioReactiveBackground(
                                 Brush.linearGradient(
                                     colors = listOf(
                                         primary.copy(alpha = 0.58f),
-                                        secondary.copy(alpha = 0.44f * breathe),
+                                        secondary.copy(alpha = 0.35f * breathe),
                                         primary.copy(alpha = 0.50f)
                                     )
                                 )
@@ -583,18 +584,10 @@ fun FoliaCommandBar(
         modifier = modifier.animateContentSize(animationSpec = springSpec),
         shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f))
+        border = HairlineBorder
     ) {
         Box(
-            modifier = Modifier.background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.10f),
-                        DarkSurfaceVariant.copy(alpha = 0.55f),
-                        DarkSurfaceVariant.copy(alpha = 0.32f)
-                    )
-                )
-            )
+            modifier = Modifier.background(GlassSurface)
         ) {
             Column {
                 // 标题行始终显示：折叠时只有歌名，点按整条切换
@@ -660,14 +653,26 @@ fun FoliaCommandBar(
                             thumb = {
                                 Box(
                                     modifier = Modifier
-                                        .size(12.dp)
-                                        .background(color = accent, shape = CircleShape)
-                                )
+                                        .size(16.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(accent.copy(alpha = 0.30f), Color.Transparent)
+                                            ),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .size(10.dp)
+                                            .background(Color.White, CircleShape)
+                                    )
+                                }
                             },
                             track = { sliderState ->
                                 SliderDefaults.Track(
                                     sliderState = sliderState,
-                                    modifier = Modifier.height(3.dp),
+                                    modifier = Modifier.height(2.dp),
                                     colors = SliderDefaults.colors(
                                         thumbColor = accent,
                                         activeTrackColor = accent,

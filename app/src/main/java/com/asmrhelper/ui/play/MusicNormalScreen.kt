@@ -58,7 +58,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,9 +78,11 @@ import com.asmrhelper.player.HeadphonePreset
 import com.asmrhelper.player.HeadphonePresets
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.ui.components.ModeToggleButton
+import com.asmrhelper.ui.play.folia.rememberCoverPalette
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.Radius
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
@@ -299,13 +303,29 @@ private fun NormalModeContent(
             )
         }
 
-        // 中上：封面
+        // 中上：封面（下方叠一层取色晕影，渐变到页面底色，弱化封面边缘切线）
+        val accent = LocalAccentColor.current
+        val coverGlow = rememberCoverPalette(
+            coverUrl,
+            fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL,
+            fallbackSecondary = accent.toArgb().toLong() and 0xFFFFFFFFL
+        ).first
+        val glowColor = Color(coverGlow.toInt())
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(0.42f),
             contentAlignment = Alignment.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .size(320.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(glowColor.copy(alpha = 0.35f), Color.Transparent)
+                        )
+                    )
+            )
             AlbumCover(coverUrl, coverTitle)
         }
 
@@ -467,8 +487,8 @@ private fun EqualizerPanel(
                     value = noteText,
                     onValueChange = { if (it.length <= 400) { noteText = it; noteSaved = false } },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(Radius.sm),
                     placeholder = { Text(stringResource(R.string.song_note_hint), color = TextHint) },
-                    supportingText = { Text("${noteText.length}/400", color = TextHint, fontSize = 11.sp) },
                     minLines = 4,
                     maxLines = 6,
                     enabled = songKey != null,
@@ -479,6 +499,12 @@ private fun EqualizerPanel(
                         unfocusedBorderColor = DarkSurfaceVariant,
                         cursorColor = accent
                     )
+                )
+                Text(
+                    text = "${noteText.length}/400",
+                    color = TextHint,
+                    fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.End)
                 )
                 Button(
                     onClick = {
@@ -507,7 +533,7 @@ private fun SectionTitle(text: String) {
                 .background(accent)
         )
         Spacer(Modifier.width(8.dp))
-        Text(text, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -527,7 +553,7 @@ private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
     val accent = LocalAccentColor.current
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(Radius.md))
             .background(if (selected) accent else DarkSurfaceVariant)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 7.dp)

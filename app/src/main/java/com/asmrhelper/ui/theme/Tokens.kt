@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
@@ -49,3 +50,8 @@ val ChipShape = RoundedCornerShape(Radius.chip)
 val HairlineBorder: BorderStroke
     @Composable @ReadOnlyComposable
     get() = BorderStroke(1.dp, TextPrimary.copy(alpha = 0.08f))
+
+/** 磨砂玻璃底（悬浮条/底部栏）：半透明 surface + hairline 描边，透过它看到已模糊的背景。 */
+val GlassSurface: Color
+    @Composable @ReadOnlyComposable
+    get() = DarkSurface.copy(alpha = 0.45f)
