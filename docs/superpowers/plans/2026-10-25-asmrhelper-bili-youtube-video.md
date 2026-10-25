@@ -3,6 +3,14 @@
 日期：2026-10-25
 目标：给 NACRE 加入 B站 / YouTube「视频音频」能力——发现页切换平台、浏览/搜索视频（封面 + 名称/上传者/发布时间/时长）、点按播放音频+封面（后台播放，不放视频）、账号并入「管理个人账号」，并保留/改进现有视频链接提取。
 
+## 进度
+
+- ✅ A. B站 WBI + `BilibiliMusicSource`（commit cc4e2aa）
+- ✅ B. YouTube InnerTube + `YoutubeMusicSource`（commit e2cac32）
+- ✅ C. 发现页 B/Y 切换 + 视频行/横滑视频架（commit ea9f68e）
+- ✅ D. 账号管理匿名态（YouTube 显示「匿名」，commit ea9f68e）
+- ⏭️ 下一步：UI 设计「高级感」（用户 Q7：功能完成后统一做）。
+
 ## 已拍板决策（用户）
 - 平台：B站（WBI 取流）+ YouTube（InnerTube 音频直链）。
 - B站登录：扫码 + 账号密码都要。
