@@ -74,6 +74,8 @@ import com.asmrhelper.R
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.CardShape
+import com.asmrhelper.ui.theme.HairlineBorder
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -229,8 +231,9 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                    shape = CardShape,
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    border = HairlineBorder
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -265,8 +268,9 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                    shape = CardShape,
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    border = HairlineBorder
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         var inputUsername by remember { mutableStateOf("") }
@@ -629,8 +633,9 @@ private fun StatCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        shape = CardShape,
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        border = HairlineBorder
     ) {
         Row(
             modifier = Modifier

@@ -103,6 +103,8 @@ import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.CardShape
+import com.asmrhelper.ui.theme.HairlineBorder
 import com.asmrhelper.ui.theme.ControlWhite
 import com.asmrhelper.util.BatteryOptimizationHelper
 import com.asmrhelper.util.GITHUB_URL
@@ -301,8 +303,9 @@ private fun PersonalPreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -340,8 +343,9 @@ private fun PersonalPreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             // 下拉通知栏播放控件
             Row(
@@ -459,8 +463,9 @@ private fun PersonalPreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Row(
@@ -509,8 +514,9 @@ private fun PersonalPreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             // 自动播放
             Row(
@@ -567,8 +573,9 @@ private fun PersonalPreferenceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             // 显示大小缩放
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
@@ -789,8 +796,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             var loopMenuExpanded by remember { mutableStateOf(false) }
             Row(
@@ -842,8 +850,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             var fadeOutMenuExpanded by remember { mutableStateOf(false) }
             Row(
@@ -895,8 +904,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -930,8 +940,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -965,8 +976,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -991,8 +1003,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1017,8 +1030,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1043,8 +1057,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(stringResource(R.string.settings_seek_seconds, seekSeconds), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -1062,8 +1077,9 @@ private fun PlaybackSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
@@ -1105,8 +1121,9 @@ private fun EqualizerSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 if (!eqEnabled) {
@@ -1268,8 +1285,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(
                 modifier = Modifier
@@ -1321,8 +1339,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             val (label, color) = SettingsViewModel.bgColorOptions[bgColorIndex]
             val animatedColor by animateColorAsState(targetValue = color, label = "bgColor")
@@ -1356,8 +1375,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(stringResource(R.string.settings_theme_accent), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -1406,8 +1426,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1436,8 +1457,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1466,8 +1488,9 @@ private fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1563,8 +1586,9 @@ private fun StorageSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1688,8 +1712,9 @@ private fun AmbientSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1773,8 +1798,9 @@ private fun LyricsSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 var modeExpanded by remember { mutableStateOf(false) }
@@ -1965,8 +1991,9 @@ private fun AudioEffectsSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -1993,8 +2020,9 @@ private fun AudioEffectsSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -2183,8 +2211,9 @@ private fun AudioEffectsSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             Row(
                 modifier = Modifier
@@ -2294,8 +2323,9 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
         ) {
             AboutRow(label = stringResource(R.string.settings_version_info), value = "NACRE $versionName")
 

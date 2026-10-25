@@ -45,6 +45,8 @@ import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
+import com.asmrhelper.ui.theme.CardShape
+import com.asmrhelper.ui.theme.HairlineBorder
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 
@@ -93,8 +95,9 @@ fun MusicSourceSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                shape = CardShape,
+                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                border = HairlineBorder
             ) {
                 Column {
                     sources.forEachIndexed { index, config ->
