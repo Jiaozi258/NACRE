@@ -95,6 +95,8 @@
     <string name="discover_tab_daily">每日</string>
     <string name="discover_tab_charts">排行榜</string>
     <string name="discover_tab_playlists">歌单</string>
+    <string name="discover_tab_favorites">收藏夹</string>
+    <string name="discover_tab_feed">动态</string>
     <string name="discover_settings_title">发现页设置</string>
     <string name="discover_empty_tab">暂无内容</string>
     <string name="discover_loading">加载中…</string>
@@ -103,6 +105,8 @@
     <string name="discover_search_tab_songs">歌曲</string>
     <string name="discover_search_tab_artists">歌手</string>
     <string name="discover_search_tab_playlists">歌单</string>
+    <string name="discover_search_tab_video">视频</string>
+    <string name="discover_search_tab_uploader">博主</string>
     <string name="discover_switch_platform">换平台</string>
     <string name="discover_switch_platform_title">选择音乐平台</string>
     <string name="discover_login_required">请登录平台后使用相关功能</string>

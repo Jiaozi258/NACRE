@@ -95,6 +95,8 @@
     <string name="discover_tab_daily">Daily</string>
     <string name="discover_tab_charts">Charts</string>
     <string name="discover_tab_playlists">Playlists</string>
+    <string name="discover_tab_favorites">Favorites</string>
+    <string name="discover_tab_feed">Feed</string>
     <string name="discover_settings_title">Discover settings</string>
     <string name="discover_empty_tab">Nothing here</string>
     <string name="discover_loading">Loading…</string>
@@ -103,6 +105,8 @@
     <string name="discover_search_tab_songs">Songs</string>
     <string name="discover_search_tab_artists">Artists</string>
     <string name="discover_search_tab_playlists">Playlists</string>
+    <string name="discover_search_tab_video">Video</string>
+    <string name="discover_search_tab_uploader">Uploader</string>
     <string name="discover_switch_platform">Switch</string>
     <string name="discover_switch_platform_title">Choose platform</string>
     <string name="discover_login_required">Please log in to use this platform</string>

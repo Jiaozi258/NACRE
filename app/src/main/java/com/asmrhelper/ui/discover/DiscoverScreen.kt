@@ -115,6 +115,7 @@ fun DiscoverScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val loadFailed by viewModel.loadFailed.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val isVideo = isVideoSource(activeSourceId)
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -125,6 +126,12 @@ fun DiscoverScreen(
             Toast.makeText(context, context.getString(it), Toast.LENGTH_SHORT).show()
             viewModel.consumeMessage()
         }
+    }
+
+    // 切换平台（音源↔视频源）后回到首个标签，避免停留在已不存在的标签
+    LaunchedEffect(activeSourceId) {
+        selectedTab = 0
+        viewModel.setSearchTab(0)
     }
 
     // 点击某首在线歌：当前可见列表整段成为播放队列
@@ -174,6 +181,7 @@ fun DiscoverScreen(
                         else -> SearchResults(
                             searching = searching,
                             searchTab = searchTab,
+                            labels = if (isVideo) videoSearchTabLabels else searchTabLabels,
                             onTabChange = viewModel::setSearchTab,
                             songs = searchResults,
                             artists = artistResults,
@@ -185,34 +193,65 @@ fun DiscoverScreen(
                     }
                 }
                 else -> {
-                    DiscoverTabRow(selectedTab, onOpenPlatformSwitch = { showPlatformDialog = true }) { selectedTab = it }
-                    when (selectedTab) {
-                        0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
-                        1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
-                        2 -> ChartsTab(
-                            charts = charts,
-                            expandedChartId = expandedChartId,
-                            expandedChartSongs = expandedChartSongs,
-                            hiddenModules = hiddenModules,
-                            loading = loading,
-                            loadFailed = loadFailed,
-                            onRetry = viewModel::refresh,
-                            onPlay = playSongs,
-                            onToggleChart = viewModel::toggleChart
-                        )
-                        else -> PlaylistsTab(
-                            userPlaylists = userPlaylists,
-                            recent = recent,
-                            expandedPlaylistId = expandedPlaylistId,
-                            expandedPlaylistSongs = expandedPlaylistSongs,
-                            hiddenModules = hiddenModules,
-                            loading = loading,
-                            loadFailed = loadFailed,
-                            onRetry = viewModel::refresh,
-                            onPlay = playSongs,
-                            onPlayRecent = playRecentEntries,
-                            onTogglePlaylist = viewModel::toggleUserPlaylist
-                        )
+                    if (isVideo) {
+                        DiscoverTabRow(
+                            selectedIndex = selectedTab,
+                            labels = videoDiscoverTabLabels,
+                            onOpenPlatformSwitch = { showPlatformDialog = true }
+                        ) { selectedTab = it }
+                        when (selectedTab) {
+                            0 -> VideoFavoritesTab(
+                                userPlaylists = userPlaylists,
+                                expandedPlaylistId = expandedPlaylistId,
+                                expandedPlaylistSongs = expandedPlaylistSongs,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRetry = viewModel::refresh,
+                                onPlay = playSongs,
+                                onTogglePlaylist = viewModel::toggleUserPlaylist
+                            )
+                            else -> VideoFeedTab(
+                                feed = radio,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRetry = viewModel::refresh,
+                                onPlay = playSongs
+                            )
+                        }
+                    } else {
+                        DiscoverTabRow(
+                            selectedIndex = selectedTab,
+                            labels = discoverTabLabels,
+                            onOpenPlatformSwitch = { showPlatformDialog = true }
+                        ) { selectedTab = it }
+                        when (selectedTab) {
+                            0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
+                            1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
+                            2 -> ChartsTab(
+                                charts = charts,
+                                expandedChartId = expandedChartId,
+                                expandedChartSongs = expandedChartSongs,
+                                hiddenModules = hiddenModules,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRetry = viewModel::refresh,
+                                onPlay = playSongs,
+                                onToggleChart = viewModel::toggleChart
+                            )
+                            else -> PlaylistsTab(
+                                userPlaylists = userPlaylists,
+                                recent = recent,
+                                expandedPlaylistId = expandedPlaylistId,
+                                expandedPlaylistSongs = expandedPlaylistSongs,
+                                hiddenModules = hiddenModules,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRetry = viewModel::refresh,
+                                onPlay = playSongs,
+                                onPlayRecent = playRecentEntries,
+                                onTogglePlaylist = viewModel::toggleUserPlaylist
+                            )
+                        }
                     }
                 }
             }
@@ -270,6 +309,12 @@ private val discoverTabLabels = listOf(
     R.string.discover_tab_playlists
 )
 
+/** 视频源（B站/YouTube）发现页标签：只有收藏夹 + 动态，不显示音乐向的推荐/每日/排行榜/歌单。 */
+private val videoDiscoverTabLabels = listOf(
+    R.string.discover_tab_favorites,
+    R.string.discover_tab_feed
+)
+
 @Composable
 private fun SearchBar(
     query: String,
@@ -323,7 +368,12 @@ private fun SearchBar(
 }
 
 @Composable
-private fun DiscoverTabRow(selectedIndex: Int, onOpenPlatformSwitch: () -> Unit, onSelect: (Int) -> Unit) {
+private fun DiscoverTabRow(
+    selectedIndex: Int,
+    labels: List<Int>,
+    onOpenPlatformSwitch: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
     val accent = LocalAccentColor.current
     Row(
         modifier = Modifier
@@ -332,7 +382,7 @@ private fun DiscoverTabRow(selectedIndex: Int, onOpenPlatformSwitch: () -> Unit,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        discoverTabLabels.forEachIndexed { i, labelRes ->
+        labels.forEachIndexed { i, labelRes ->
             val selected = i == selectedIndex
             Box(
                 modifier = Modifier
@@ -362,10 +412,17 @@ private val searchTabLabels = listOf(
     R.string.discover_search_tab_playlists
 )
 
+/** 视频源搜索标签：只有视频 + 博主，不提供歌曲/歌手/歌单。 */
+private val videoSearchTabLabels = listOf(
+    R.string.discover_search_tab_video,
+    R.string.discover_search_tab_uploader
+)
+
 @Composable
 private fun SearchResults(
     searching: Boolean,
     searchTab: Int,
+    labels: List<Int>,
     onTabChange: (Int) -> Unit,
     songs: List<RemoteSong>,
     artists: List<RemoteArtist>,
@@ -375,7 +432,7 @@ private fun SearchResults(
     onOpenPlaylist: (RemotePlaylist) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
-        SearchTabRow(searchTab, onTabChange)
+        SearchTabRow(searchTab, labels, onTabChange)
         if (searching) {
             CenteredLoading()
         } else {
@@ -389,7 +446,7 @@ private fun SearchResults(
 }
 
 @Composable
-private fun SearchTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
+private fun SearchTabRow(selectedIndex: Int, labels: List<Int>, onSelect: (Int) -> Unit) {
     val accent = LocalAccentColor.current
     Row(
         modifier = Modifier
@@ -397,7 +454,7 @@ private fun SearchTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
             .padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        searchTabLabels.forEachIndexed { i, labelRes ->
+        labels.forEachIndexed { i, labelRes ->
             val selected = i == selectedIndex
             Box(
                 modifier = Modifier
@@ -690,6 +747,68 @@ private fun PlaylistsTab(
                     }
                 }
             }
+        }
+    }
+}
+
+/** 视频源「收藏夹」标签：折叠的收藏夹列表。 */
+@Composable
+private fun VideoFavoritesTab(
+    userPlaylists: List<RemotePlaylist>,
+    expandedPlaylistId: String?,
+    expandedPlaylistSongs: List<RemoteSong>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onTogglePlaylist: (RemotePlaylist) -> Unit
+) {
+    if (userPlaylists.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRetry)
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        userPlaylists.forEach { playlist ->
+            val expanded = expandedPlaylistId == playlist.id
+            item(key = "vfav_header:${playlist.id}") {
+                PlaylistRow(
+                    name = playlist.name,
+                    coverUrl = playlist.coverUrl,
+                    expanded = expanded,
+                    onClick = { onTogglePlaylist(playlist) }
+                )
+            }
+            if (expanded) {
+                itemsIndexed(expandedPlaylistSongs, key = { _, it -> "vfav:${playlist.id}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(expandedPlaylistSongs, index) })
+                }
+            }
+        }
+    }
+}
+
+/** 视频源「动态」标签：动态流视频（视频源渲染为视频行）。 */
+@Composable
+private fun VideoFeedTab(
+    feed: List<RemoteSong>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    if (feed.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRetry)
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(feed, key = { _, it -> "feed:${it.sourceId}:${it.id}" }) { index, song ->
+            SongRow(song = song, onPlay = { onPlay(feed, index) })
         }
     }
 }
