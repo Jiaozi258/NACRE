@@ -215,9 +215,13 @@ class PlayerManager @Inject constructor(
         }
     }
 
-    /** 进程被杀时是否处于播放中，用于前台服务重启后判断是否续播。 */
+    /** 进程被杀时是否处于播放中，用于前台服务重启后判断是否续播。
+     *  「自动播放」为主开关：关闭时任何自动续播（含进程被杀后的重启续播）都不发生，
+     *  避免用户明明关掉了自动播放，打开软件却还是自己出声。 */
     fun shouldResumeAfterProcessDeath(): Boolean =
-        isRememberPlaybackEnabled() && prefs.getBoolean("was_playing", false)
+        settingsPrefs.getBoolean("auto_play", false) &&
+        isRememberPlaybackEnabled() &&
+        prefs.getBoolean("was_playing", false)
 
     /** 「自动播放」：打开软件后若设置开启且有上次播放记录，则自动续播（默认关闭）。
      *  已在播放或无可续播记录（如关闭了记忆播放）则无动作。 */

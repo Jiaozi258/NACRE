@@ -64,9 +64,9 @@ class MusicSourceManager @Inject constructor(
     fun sourceFor(config: SourceConfig): MusicSource =
         sourceCache.getOrPut(config.id) {
             val login = settingsRepository.getMusicLogin(config.id)
-            val onLoginChanged: (String, String) -> Unit = { cookie, nickname ->
+            val onLoginChanged: (String, String, Long) -> Unit = { cookie, nickname, loginTime ->
                 scope.launch {
-                    settingsRepository.setMusicLogin(config.id, MusicLogin(cookie, nickname))
+                    settingsRepository.setMusicLogin(config.id, MusicLogin(cookie, nickname, loginTime))
                 }
             }
             when (config.id) {

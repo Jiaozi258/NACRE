@@ -28,7 +28,7 @@ class QqMusicSource(
     private val context: Context,
     persistedCookie: String = "",
     persistedNickname: String = "",
-    private val onLoginChanged: (cookie: String, nickname: String) -> Unit = { _, _ -> }
+    private val onLoginChanged: (cookie: String, nickname: String, loginTime: Long) -> Unit = { _, _, _ -> }
 ) : MusicSource {
 
     override val id: String = "qq"
@@ -127,14 +127,14 @@ class QqMusicSource(
         this.cookie = cookie
         this.nickname = nickname
         _isLoggedIn.value = hasLoginCookie(cookie)
-        onLoginChanged(cookie, nickname)
+        onLoginChanged(cookie, nickname, System.currentTimeMillis())
     }
 
     override fun logout() {
         cookie = ""
         nickname = ""
         _isLoggedIn.value = false
-        onLoginChanged("", "")
+        onLoginChanged("", "", 0L)
     }
 
     // ── zzc POST ───────────────────────────────────────

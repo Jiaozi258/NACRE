@@ -49,6 +49,15 @@
     <string name="category_about_sub">版本信息与开源许可</string>
     <string name="music_source_settings_title">音源设置</string>
     <string name="music_source_settings_sub">在线音乐平台音源地址</string>
+    <string name="category_accounts">管理个人账号</string>
+    <string name="category_accounts_sub">查看已登录平台账号与连接状态</string>
+    <string name="settings_account_username">用户名</string>
+    <string name="settings_account_login_time">登录时间</string>
+    <string name="settings_account_check_connection">检查连接</string>
+    <string name="settings_account_checking">检查中…</string>
+    <string name="settings_account_connection_ok">连接正常</string>
+    <string name="settings_account_connection_fail">连接异常</string>
+    <string name="settings_account_not_logged">未登录，请前往「我的」登录</string>
 
     <!-- 外观 -->
     <string name="theme_mode">主题模式</string>
@@ -90,6 +99,12 @@
     <string name="discover_loading">加载中…</string>
     <string name="discover_load_failed">加载失败，请检查网络</string>
     <string name="discover_retry">重试</string>
+    <string name="discover_search_tab_songs">歌曲</string>
+    <string name="discover_search_tab_artists">歌手</string>
+    <string name="discover_search_tab_playlists">歌单</string>
+    <string name="discover_switch_platform">换平台</string>
+    <string name="discover_switch_platform_title">选择音乐平台</string>
+    <string name="discover_login_required">请登录平台后使用相关功能</string>
 
     <!-- MUSIC 播放页 -->
     <string name="lyric_mode">歌词模式</string>
@@ -185,6 +200,7 @@
     <string name="play_bookmark">🔖 书签</string>
     <string name="play_bookmark_count">🔖 书签(%d)</string>
     <string name="play_fade_out">🌙 淡出</string>
+    <string name="play_fast_forward">⏩ 快进</string>
     <string name="play_drag_to">拖拽至 %s</string>
     <string name="play_timer_title">定时器</string>
     <string name="play_sleep_timer">睡眠定时</string>

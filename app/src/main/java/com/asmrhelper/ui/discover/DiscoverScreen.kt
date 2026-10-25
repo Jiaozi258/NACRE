@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
@@ -58,9 +61,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
+import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
@@ -79,6 +85,15 @@ fun DiscoverScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val searching by viewModel.searching.collectAsStateWithLifecycle()
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
+    val artistResults by viewModel.artistResults.collectAsStateWithLifecycle()
+    val playlistResults by viewModel.playlistResults.collectAsStateWithLifecycle()
+    val searchTab by viewModel.searchTab.collectAsStateWithLifecycle()
+    val artistDetail by viewModel.artistDetail.collectAsStateWithLifecycle()
+    val artistDetailSongs by viewModel.artistDetailSongs.collectAsStateWithLifecycle()
+    val playlistDetail by viewModel.playlistDetail.collectAsStateWithLifecycle()
+    val playlistDetailSongs by viewModel.playlistDetailSongs.collectAsStateWithLifecycle()
+    val musicSources by viewModel.musicSources.collectAsStateWithLifecycle()
+    val activeSourceId by viewModel.activeSourceId.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val charts by viewModel.charts.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
@@ -98,6 +113,7 @@ fun DiscoverScreen(
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showPlatformDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(messageRes) {
         messageRes?.let {
@@ -134,11 +150,35 @@ fun DiscoverScreen(
             )
 
             when {
-                query.isNotBlank() -> SearchResults(
-                    searching = searching,
-                    results = searchResults,
-                    onPlay = playSongs
-                )
+                query.isNotBlank() -> {
+                    val openedArtist = artistDetail
+                    val openedPlaylist = playlistDetail
+                    when {
+                        openedArtist != null -> ArtistDetail(
+                            artist = openedArtist,
+                            songs = artistDetailSongs,
+                            onBack = viewModel::closeArtist,
+                            onPlay = playSongs
+                        )
+                        openedPlaylist != null -> PlaylistDetail(
+                            playlist = openedPlaylist,
+                            songs = playlistDetailSongs,
+                            onBack = viewModel::closePlaylist,
+                            onPlay = playSongs
+                        )
+                        else -> SearchResults(
+                            searching = searching,
+                            searchTab = searchTab,
+                            onTabChange = viewModel::setSearchTab,
+                            songs = searchResults,
+                            artists = artistResults,
+                            playlists = playlistResults,
+                            onPlay = playSongs,
+                            onOpenArtist = viewModel::openArtist,
+                            onOpenPlaylist = viewModel::openPlaylist
+                        )
+                    }
+                }
                 else -> {
                     DiscoverTabRow(selectedTab) { selectedTab = it }
                     when (selectedTab) {
@@ -166,7 +206,8 @@ fun DiscoverScreen(
                             onRetry = viewModel::refresh,
                             onPlay = playSongs,
                             onPlayRecent = playRecentEntries,
-                            onTogglePlaylist = viewModel::toggleUserPlaylist
+                            onTogglePlaylist = viewModel::toggleUserPlaylist,
+                            onOpenPlatformSwitch = { showPlatformDialog = true }
                         )
                     }
                 }
@@ -204,6 +245,16 @@ fun DiscoverScreen(
             hiddenModules = hiddenModules,
             onToggle = viewModel::toggleModule,
             onDismiss = { showSettingsDialog = false }
+        )
+    }
+
+    if (showPlatformDialog) {
+        PlatformSwitchDialog(
+            sources = musicSources,
+            activeSourceId = activeSourceId,
+            sourceFor = viewModel::sourceFor,
+            onSelect = viewModel::setActiveSource,
+            onDismiss = { showPlatformDialog = false }
         )
     }
 }
@@ -296,25 +347,165 @@ private fun DiscoverTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
     }
 }
 
+private val searchTabLabels = listOf(
+    R.string.discover_search_tab_songs,
+    R.string.discover_search_tab_artists,
+    R.string.discover_search_tab_playlists
+)
+
 @Composable
 private fun SearchResults(
     searching: Boolean,
-    results: List<RemoteSong>,
-    onPlay: (List<RemoteSong>, Int) -> Unit
+    searchTab: Int,
+    onTabChange: (Int) -> Unit,
+    songs: List<RemoteSong>,
+    artists: List<RemoteArtist>,
+    playlists: List<RemotePlaylist>,
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onOpenArtist: (RemoteArtist) -> Unit,
+    onOpenPlaylist: (RemotePlaylist) -> Unit
 ) {
-    when {
-        searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = LocalAccentColor.current)
-        }
-        results.isEmpty() -> EmptyState(stringResource(R.string.discover_no_results))
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
-        ) {
-            itemsIndexed(results, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
-                SongRow(song = song, onPlay = { onPlay(results, index) })
+    Column(Modifier.fillMaxSize()) {
+        SearchTabRow(searchTab, onTabChange)
+        if (searching) {
+            CenteredLoading()
+        } else {
+            when (searchTab) {
+                1 -> SearchArtistList(artists, onOpenArtist)
+                2 -> SearchPlaylistList(playlists, onOpenPlaylist)
+                else -> SearchSongList(songs, onPlay)
             }
         }
+    }
+}
+
+@Composable
+private fun SearchTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
+    val accent = LocalAccentColor.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        searchTabLabels.forEachIndexed { i, labelRes ->
+            val selected = i == selectedIndex
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (selected) accent.copy(alpha = 0.18f) else Color.Transparent)
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    stringResource(labelRes),
+                    color = if (selected) accent else TextSecondary,
+                    fontSize = 14.sp,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchSongList(songs: List<RemoteSong>, onPlay: (List<RemoteSong>, Int) -> Unit) {
+    if (songs.isEmpty()) {
+        EmptyState(stringResource(R.string.discover_no_results))
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(songs, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+            SongRow(song = song, onPlay = { onPlay(songs, index) })
+        }
+    }
+}
+
+@Composable
+private fun SearchArtistList(artists: List<RemoteArtist>, onOpenArtist: (RemoteArtist) -> Unit) {
+    if (artists.isEmpty()) {
+        EmptyState(stringResource(R.string.discover_no_results))
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(artists, key = { _, it -> "artist:${it.id}" }) { _, artist ->
+            ArtistRow(artist = artist, onClick = { onOpenArtist(artist) })
+        }
+    }
+}
+
+@Composable
+private fun SearchPlaylistList(playlists: List<RemotePlaylist>, onOpenPlaylist: (RemotePlaylist) -> Unit) {
+    if (playlists.isEmpty()) {
+        EmptyState(stringResource(R.string.discover_no_results))
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(playlists, key = { _, it -> "spl:${it.id}" }) { _, playlist ->
+            SearchPlaylistRow(name = playlist.name, coverUrl = playlist.coverUrl, onClick = { onOpenPlaylist(playlist) })
+        }
+    }
+}
+
+@Composable
+private fun ArtistRow(artist: RemoteArtist, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(coverUrl = artist.coverUrl)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            artist.name,
+            color = TextPrimary,
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun SearchPlaylistRow(name: String, coverUrl: String?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(coverUrl = coverUrl)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            name,
+            color = TextPrimary,
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun CenteredLoading() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = LocalAccentColor.current)
     }
 }
 
@@ -441,44 +632,232 @@ private fun PlaylistsTab(
     onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onPlayRecent: (List<PlayHistoryEntity>, Int) -> Unit,
-    onTogglePlaylist: (RemotePlaylist) -> Unit
+    onTogglePlaylist: (RemotePlaylist) -> Unit,
+    onOpenPlatformSwitch: () -> Unit
 ) {
     val playlists = if (DiscoverModule.PLAYLISTS in hiddenModules) emptyList() else userPlaylists
     val recentList = if (DiscoverModule.RECENT in hiddenModules) emptyList() else recent
-    if (playlists.isEmpty() && recentList.isEmpty()) {
-        // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
-        if (DiscoverModule.PLAYLISTS in hiddenModules && DiscoverModule.RECENT in hiddenModules) EmptyTab()
-        else ModuleEmptyState(loading, loadFailed, onRetry)
-        return
-    }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
-    ) {
-        if (playlists.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.discover_user_playlists)) }
-            playlists.forEach { playlist ->
-                val expanded = expandedPlaylistId == playlist.id
-                item(key = "pl_header:${playlist.id}") {
-                    PlaylistRow(
-                        name = playlist.name,
-                        coverUrl = playlist.coverUrl,
-                        expanded = expanded,
-                        onClick = { onTogglePlaylist(playlist) }
-                    )
+    Column(Modifier.fillMaxSize()) {
+        PlaylistsHeader(onOpenPlatformSwitch)
+        if (playlists.isEmpty() && recentList.isEmpty()) {
+            // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
+            if (DiscoverModule.PLAYLISTS in hiddenModules && DiscoverModule.RECENT in hiddenModules) EmptyTab()
+            else ModuleEmptyState(loading, loadFailed, onRetry)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+            ) {
+                if (playlists.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.discover_user_playlists)) }
+                    playlists.forEach { playlist ->
+                        val expanded = expandedPlaylistId == playlist.id
+                        item(key = "pl_header:${playlist.id}") {
+                            PlaylistRow(
+                                name = playlist.name,
+                                coverUrl = playlist.coverUrl,
+                                expanded = expanded,
+                                onClick = { onTogglePlaylist(playlist) }
+                            )
+                        }
+                        if (expanded) {
+                            itemsIndexed(expandedPlaylistSongs, key = { _, it -> "pl:${playlist.id}:${it.id}" }) { index, song ->
+                                SongRow(song = song, onPlay = { onPlay(expandedPlaylistSongs, index) })
+                            }
+                        }
+                    }
                 }
-                if (expanded) {
-                    itemsIndexed(expandedPlaylistSongs, key = { _, it -> "pl:${playlist.id}:${it.id}" }) { index, song ->
-                        SongRow(song = song, onPlay = { onPlay(expandedPlaylistSongs, index) })
+                if (recentList.isNotEmpty()) {
+                    item { SectionHeader(stringResource(R.string.discover_recent)) }
+                    itemsIndexed(recentList, key = { _, it -> "recent:${it.id}" }) { index, entry ->
+                        RecentRow(entry = entry, onPlay = { onPlayRecent(recentList, index) })
                     }
                 }
             }
         }
-        if (recentList.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.discover_recent)) }
-            itemsIndexed(recentList, key = { _, it -> "recent:${it.id}" }) { index, entry ->
-                RecentRow(entry = entry, onPlay = { onPlayRecent(recentList, index) })
+    }
+}
+
+@Composable
+private fun PlaylistsHeader(onOpenPlatformSwitch: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.discover_tab_playlists),
+            color = TextPrimary,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onOpenPlatformSwitch) {
+            Text(stringResource(R.string.discover_switch_platform), color = LocalAccentColor.current, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun PlatformSwitchDialog(
+    sources: List<SourceConfig>,
+    activeSourceId: String,
+    sourceFor: (SourceConfig) -> MusicSource,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.discover_switch_platform_title), color = TextPrimary) },
+        text = {
+            Column {
+                sources.forEach { config ->
+                    val source = sourceFor(config)
+                    val isLoggedIn by source.isLoggedIn.collectAsStateWithLifecycle()
+                    val isActive = config.id == activeSourceId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                when {
+                                    isActive -> onDismiss()
+                                    isLoggedIn -> { onSelect(config.id); onDismiss() }
+                                    else -> Toast.makeText(
+                                        context,
+                                        context.getString(R.string.discover_login_required),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(config.displayNameRes),
+                            color = TextPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            if (isLoggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
+                            color = if (isLoggedIn) LocalAccentColor.current else TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
             }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+        },
+        containerColor = DarkSurface,
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+/** 歌手/歌单详情：上方大封面 + 下方歌曲列表。 */
+@Composable
+private fun ArtistDetail(
+    artist: RemoteArtist,
+    songs: List<RemoteSong>,
+    onBack: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    Column(Modifier.fillMaxSize()) {
+        DetailHeader(title = artist.name, coverUrl = artist.coverUrl, onBack = onBack)
+        if (songs.isEmpty()) {
+            CenteredLoading()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+            ) {
+                itemsIndexed(songs, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(songs, index) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaylistDetail(
+    playlist: RemotePlaylist,
+    songs: List<RemoteSong>,
+    onBack: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    Column(Modifier.fillMaxSize()) {
+        DetailHeader(title = playlist.name, coverUrl = playlist.coverUrl, onBack = onBack)
+        if (songs.isEmpty()) {
+            CenteredLoading()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+            ) {
+                itemsIndexed(songs, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(songs, index) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailHeader(title: String, coverUrl: String?, onBack: () -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+        ) {
+            BigCover(coverUrl)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.ArrowBack, stringResource(R.string.common_back), tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        Text(
+            title,
+            color = TextPrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+    }
+}
+
+@Composable
+private fun BigCover(coverUrl: String?) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkSurface),
+        contentAlignment = Alignment.Center
+    ) {
+        if (coverUrl.isNullOrBlank()) {
+            Icon(Icons.Filled.MusicNote, null, tint = TextSecondary, modifier = Modifier.size(64.dp))
+        } else {
+            AsyncImage(
+                model = coverUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

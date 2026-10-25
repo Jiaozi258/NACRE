@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Accessibility
@@ -137,6 +138,7 @@ private enum class SettingsCategory(
     val icon: ImageVector
 ) {
     PERSONAL(R.string.category_personal, R.string.category_personal_sub, Icons.Filled.Lock),
+    ACCOUNTS(R.string.category_accounts, R.string.category_accounts_sub, Icons.Filled.Person),
     PLAYBACK(R.string.category_playback, R.string.category_playback_sub, Icons.Filled.Loop),
     EQUALIZER(R.string.category_equalizer, R.string.category_equalizer_sub, Icons.Filled.GraphicEq),
     APPEARANCE(R.string.category_appearance, R.string.category_appearance_sub, Icons.Filled.Palette),
@@ -166,6 +168,7 @@ fun SettingsScreen(
             onBack = onBack
         )
         SettingsCategory.PERSONAL -> PersonalPreferenceScreen(onBack = { category = null }, viewModel = viewModel)
+        SettingsCategory.ACCOUNTS -> AccountManagementScreen(onBack = { category = null }, viewModel = viewModel)
         SettingsCategory.PLAYBACK -> PlaybackSettingsScreen(onBack = { category = null }, viewModel = viewModel)
         SettingsCategory.EQUALIZER -> EqualizerSettingsScreen(onBack = { category = null }, viewModel = viewModel)
         SettingsCategory.APPEARANCE -> AppearanceSettingsScreen(onBack = { category = null }, viewModel = viewModel)
@@ -613,6 +616,125 @@ private fun PersonalPreferenceScreen(
             }
         }
     }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  1.5 管理个人账号
+// ═══════════════════════════════════════════════════════════
+
+@Composable
+private fun AccountManagementScreen(
+    onBack: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val connectionStatus by viewModel.connectionStatus.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) { viewModel.refreshAccounts() }
+
+    SubScreenScaffold(title = stringResource(R.string.category_accounts), onBack = onBack) {
+        SectionHeader(icon = Icons.Filled.Person, title = stringResource(R.string.category_accounts))
+
+        accounts.forEach { account ->
+            val config = account.config
+            val isLoggedIn = account.nickname.isNotBlank()
+            val status = connectionStatus[config.id]
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(config.displayNameRes),
+                            color = TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            if (isLoggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
+                            color = if (isLoggedIn) LocalAccentColor.current else TextHint,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    if (isLoggedIn) {
+                        AccountInfoRow(stringResource(R.string.settings_account_username), account.nickname)
+                        AccountInfoRow(
+                            stringResource(R.string.settings_account_login_time),
+                            formatLoginTime(context, account.loginTime)
+                        )
+                    } else {
+                        Text(stringResource(R.string.settings_account_not_logged), color = TextHint, fontSize = 12.sp)
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_account_check_connection),
+                            color = TextPrimary,
+                            fontSize = 14.sp
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val statusText = when (status) {
+                                null -> stringResource(R.string.settings_account_checking)
+                                true -> stringResource(R.string.settings_account_connection_ok)
+                                else -> stringResource(R.string.settings_account_connection_fail)
+                            }
+                            val statusColor = when (status) {
+                                null -> TextHint
+                                true -> Color(0xFF4CAF50)
+                                else -> ErrorRed
+                            }
+                            Text(statusText, color = statusColor, fontSize = 13.sp)
+                            Spacer(Modifier.width(8.dp))
+                            TextButton(onClick = { viewModel.checkConnection(config.id) }) {
+                                Text(
+                                    stringResource(R.string.settings_account_check_connection),
+                                    color = LocalAccentColor.current,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, color = TextHint, fontSize = 13.sp)
+        Text(value, color = TextSecondary, fontSize = 13.sp)
+    }
+}
+
+private fun formatLoginTime(context: android.content.Context, loginTime: Long): String {
+    if (loginTime <= 0L) return "—"
+    return java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(loginTime))
 }
 
 // ═══════════════════════════════════════════════════════════

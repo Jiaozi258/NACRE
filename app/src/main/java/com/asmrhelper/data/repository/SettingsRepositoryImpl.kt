@@ -480,7 +480,11 @@ class SettingsRepositoryImpl @Inject constructor(
         val json = prefs.getString("music_login_$sourceId", null) ?: return MusicLogin()
         return try {
             val obj = org.json.JSONObject(json)
-            MusicLogin(cookie = obj.optString("cookie"), nickname = obj.optString("nickname"))
+            MusicLogin(
+                cookie = obj.optString("cookie"),
+                nickname = obj.optString("nickname"),
+                loginTime = obj.optLong("loginTime", 0L)
+            )
         } catch (_: Exception) {
             MusicLogin()
         }
@@ -490,6 +494,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val obj = org.json.JSONObject()
         obj.put("cookie", login.cookie)
         obj.put("nickname", login.nickname)
+        obj.put("loginTime", login.loginTime)
         prefs.edit().putString("music_login_$sourceId", obj.toString()).apply()
     }
 

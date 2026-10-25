@@ -7,10 +7,12 @@ import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 import com.asmrhelper.domain.model.Audio
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.player.PlayerEvent
 import com.asmrhelper.player.PlayerManager
@@ -43,6 +45,16 @@ class DiscoverViewModel @Inject constructor(
     /** 活动音源：原生源恒可用。 */
     val activeSource: StateFlow<MusicSource> = musicSourceManager.activeSource
 
+    /** 平台列表 + 当前活动平台（用于发现页「换平台」入口）。 */
+    val musicSources: StateFlow<List<SourceConfig>> = musicSourceManager.sources
+    val activeSourceId: StateFlow<String> = musicSourceManager.activeSourceId
+
+    fun sourceFor(config: SourceConfig): MusicSource = musicSourceManager.sourceFor(config)
+
+    fun setActiveSource(id: String) {
+        viewModelScope.launch { musicSourceManager.setActive(id) }
+    }
+
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
@@ -51,6 +63,30 @@ class DiscoverViewModel @Inject constructor(
 
     private val _searchResults = MutableStateFlow<List<RemoteSong>>(emptyList())
     val searchResults: StateFlow<List<RemoteSong>> = _searchResults.asStateFlow()
+
+    private val _artistResults = MutableStateFlow<List<RemoteArtist>>(emptyList())
+    val artistResults: StateFlow<List<RemoteArtist>> = _artistResults.asStateFlow()
+
+    private val _playlistResults = MutableStateFlow<List<RemotePlaylist>>(emptyList())
+    val playlistResults: StateFlow<List<RemotePlaylist>> = _playlistResults.asStateFlow()
+
+    /** 搜索类型标签：0=歌曲，1=歌手，2=歌单。 */
+    private val _searchTab = MutableStateFlow(0)
+    val searchTab: StateFlow<Int> = _searchTab.asStateFlow()
+
+    /** 点开的歌手详情及其歌曲。 */
+    private val _artistDetail = MutableStateFlow<RemoteArtist?>(null)
+    val artistDetail: StateFlow<RemoteArtist?> = _artistDetail.asStateFlow()
+
+    private val _artistDetailSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val artistDetailSongs: StateFlow<List<RemoteSong>> = _artistDetailSongs.asStateFlow()
+
+    /** 点开的歌单详情及其歌曲。 */
+    private val _playlistDetail = MutableStateFlow<RemotePlaylist?>(null)
+    val playlistDetail: StateFlow<RemotePlaylist?> = _playlistDetail.asStateFlow()
+
+    private val _playlistDetailSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val playlistDetailSongs: StateFlow<List<RemoteSong>> = _playlistDetailSongs.asStateFlow()
 
     /** 初始/刷新加载中：发现页首次进入或重试时显示加载态。 */
     private val _loading = MutableStateFlow(true)
@@ -141,7 +177,14 @@ class DiscoverViewModel @Inject constructor(
         _query.value = value
         if (value.isBlank()) {
             _searchResults.value = emptyList()
+            _artistResults.value = emptyList()
+            _playlistResults.value = emptyList()
             _searching.value = false
+            _searchTab.value = 0
+            _artistDetail.value = null
+            _artistDetailSongs.value = emptyList()
+            _playlistDetail.value = null
+            _playlistDetailSongs.value = emptyList()
             return
         }
         search(value)
@@ -151,11 +194,49 @@ class DiscoverViewModel @Inject constructor(
         val source = activeSource.value
         _searching.value = true
         viewModelScope.launch {
-            source.search(query, 1).collect { list ->
-                _searchResults.value = list
-                _searching.value = false
+            coroutineScope {
+                launch { source.search(query, 1).collect { list -> _searchResults.value = list } }
+                launch { source.searchArtists(query).collect { list -> _artistResults.value = list } }
+                launch { source.searchPlaylists(query).collect { list -> _playlistResults.value = list } }
+            }
+            _searching.value = false
+        }
+    }
+
+    fun setSearchTab(tab: Int) {
+        _searchTab.value = tab
+    }
+
+    /** 点开搜索结果中的歌手：拉取其歌曲并进入详情。 */
+    fun openArtist(artist: RemoteArtist) {
+        _artistDetail.value = artist
+        _artistDetailSongs.value = emptyList()
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getArtistSongs(artist.id).collect { songs -> _artistDetailSongs.value = songs }
+        }
+    }
+
+    fun closeArtist() {
+        _artistDetail.value = null
+        _artistDetailSongs.value = emptyList()
+    }
+
+    /** 点开搜索结果中的歌单：拉取歌曲并进入详情。 */
+    fun openPlaylist(playlist: RemotePlaylist) {
+        _playlistDetail.value = playlist
+        _playlistDetailSongs.value = playlist.songs
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getPlaylist(playlist.id).collect { detail ->
+                if (detail.songs.isNotEmpty()) _playlistDetailSongs.value = detail.songs
             }
         }
+    }
+
+    fun closePlaylist() {
+        _playlistDetail.value = null
+        _playlistDetailSongs.value = emptyList()
     }
 
     fun loadRecommendations() {

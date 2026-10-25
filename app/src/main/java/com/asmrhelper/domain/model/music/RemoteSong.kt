@@ -40,3 +40,10 @@ data class RemoteChart(
     val name: String,
     val songs: List<RemoteSong> = emptyList()
 )
+
+/** 在线歌手/艺人。 */
+data class RemoteArtist(
+    val id: String,
+    val name: String,
+    val coverUrl: String? = null
+)

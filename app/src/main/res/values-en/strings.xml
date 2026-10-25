@@ -49,6 +49,15 @@
     <string name="category_about_sub">Version &amp; open-source licenses</string>
     <string name="music_source_settings_title">Music sources</string>
     <string name="music_source_settings_sub">Online music platform source URLs</string>
+    <string name="category_accounts">Manage accounts</string>
+    <string name="category_accounts_sub">View signed-in platforms &amp; connection status</string>
+    <string name="settings_account_username">Username</string>
+    <string name="settings_account_login_time">Login time</string>
+    <string name="settings_account_check_connection">Check connection</string>
+    <string name="settings_account_checking">Checking…</string>
+    <string name="settings_account_connection_ok">Connected</string>
+    <string name="settings_account_connection_fail">Connection failed</string>
+    <string name="settings_account_not_logged">Not signed in. Sign in from “My”.</string>
 
     <!-- Appearance -->
     <string name="theme_mode">Theme mode</string>
@@ -90,6 +99,12 @@
     <string name="discover_loading">Loading…</string>
     <string name="discover_load_failed">Failed to load, check your network</string>
     <string name="discover_retry">Retry</string>
+    <string name="discover_search_tab_songs">Songs</string>
+    <string name="discover_search_tab_artists">Artists</string>
+    <string name="discover_search_tab_playlists">Playlists</string>
+    <string name="discover_switch_platform">Switch</string>
+    <string name="discover_switch_platform_title">Choose platform</string>
+    <string name="discover_login_required">Please log in to use this platform</string>
 
     <!-- MUSIC player -->
     <string name="lyric_mode">Lyric mode</string>
@@ -185,6 +200,7 @@
     <string name="play_bookmark">🔖 Bookmark</string>
     <string name="play_bookmark_count">🔖 Bookmark(%d)</string>
     <string name="play_fade_out">🌙 Fade out</string>
+    <string name="play_fast_forward">⏩ Forward</string>
     <string name="play_drag_to">Drag to %s</string>
     <string name="play_timer_title">Timer</string>
     <string name="play_sleep_timer">Sleep timer</string>

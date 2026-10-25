@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music.netease
 
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemoteLyricLine
@@ -15,6 +16,55 @@ object NeteaseJson {
 
     fun parseSearch(json: String): List<RemoteSong> = try {
         parseSongArray(JSONObject(json).optJSONObject("result")?.optJSONArray("songs"))
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 搜索歌手（cloudsearch type=100 → result.artists[]）。 */
+    fun parseArtists(json: String): List<RemoteArtist> = try {
+        val arr = JSONObject(json).optJSONObject("result")?.optJSONArray("artists")
+            ?: return emptyList()
+        val list = mutableListOf<RemoteArtist>()
+        for (i in 0 until arr.length()) {
+            val a = arr.optJSONObject(i) ?: continue
+            val cover = a.optString("picUrl").takeIf { it.isNotBlank() }
+                ?: a.optString("img1v1Url").takeIf { it.isNotBlank() }
+            list.add(
+                RemoteArtist(
+                    id = a.optLong("id").toString(),
+                    name = a.optString("name"),
+                    coverUrl = cover?.let { https(it) }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 搜索歌单（cloudsearch type=1000 → result.playlists[]，仅名称/封面）。 */
+    fun parsePlaylistSearch(json: String): List<RemotePlaylist> = try {
+        val arr = JSONObject(json).optJSONObject("result")?.optJSONArray("playlists")
+            ?: return emptyList()
+        val list = mutableListOf<RemotePlaylist>()
+        for (i in 0 until arr.length()) {
+            val p = arr.optJSONObject(i) ?: continue
+            list.add(
+                RemotePlaylist(
+                    id = p.optLong("id").toString(),
+                    name = p.optString("name"),
+                    coverUrl = p.optString("coverImgUrl").takeIf { it.isNotBlank() }?.let { https(it) }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 歌手热门歌曲（`/weapi/v1/artist/{id}` → hotSongs[]）。 */
+    fun parseArtistSongs(json: String): List<RemoteSong> = try {
+        parseSongArray(JSONObject(json).optJSONArray("hotSongs"))
     } catch (_: Exception) {
         emptyList()
     }

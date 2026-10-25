@@ -6,6 +6,7 @@ import com.asmrhelper.data.music.neteaselib.Eapi
 import com.asmrhelper.data.music.neteaselib.PublicKeyState
 import com.asmrhelper.data.music.neteaselib.Weapi
 import com.asmrhelper.data.music.neteaselib.Xeapi
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -37,7 +38,7 @@ class NeteaseMusicSource(
     private val context: Context,
     persistedCookie: String = "",
     persistedNickname: String = "",
-    private val onLoginChanged: (cookie: String, nickname: String) -> Unit = { _, _ -> }
+    private val onLoginChanged: (cookie: String, nickname: String, loginTime: Long) -> Unit = { _, _, _ -> }
 ) : MusicSource {
 
     override val id: String = "netease"
@@ -76,6 +77,34 @@ class NeteaseMusicSource(
             .put("offset", (page - 1) * 30)
             .put("total", true)
         emit(NeteaseJson.parseSearch(eapiPost(SEARCH_URI, data)))
+    }
+
+    override fun searchArtists(keyword: String): Flow<List<RemoteArtist>> = flow {
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("s", keyword)
+            .put("type", 100)
+            .put("limit", 30)
+            .put("offset", 0)
+            .put("total", true)
+        emit(NeteaseJson.parseArtists(eapiPost(SEARCH_URI, data)))
+    }
+
+    override fun searchPlaylists(keyword: String): Flow<List<RemotePlaylist>> = flow {
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("s", keyword)
+            .put("type", 1000)
+            .put("limit", 30)
+            .put("offset", 0)
+            .put("total", true)
+        emit(NeteaseJson.parsePlaylistSearch(eapiPost(SEARCH_URI, data)))
+    }
+
+    override fun getArtistSongs(artistId: String): Flow<List<RemoteSong>> = flow {
+        ensureAnonymousSession()
+        val body = json(mapOf("id" to artistId))
+        emit(NeteaseJson.parseArtistSongs(weapiPost("/weapi/v1/artist/$artistId", body)))
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {
@@ -192,7 +221,7 @@ class NeteaseMusicSource(
             nickname = NeteaseJson.parseLoginNickname(resp.body).ifBlank { username }
             uid = NeteaseJson.parseLoginUid(resp.body)
             _isLoggedIn.value = true
-            onLoginChanged(cookie, nickname)
+            onLoginChanged(cookie, nickname, System.currentTimeMillis())
             emit(Result.success(Unit))
         } else {
             val msg = NeteaseJson.parseMessage(resp.body).ifBlank { context.getString(R.string.login_failed) }
@@ -205,7 +234,7 @@ class NeteaseMusicSource(
         this.cookie = cookie
         this.nickname = nickname
         _isLoggedIn.value = cookie.contains("MUSIC_U")
-        onLoginChanged(cookie, nickname)
+        onLoginChanged(cookie, nickname, System.currentTimeMillis())
     }
 
     override fun logout() {
@@ -213,7 +242,7 @@ class NeteaseMusicSource(
         nickname = ""
         uid = ""
         _isLoggedIn.value = false
-        onLoginChanged("", "")
+        onLoginChanged("", "", 0L)
     }
 
     /** 惰性解析登录用户 uid（账号密码登录已带，WebView 导入时按需拉取）。 */
@@ -289,7 +318,7 @@ class NeteaseMusicSource(
         val musicA = registerAnonymous(state)
         if (musicA.isNotBlank()) {
             cookie = musicA
-            onLoginChanged(cookie, nickname)
+            onLoginChanged(cookie, nickname, 0L)
         }
     }
 

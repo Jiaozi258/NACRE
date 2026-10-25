@@ -7,6 +7,8 @@ import coil.Coil
 import com.asmrhelper.R
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.music.MusicLogin
+import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.domain.repository.AudioRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
@@ -17,8 +19,11 @@ import com.asmrhelper.player.SceneEffectsController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -178,6 +183,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _selectedAmbient.value = settingsRepository.getSelectedAmbientAudio()
         }
+        refreshAccounts()
     }
 
     fun selectAmbient(path: String?) {
@@ -477,6 +483,43 @@ class SettingsViewModel @Inject constructor(
 
     fun setActiveSource(id: String) {
         viewModelScope.launch { musicSourceManager.setActive(id) }
+    }
+
+    // ── 个人账号管理 ──────────────────────────────────────────
+
+    data class AccountInfo(
+        val config: SourceConfig,
+        val nickname: String,
+        val loginTime: Long
+    )
+
+    private val _accounts = MutableStateFlow<List<AccountInfo>>(emptyList())
+    val accounts: StateFlow<List<AccountInfo>> = _accounts.asStateFlow()
+
+    /** 重新读取各平台的登录信息（登录/退出后调用）。 */
+    fun refreshAccounts() {
+        _accounts.value = musicSources.value.map { config ->
+            val login = settingsRepository.getMusicLogin(config.id)
+            AccountInfo(config, login.nickname, login.loginTime)
+        }
+    }
+
+    fun musicSourceFor(config: SourceConfig): MusicSource = musicSourceManager.sourceFor(config)
+
+    /** 连接状态：null=检查中，true=正常，false=异常。 */
+    private val _connectionStatus = MutableStateFlow<Map<String, Boolean?>>(emptyMap())
+    val connectionStatus: StateFlow<Map<String, Boolean?>> = _connectionStatus.asStateFlow()
+
+    /** 检查平台连接是否正常：用常见关键词搜索，能拿到结果即视为连通。 */
+    fun checkConnection(sourceId: String) {
+        viewModelScope.launch {
+            _connectionStatus.value = _connectionStatus.value + (sourceId to null)
+            val source = musicSourceManager.sourceForId(sourceId)
+            val ok = if (source == null) false else runCatching {
+                source.search("周杰伦", 1).first().isNotEmpty()
+            }.getOrDefault(false)
+            _connectionStatus.value = _connectionStatus.value + (sourceId to ok)
+        }
     }
 
     // ── 遮罩工具 ──────────────────────────────────────────
