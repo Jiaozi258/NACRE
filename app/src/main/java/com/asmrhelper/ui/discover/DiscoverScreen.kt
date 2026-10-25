@@ -85,6 +85,7 @@ import com.asmrhelper.ui.theme.TextSecondary
 fun DiscoverScreen(
     modifier: Modifier = Modifier,
     onPlayRequested: () -> Unit = {},
+    searchRequest: Pair<Long, String>? = null,
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -132,6 +133,16 @@ fun DiscoverScreen(
     LaunchedEffect(activeSourceId) {
         selectedTab = 0
         viewModel.setSearchTab(0)
+    }
+
+    // 播放页歌曲信息点歌手/专辑 → 携带关键词跳到发现页搜索
+    LaunchedEffect(searchRequest) {
+        searchRequest?.let { (_, query) ->
+            if (query.isNotBlank()) {
+                selectedTab = 0
+                viewModel.onQueryChange(query)
+            }
+        }
     }
 
     // 点击某首在线歌：当前可见列表整段成为播放队列

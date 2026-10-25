@@ -55,6 +55,9 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     var playSubScreen by remember { mutableStateOf<SubScreen?>(null) }
     var libraryInitialTab by remember { mutableStateOf(0) }
     var settingsFromProfile by remember { mutableStateOf(false) }
+    // 从播放页歌曲信息点歌手/专辑 → 跳到发现页搜索（nonce 保证同关键词可重复触发）
+    var discoverSearchRequest by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var discoverSearchNonce by remember { mutableStateOf(0L) }
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -63,6 +66,13 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     fun openSubScreen(sub: SubScreen?) {
         playSubScreen = sub
         if (sub != null) scope.launch { pagerState.scrollToPage(0) }
+    }
+
+    // 从播放页歌曲信息点歌手/专辑 → 跳到发现页搜索
+    fun searchFromPlay(query: String) {
+        discoverSearchNonce++
+        discoverSearchRequest = discoverSearchNonce to query
+        scope.launch { pagerState.scrollToPage(1) }
     }
 
     // 从播放页菜单打开设置：退出时留在播放页
@@ -140,12 +150,14 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 onOpenSubScreen = ::openSubScreen,
                 onSetLibraryTab = { libraryInitialTab = it },
                 onOpenSettings = { openSettingsFromPlay() },
-                onBackFromSettings = { backFromSettings() }
+                onBackFromSettings = { backFromSettings() },
+                onSearch = ::searchFromPlay
             )
 
             // ── 发现页 ──────────────────────────────────
             1 -> DiscoverScreen(
                 modifier = Modifier.fillMaxSize(),
+                searchRequest = discoverSearchRequest,
                 onPlayRequested = { scope.launch { pagerState.scrollToPage(0) } }
             )
 
@@ -174,7 +186,8 @@ private fun PlayPage(
     onOpenSubScreen: (SubScreen?) -> Unit,
     onSetLibraryTab: (Int) -> Unit,
     onOpenSettings: () -> Unit,
-    onBackFromSettings: () -> Unit
+    onBackFromSettings: () -> Unit,
+    onSearch: (String) -> Unit
 ) {
     val context = LocalContext.current
     val playbackMode by playViewModel.playbackMode.collectAsStateWithLifecycle()
@@ -228,7 +241,8 @@ private fun PlayPage(
                                             val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
                                             playViewModel.setPlaybackMode(next)
                                         },
-                                        onToggleMusicStyle = toggleMusicStyle
+                                        onToggleMusicStyle = toggleMusicStyle,
+                                        onSearch = onSearch
                                     )
                                 } else {
                                     // 沉浸模式：Folia 沉浸式播放页（双色调封面/可视化/居中歌词/悬浮控制）

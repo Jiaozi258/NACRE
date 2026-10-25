@@ -118,7 +118,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun MusicNormalScreen(
     onToggleMode: () -> Unit = {},
-    onToggleMusicStyle: () -> Unit = {}
+    onToggleMusicStyle: () -> Unit = {},
+    onSearch: (String) -> Unit = {}
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
@@ -233,6 +234,7 @@ fun MusicNormalScreen(
                     onApplyV3Reverb = { viewModel.applyV3Reverb(it) },
                     onOpenSongNote = { showSongNoteDialog = true },
                     onToggleMusicStyle = onToggleMusicStyle,
+                    onSearch = onSearch,
                     onBack = backToDefault
                 )
             }
@@ -401,9 +403,21 @@ fun MusicNormalScreen(
             title = { Text(stringResource(R.string.song_info_title), color = TextPrimary) },
             text = {
                 Column {
-                    SongInfoRow(stringResource(R.string.song_info_title), audio?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
-                    SongInfoRow(stringResource(R.string.song_info_artist), audio?.artist?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
-                    SongInfoRow(stringResource(R.string.song_info_album), audio?.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoCoverRow(coverUrl = audio?.coverUrl, title = audio?.title)
+                    ClickableSongInfoRow(
+                        label = stringResource(R.string.song_info_artist),
+                        value = audio?.artist?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown),
+                        onClick = audio?.artist?.takeIf { it.isNotBlank() }?.let { artist ->
+                            { showSongInfoDialog = false; onSearch(artist) }
+                        }
+                    )
+                    ClickableSongInfoRow(
+                        label = stringResource(R.string.song_info_album),
+                        value = audio?.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown),
+                        onClick = audio?.album?.takeIf { it.isNotBlank() }?.let { album ->
+                            { showSongInfoDialog = false; onSearch(album) }
+                        }
+                    )
                     SongInfoRow(stringResource(R.string.song_info_source), sourceText)
                     SongInfoRow(stringResource(R.string.song_info_publish), if (publishTime > 0L) formatDate(publishTime) else stringResource(R.string.common_unknown))
                 }
@@ -991,6 +1005,7 @@ private fun EqualizerPanel(
     onApplyV3Reverb: (V3ReverbPreset) -> Unit,
     onOpenSongNote: () -> Unit,
     onToggleMusicStyle: () -> Unit,
+    onSearch: (String) -> Unit,
     onBack: () -> Unit
 ) {
     var selectedBrand by remember { mutableStateOf(HeadphonePresets.BRANDS.firstOrNull() ?: "") }
@@ -1085,9 +1100,19 @@ private fun EqualizerPanel(
                 else -> stringResource(R.string.song_info_source_local)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                // 真实歌手/专辑头像数据模型暂无，先以小图占位；点击跳转歌手/专辑主页待补（搜索兜底）
-                SongInfoAvatarRow(stringResource(R.string.song_info_artist), audio?.artist)
-                SongInfoAvatarRow(stringResource(R.string.song_info_album), audio?.album)
+                // 歌手无头像数据（首字占位）；专辑用封面图。点击歌手/专辑跳到发现页搜索。
+                SongInfoAvatarRow(
+                    label = stringResource(R.string.song_info_artist),
+                    value = audio?.artist,
+                    imageUrl = null,
+                    onClick = audio?.artist?.takeIf { it.isNotBlank() }?.let { artist -> { onSearch(artist) } }
+                )
+                SongInfoAvatarRow(
+                    label = stringResource(R.string.song_info_album),
+                    value = audio?.album,
+                    imageUrl = audio?.coverUrl,
+                    onClick = audio?.album?.takeIf { it.isNotBlank() }?.let { album -> { onSearch(album) } }
+                )
                 InfoRow(stringResource(R.string.song_info_source), sourceText)
             }
         }
@@ -1151,29 +1176,43 @@ private fun SubTitle(text: String) {
     Text(text, color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
 }
 
-/** 歌曲信息行（歌手/专辑）：左侧小图占位（首字头像），右侧值。 */
+/** 歌曲信息行（歌手/专辑）：左侧小图（有图显示封面、无图用首字头像），右侧值，可点跳搜索。 */
 @Composable
-private fun SongInfoAvatarRow(label: String, value: String?) {
+private fun SongInfoAvatarRow(label: String, value: String?, imageUrl: String? = null, onClick: (() -> Unit)? = null) {
     val accent = LocalAccentColor.current
+    val rowModifier = if (onClick != null) {
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp)
+    } else {
+        Modifier.fillMaxWidth().padding(vertical = 6.dp)
+    }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
+        modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(accent.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = value?.trim()?.firstOrNull()?.toString() ?: "?",
-                color = accent,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
+        if (imageUrl != null) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = value?.trim()?.firstOrNull()?.toString() ?: "?",
+                    color = accent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
         Spacer(Modifier.width(10.dp))
         Text(label, color = TextSecondary, fontSize = 13.sp)
@@ -1186,6 +1225,10 @@ private fun SongInfoAvatarRow(label: String, value: String?) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+        if (onClick != null) {
+            Spacer(Modifier.width(4.dp))
+            Text("›", color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -1503,5 +1546,52 @@ private fun SongInfoRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
         Text(label, color = TextHint, fontSize = 13.sp, modifier = Modifier.width(72.dp))
         Text(value, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+/** 歌曲信息行（可点击，如歌手/专辑跳搜索）。 */
+@Composable
+private fun ClickableSongInfoRow(label: String, value: String, onClick: (() -> Unit)?) {
+    val rowModifier = if (onClick != null) {
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp)
+    } else {
+        Modifier.fillMaxWidth().padding(vertical = 6.dp)
+    }
+    Row(modifier = rowModifier, verticalAlignment = Alignment.Top) {
+        Text(label, color = TextHint, fontSize = 13.sp, modifier = Modifier.width(72.dp))
+        Text(value, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (onClick != null) {
+            Text("›", color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
+        }
+    }
+}
+
+/** 歌曲信息封面行：左侧封面图 + 右侧标题。 */
+@Composable
+private fun SongInfoCoverRow(coverUrl: String?, title: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (coverUrl != null) {
+            AsyncImage(
+                model = coverUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            Spacer(Modifier.width(12.dp))
+        }
+        Text(
+            text = title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown),
+            color = TextPrimary,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
