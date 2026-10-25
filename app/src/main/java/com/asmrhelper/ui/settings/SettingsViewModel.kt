@@ -495,11 +495,31 @@ class SettingsViewModel @Inject constructor(
     private val _accounts = MutableStateFlow<List<AccountInfo>>(emptyList())
     val accounts: StateFlow<List<AccountInfo>> = _accounts.asStateFlow()
 
-    /** 重新读取各平台的登录信息（登录/退出后调用）。 */
+    /** 重新读取各平台的登录信息（登录/退出后调用），并对已登录但昵称为空的平台按需拉取昵称。 */
     fun refreshAccounts() {
         _accounts.value = musicSources.value.map { config ->
             val login = settingsRepository.getMusicLogin(config.id)
             AccountInfo(config, login.nickname, login.loginTime)
+        }
+        resolveMissingNicknames()
+    }
+
+    /** 网页/扫码登录时 nickname 为空：对已登录平台异步拉取真实昵称（或 QQ 号）补全显示。 */
+    private fun resolveMissingNicknames() {
+        viewModelScope.launch {
+            _accounts.value.forEach { account ->
+                if (account.nickname.isBlank()) {
+                    val source = musicSourceManager.sourceFor(account.config)
+                    if (source.isLoggedIn.value) {
+                        val nickname = runCatching { source.resolveAccountNickname() }.getOrDefault("")
+                        if (nickname.isNotBlank()) {
+                            _accounts.value = _accounts.value.map {
+                                if (it.config.id == account.config.id) it.copy(nickname = nickname) else it
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -180,7 +180,7 @@ fun DiscoverScreen(
                     }
                 }
                 else -> {
-                    DiscoverTabRow(selectedTab) { selectedTab = it }
+                    DiscoverTabRow(selectedTab, onOpenPlatformSwitch = { showPlatformDialog = true }) { selectedTab = it }
                     when (selectedTab) {
                         0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
                         1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
@@ -206,8 +206,7 @@ fun DiscoverScreen(
                             onRetry = viewModel::refresh,
                             onPlay = playSongs,
                             onPlayRecent = playRecentEntries,
-                            onTogglePlaylist = viewModel::toggleUserPlaylist,
-                            onOpenPlatformSwitch = { showPlatformDialog = true }
+                            onTogglePlaylist = viewModel::toggleUserPlaylist
                         )
                     }
                 }
@@ -319,13 +318,14 @@ private fun SearchBar(
 }
 
 @Composable
-private fun DiscoverTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
+private fun DiscoverTabRow(selectedIndex: Int, onOpenPlatformSwitch: () -> Unit, onSelect: (Int) -> Unit) {
     val accent = LocalAccentColor.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         discoverTabLabels.forEachIndexed { i, labelRes ->
             val selected = i == selectedIndex
@@ -343,6 +343,10 @@ private fun DiscoverTabRow(selectedIndex: Int, onSelect: (Int) -> Unit) {
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
                 )
             }
+        }
+        Spacer(Modifier.weight(1f))
+        TextButton(onClick = onOpenPlatformSwitch) {
+            Text(stringResource(R.string.discover_switch_platform), color = accent, fontSize = 13.sp)
         }
     }
 }
@@ -632,13 +636,11 @@ private fun PlaylistsTab(
     onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onPlayRecent: (List<PlayHistoryEntity>, Int) -> Unit,
-    onTogglePlaylist: (RemotePlaylist) -> Unit,
-    onOpenPlatformSwitch: () -> Unit
+    onTogglePlaylist: (RemotePlaylist) -> Unit
 ) {
     val playlists = if (DiscoverModule.PLAYLISTS in hiddenModules) emptyList() else userPlaylists
     val recentList = if (DiscoverModule.RECENT in hiddenModules) emptyList() else recent
     Column(Modifier.fillMaxSize()) {
-        PlaylistsHeader(onOpenPlatformSwitch)
         if (playlists.isEmpty() && recentList.isEmpty()) {
             // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
             if (DiscoverModule.PLAYLISTS in hiddenModules && DiscoverModule.RECENT in hiddenModules) EmptyTab()
@@ -674,27 +676,6 @@ private fun PlaylistsTab(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PlaylistsHeader(onOpenPlatformSwitch: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            stringResource(R.string.discover_tab_playlists),
-            color = TextPrimary,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
-        )
-        TextButton(onClick = onOpenPlatformSwitch) {
-            Text(stringResource(R.string.discover_switch_platform), color = LocalAccentColor.current, fontSize = 13.sp)
         }
     }
 }

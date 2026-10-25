@@ -130,6 +130,12 @@ class QqMusicSource(
         onLoginChanged(cookie, nickname, System.currentTimeMillis())
     }
 
+    /** QQ 网页登录只给 cookie（uin）没有昵称；回退显示 QQ 号。 */
+    override suspend fun resolveAccountNickname(): String {
+        if (nickname.isNotBlank()) return nickname
+        return QqMusicJson.uin(cookie).takeIf { it.isNotBlank() && it != "0" } ?: ""
+    }
+
     override fun logout() {
         cookie = ""
         nickname = ""

@@ -65,4 +65,7 @@ interface MusicSource {
     fun loginAccount(username: String, password: String): Flow<Result<Unit>>
     fun importLogin(cookie: String, nickname: String)
     fun logout()
+
+    /** 解析当前登录用户的昵称（网页/扫码登录时昵称为空，按需拉取）；返回空表示无法解析。 */
+    suspend fun resolveAccountNickname(): String = ""
 }

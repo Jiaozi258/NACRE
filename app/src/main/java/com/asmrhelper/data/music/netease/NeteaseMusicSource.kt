@@ -237,6 +237,17 @@ class NeteaseMusicSource(
         onLoginChanged(cookie, nickname, System.currentTimeMillis())
     }
 
+    /** 网页登录无昵称：按需拉取当前登录用户资料（`/weapi/w/nuser/account/get` 返回 profile.nickname）。 */
+    override suspend fun resolveAccountNickname(): String {
+        if (nickname.isNotBlank()) return nickname
+        val resp = weapiPost("/weapi/w/nuser/account/get", "{}")
+        val n = NeteaseJson.parseLoginNickname(resp)
+        if (n.isBlank()) return ""
+        nickname = n
+        onLoginChanged(cookie, n, System.currentTimeMillis())
+        return n
+    }
+
     override fun logout() {
         cookie = ""
         nickname = ""
