@@ -1,7 +1,7 @@
 # 「高级感」UI 打磨设计提案
 
 日期：2026-10-25
-状态：**待批准**（批准后再逐页实现）
+状态：**已批准并实现**（P0/P1 全部 + P2 部分落地；余项见文末「进度」）
 前提：B站 + YouTube 视频音频已上线；正常/沉浸双播放页已就位；主题/字型/强调色系统已有底子（`AppColors` 语义色 + `ThemePreset` 14 强调色 + Apple 风字型 + `appleClickable`/`pressScale`/`DynamicIsland`）。
 
 ## 0. 目标
@@ -69,3 +69,15 @@
 - 不引入新第三方动画库（现有 Compose 动画足够）。
 - 不做 GPU shader 级特效（Folia 的 Pixi/Three 无法移植，按「概念复刻」已实现双色调/可视化）。
 - 不改信息架构/交互流程，只改视觉与动效。
+
+## 5. 进度
+
+- **P0 ✅**（`5262aae`）：`Tokens.kt` 设计令牌 + 全局卡片统一（Settings / Profile / MusicSourceSettings 卡片圆角 `Radius.md` + `HairlineBorder`）。
+- **P1 ✅**（`d234c09`）：
+  - 发现页 D3/D4：换平台对话框状态圆点（accent / 已登录绿 / 匿名灰）、ChartHeader/PlaylistRow accent 竖条 + 动画 chevron。
+  - 播放页 B1/B2：沉浸模式次色呼吸 0.44→0.35 更克制、悬浮条 `Glass.card` 磨砂、进度条细横条 2dp + 白圆点淡光晕；正常模式封面取色晕影、音效器 chip 统一 `Radius.md`、分区块标题 16sp、笔记输入框 10dp 圆角 + 计数右对齐。
+- **P2 部分 ✅**（`7f6be78`）：C1 点按统一 —— DiscoverScreen / ProfileScreen 残留裸 `clickable` 全部替换 `appleClickable`。
+- **暂缓（待真机验收）**：
+  - C2 子列表展开动画（榜单/歌单展开的歌曲子列表目前硬显隐；chevron 旋转已就位，`animateContentSize` 因 LazyColumn 子项性能取舍暂缓）。
+  - C3 列表入场 stagger（`animateItem` 仅首屏一次，Foundation 1.7 可做，待设备确认不干扰滚动）。
+  - C4 页面级转场（HorizontalPager 导航 + 详情页 slide+fade，改动面大，待设备确认）。
