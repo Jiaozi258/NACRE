@@ -97,6 +97,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.asmrhelper.domain.music.MusicSource
+import com.asmrhelper.domain.music.SourceConfig
 import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.ui.components.HypnosisBgType
@@ -629,7 +631,6 @@ private fun AccountManagementScreen(
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val connectionStatus by viewModel.connectionStatus.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) { viewModel.refreshAccounts() }
 
@@ -637,60 +638,85 @@ private fun AccountManagementScreen(
         SectionHeader(icon = Icons.Filled.Person, title = stringResource(R.string.category_accounts))
 
         accounts.forEach { account ->
-            val config = account.config
-            val isLoggedIn = account.nickname.isNotBlank()
-            val status = connectionStatus[config.id]
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            AccountCard(
+                config = account.config,
+                nickname = account.nickname,
+                loginTime = account.loginTime,
+                connectionStatus = connectionStatus,
+                onCheckConnection = { viewModel.checkConnection(account.config.id) },
+                source = viewModel.musicSourceFor(account.config)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountCard(
+    config: SourceConfig,
+    nickname: String,
+    loginTime: Long,
+    connectionStatus: Map<String, Boolean?>,
+    onCheckConnection: () -> Unit,
+    source: MusicSource
+) {
+    val context = LocalContext.current
+    // 登录态以音源自身的 cookie 判定为准（网页扫码登录时 nickname 为空，不能用昵称判断）。
+    val isLoggedIn by source.isLoggedIn.collectAsStateWithLifecycle()
+    val status = connectionStatus[config.id]
+    val checked = config.id in connectionStatus
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(config.displayNameRes),
-                            color = TextPrimary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            if (isLoggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
-                            color = if (isLoggedIn) LocalAccentColor.current else TextHint,
-                            fontSize = 12.sp
-                        )
-                    }
+                Text(
+                    stringResource(config.displayNameRes),
+                    color = TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    if (isLoggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
+                    color = if (isLoggedIn) LocalAccentColor.current else TextHint,
+                    fontSize = 12.sp
+                )
+            }
 
-                    Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
-                    if (isLoggedIn) {
-                        AccountInfoRow(stringResource(R.string.settings_account_username), account.nickname)
-                        AccountInfoRow(
-                            stringResource(R.string.settings_account_login_time),
-                            formatLoginTime(context, account.loginTime)
-                        )
-                    } else {
-                        Text(stringResource(R.string.settings_account_not_logged), color = TextHint, fontSize = 12.sp)
-                    }
+            if (isLoggedIn) {
+                AccountInfoRow(stringResource(R.string.settings_account_username), nickname.ifBlank { "—" })
+                AccountInfoRow(
+                    stringResource(R.string.settings_account_login_time),
+                    formatLoginTime(context, loginTime)
+                )
+            } else {
+                Text(stringResource(R.string.settings_account_not_logged), color = TextHint, fontSize = 12.sp)
+            }
 
-                    Spacer(Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(R.string.settings_account_check_connection),
-                            color = TextPrimary,
-                            fontSize = 14.sp
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isLoggedIn) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.settings_account_check_connection),
+                        color = TextPrimary,
+                        fontSize = 14.sp
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (checked) {
                             val statusText = when (status) {
                                 null -> stringResource(R.string.settings_account_checking)
                                 true -> stringResource(R.string.settings_account_connection_ok)
@@ -703,13 +729,13 @@ private fun AccountManagementScreen(
                             }
                             Text(statusText, color = statusColor, fontSize = 13.sp)
                             Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = { viewModel.checkConnection(config.id) }) {
-                                Text(
-                                    stringResource(R.string.settings_account_check_connection),
-                                    color = LocalAccentColor.current,
-                                    fontSize = 13.sp
-                                )
-                            }
+                        }
+                        TextButton(onClick = onCheckConnection) {
+                            Text(
+                                stringResource(R.string.settings_account_check_connection),
+                                color = LocalAccentColor.current,
+                                fontSize = 13.sp
+                            )
                         }
                     }
                 }

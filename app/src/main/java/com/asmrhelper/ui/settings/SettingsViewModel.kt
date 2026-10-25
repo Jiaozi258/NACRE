@@ -509,13 +509,14 @@ class SettingsViewModel @Inject constructor(
     private val _connectionStatus = MutableStateFlow<Map<String, Boolean?>>(emptyMap())
     val connectionStatus: StateFlow<Map<String, Boolean?>> = _connectionStatus.asStateFlow()
 
-    /** 检查平台连接是否正常：用常见关键词搜索，能拿到结果即视为连通。 */
+    /** 检查已登录平台的连接是否正常。
+     *  未登录的平台不视为“连接正常”——先校验登录态，再用推荐接口（QQ 需登录、网易云校验网络）探测。 */
     fun checkConnection(sourceId: String) {
         viewModelScope.launch {
             _connectionStatus.value = _connectionStatus.value + (sourceId to null)
             val source = musicSourceManager.sourceForId(sourceId)
-            val ok = if (source == null) false else runCatching {
-                source.search("周杰伦", 1).first().isNotEmpty()
+            val ok = if (source == null || !source.isLoggedIn.value) false else runCatching {
+                source.getRecommendations().first().isNotEmpty()
             }.getOrDefault(false)
             _connectionStatus.value = _connectionStatus.value + (sourceId to ok)
         }
