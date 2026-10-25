@@ -25,6 +25,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -188,12 +192,12 @@ private fun VideoAudioCard(
         ) {
             // Platform indicator
             val platformIcon = when (videoAudio.platform) {
-                "bilibili" -> "📺"
-                "youtube" -> "▶️"
-                "douyin" -> "🎵"
-                else -> "🔗"
+                "bilibili" -> Icons.Filled.Tv
+                "youtube" -> Icons.Filled.SmartDisplay
+                "douyin" -> Icons.Filled.MusicNote
+                else -> Icons.Filled.Link
             }
-            Text(platformIcon, fontSize = 22.sp)
+            Icon(platformIcon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(22.dp))
 
             Spacer(Modifier.width(12.dp))
 

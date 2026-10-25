@@ -29,19 +29,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +82,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -262,9 +276,9 @@ fun MusicNormalScreen(
                         .height(520.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    MenuRow(stringResource(R.string.menu_timer), "") { showMenuDialog = false; showTimerDialog = true }
-                    MenuRow(stringResource(R.string.menu_song_info), "") { showMenuDialog = false; showSongInfoDialog = true }
-                    MenuRow(stringResource(R.string.menu_lyric_offset), "") { showMenuDialog = false; showLyricOffsetDialog = true }
+                    MenuRow(stringResource(R.string.menu_timer), "", Icons.Filled.Timer) { showMenuDialog = false; showTimerDialog = true }
+                    MenuRow(stringResource(R.string.menu_song_info), "", Icons.Filled.Info) { showMenuDialog = false; showSongInfoDialog = true }
+                    MenuRow(stringResource(R.string.menu_lyric_offset), "", Icons.Filled.Schedule) { showMenuDialog = false; showLyricOffsetDialog = true }
                     MenuRow(
                         stringResource(R.string.lyric_caption_title),
                         stringResource(
@@ -273,28 +287,30 @@ fun MusicNormalScreen(
                                 LyricCaptionMode.ROMANIZATION -> R.string.lyric_caption_romanization
                                 LyricCaptionMode.OFF -> R.string.lyric_caption_off
                             }
-                        )
+                        ),
+                        Icons.Filled.Subtitles
                     ) { showMenuDialog = false; showLyricCaptionDialog = true }
                     MenuRow(
                         stringResource(R.string.lyric_mode),
-                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump)
+                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump),
+                        Icons.Filled.Notes
                     ) {
                         viewModel.setLyricsMode(if (lyricsMode == LyricMode.SCROLL) LyricMode.JUMP else LyricMode.SCROLL)
                     }
-                    MenuRow(stringResource(R.string.menu_queue), "") { showMenuDialog = false; showQueueDialog = true }
-                    MenuRow(stringResource(R.string.menu_background), "") { showMenuDialog = false; showBackgroundDialog = true }
-                    MenuRow(stringResource(R.string.menu_quality), "") { showMenuDialog = false; showQualityDialog = true }
-                    MenuRow(stringResource(R.string.menu_lyrics_edit), "") { showMenuDialog = false; showLyricsEditDialog = true }
-                    MenuRow(stringResource(R.string.menu_song_note), "") { showMenuDialog = false; showSongNoteDialog = true }
+                    MenuRow(stringResource(R.string.menu_queue), "", Icons.Filled.QueueMusic) { showMenuDialog = false; showQueueDialog = true }
+                    MenuRow(stringResource(R.string.menu_background), "", Icons.Filled.Image) { showMenuDialog = false; showBackgroundDialog = true }
+                    MenuRow(stringResource(R.string.menu_quality), "", Icons.Filled.HighQuality) { showMenuDialog = false; showQualityDialog = true }
+                    MenuRow(stringResource(R.string.menu_lyrics_edit), "", Icons.Filled.Edit) { showMenuDialog = false; showLyricsEditDialog = true }
+                    MenuRow(stringResource(R.string.menu_song_note), "", Icons.Filled.RateReview) { showMenuDialog = false; showSongNoteDialog = true }
                     if (currentAudio?.isRemoteSong() != true) {
-                        MenuRow(stringResource(R.string.menu_playlist), "") { showMenuDialog = false; showPlaylistDialog = true }
+                        MenuRow(stringResource(R.string.menu_playlist), "", Icons.Filled.PlaylistPlay) { showMenuDialog = false; showPlaylistDialog = true }
                     }
-                    MenuRow(stringResource(R.string.menu_toolbox), "") { showMenuDialog = false; showToolboxDialog = true }
-                    MenuRow(stringResource(R.string.menu_effects), "") {
+                    MenuRow(stringResource(R.string.menu_toolbox), "", Icons.Filled.Build) { showMenuDialog = false; showToolboxDialog = true }
+                    MenuRow(stringResource(R.string.menu_effects), "", Icons.Filled.GraphicEq) {
                         showMenuDialog = false
                         scope.launch { pagerState.animateScrollToPage(2) }
                     }
-                    MenuRow(stringResource(R.string.menu_slice), "") { showMenuDialog = false; showSliceDialog = true }
+                    MenuRow(stringResource(R.string.menu_slice), "", Icons.Filled.ContentCut) { showMenuDialog = false; showSliceDialog = true }
                 }
             },
             confirmButton = {},
@@ -1527,7 +1543,7 @@ private fun NormalCoverBackground(coverUrl: String?, accent: Color) {
 
 /** 菜单行：左标签 + 可选右值，整行可点。 */
 @Composable
-private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
+private fun MenuRow(label: String, value: String, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1535,6 +1551,10 @@ private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+        }
         Text(label, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
         if (value.isNotEmpty()) Text(value, color = LocalAccentColor.current, fontSize = 13.sp)
     }

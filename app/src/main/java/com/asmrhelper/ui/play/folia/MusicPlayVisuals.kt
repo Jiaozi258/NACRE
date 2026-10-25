@@ -611,7 +611,7 @@ fun FoliaCommandBar(
                         val min = timerRemainingMs / 60000
                         val sec = (timerRemainingMs % 60000) / 1000
                         Text(
-                            text = "⏱ %02d:%02d".format(min, sec),
+                            text = "%02d:%02d".format(min, sec),
                             color = accent,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(end = 8.dp)

@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -325,12 +327,12 @@ fun PlayScreen(
                     val label = if (pomodoroActive) {
                         val min = state.pomodoroRemainingMs / 60000
                         val sec = (state.pomodoroRemainingMs % 60000) / 1000
-                        val phase = if (state.pomodoroIsFocus) "🍅" else "☕"
+                        val phase = if (state.pomodoroIsFocus) stringResource(R.string.play_pomodoro_focus_short) else stringResource(R.string.play_pomodoro_break_short)
                         "$phase %02d:%02d".format(min, sec)
                     } else if (timerActive) {
                         val min = state.timerRemainingMs / 60000
                         val sec = (state.timerRemainingMs % 60000) / 1000
-                        "⏱ %02d:%02d".format(min, sec)
+                        "%02d:%02d".format(min, sec)
                     } else {
                         stringResource(R.string.play_timer)
                     }
@@ -1129,10 +1131,10 @@ fun PlayScreen(
                                 }
                                 Row {
                                     IconButton(onClick = { viewModel.applyScene(scene); showSceneDialog = false }) {
-                                        Text("▶", color = LocalAccentColor.current)
+                                        Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.play_play), tint = LocalAccentColor.current, modifier = Modifier.size(22.dp))
                                     }
                                     IconButton(onClick = { viewModel.deleteScene(scene) }) {
-                                        Text("✕", color = ErrorRed, fontSize = 12.sp)
+                                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_remove), tint = ErrorRed, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -1216,7 +1218,7 @@ fun PlayScreen(
                                 )
                             }
                             IconButton(onClick = { viewModel.deleteBookmark(bm) }) {
-                                Text("✕", color = ErrorRed, fontSize = 12.sp)
+                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_remove), tint = ErrorRed, modifier = Modifier.size(18.dp))
                             }
                         }
                     }

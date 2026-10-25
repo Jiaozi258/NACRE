@@ -23,6 +23,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
@@ -42,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -298,9 +314,9 @@ fun MusicPlayScreen(
                         .height(520.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    MoreRow(stringResource(R.string.menu_timer), "") { showMoreDialog = false; showTimerDialog = true }
-                    MoreRow(stringResource(R.string.menu_song_info), "") { showMoreDialog = false; showSongInfoDialog = true }
-                    MoreRow(stringResource(R.string.menu_lyric_offset), "") { showMoreDialog = false; showLyricOffsetDialog = true }
+                    MoreRow(stringResource(R.string.menu_timer), "", Icons.Filled.Timer) { showMoreDialog = false; showTimerDialog = true }
+                    MoreRow(stringResource(R.string.menu_song_info), "", Icons.Filled.Info) { showMoreDialog = false; showSongInfoDialog = true }
+                    MoreRow(stringResource(R.string.menu_lyric_offset), "", Icons.Filled.Schedule) { showMoreDialog = false; showLyricOffsetDialog = true }
                     MoreRow(
                         stringResource(R.string.lyric_caption_title),
                         stringResource(
@@ -309,28 +325,30 @@ fun MusicPlayScreen(
                                 LyricCaptionMode.ROMANIZATION -> R.string.lyric_caption_romanization
                                 LyricCaptionMode.OFF -> R.string.lyric_caption_off
                             }
-                        )
+                        ),
+                        Icons.Filled.Subtitles
                     ) {
                         showMoreDialog = false; showLyricCaptionDialog = true
                     }
                     MoreRow(
                         stringResource(R.string.lyric_mode),
-                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump)
+                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump),
+                        Icons.Filled.Notes
                     ) {
                         viewModel.setLyricsMode(if (lyricsMode == LyricMode.SCROLL) LyricMode.JUMP else LyricMode.SCROLL)
                     }
-                    MoreRow(stringResource(R.string.menu_queue), "") { showMoreDialog = false; showQueueDialog = true }
-                    MoreRow(stringResource(R.string.menu_background), "") { showMoreDialog = false; showBackgroundDialog = true }
-                    MoreRow(stringResource(R.string.menu_quality), "") { showMoreDialog = false; showQualityDialog = true }
-                    MoreRow(stringResource(R.string.menu_lyrics_edit), "") { showMoreDialog = false; showLyricsDialog = true }
+                    MoreRow(stringResource(R.string.menu_queue), "", Icons.Filled.QueueMusic) { showMoreDialog = false; showQueueDialog = true }
+                    MoreRow(stringResource(R.string.menu_background), "", Icons.Filled.Image) { showMoreDialog = false; showBackgroundDialog = true }
+                    MoreRow(stringResource(R.string.menu_quality), "", Icons.Filled.HighQuality) { showMoreDialog = false; showQualityDialog = true }
+                    MoreRow(stringResource(R.string.menu_lyrics_edit), "", Icons.Filled.Edit) { showMoreDialog = false; showLyricsDialog = true }
                     // 本地播放列表按 Audio.id 索引，在线歌曲（QQ 非数字 mid / 网易云远程 id）
                     // 无法加入本地歌单——隐藏入口，避免写入悬空的 audioId。
                     if (state.playerState.currentAudio?.isRemoteSong() != true) {
-                        MoreRow(stringResource(R.string.menu_playlist), "") { showMoreDialog = false; showPlaylistDialog = true }
+                        MoreRow(stringResource(R.string.menu_playlist), "", Icons.Filled.PlaylistPlay) { showMoreDialog = false; showPlaylistDialog = true }
                     }
-                    MoreRow(stringResource(R.string.menu_toolbox), "") { showMoreDialog = false; showToolboxDialog = true }
-                    MoreRow(stringResource(R.string.menu_effects), "") { showMoreDialog = false; showEffectsDialog = true }
-                    MoreRow(stringResource(R.string.menu_slice), "") { showMoreDialog = false; showSliceDialog = true }
+                    MoreRow(stringResource(R.string.menu_toolbox), "", Icons.Filled.Build) { showMoreDialog = false; showToolboxDialog = true }
+                    MoreRow(stringResource(R.string.menu_effects), "", Icons.Filled.GraphicEq) { showMoreDialog = false; showEffectsDialog = true }
+                    MoreRow(stringResource(R.string.menu_slice), "", Icons.Filled.ContentCut) { showMoreDialog = false; showSliceDialog = true }
                 }
             },
             confirmButton = {},
@@ -1001,14 +1019,14 @@ fun MusicPlayScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (active) "▶ $label" else label,
+                                text = label,
                                 color = if (active) LocalAccentColor.current else TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                                 modifier = Modifier.weight(1f)
                             )
                             if (active) {
-                                Text("✓", color = LocalAccentColor.current, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
                             }
                         }
                         HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
@@ -1255,7 +1273,7 @@ fun MusicPlayScreen(
 
 /** 「更多」菜单里的一行：左侧 label、右侧当前值，点击执行 [onClick]。 */
 @Composable
-private fun MoreRow(label: String, value: String, onClick: () -> Unit) {
+private fun MoreRow(label: String, value: String, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1263,6 +1281,10 @@ private fun MoreRow(label: String, value: String, onClick: () -> Unit) {
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+        }
         Text(label, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
         if (value.isNotEmpty()) {
             Text(value, color = LocalAccentColor.current, fontSize = 13.sp)

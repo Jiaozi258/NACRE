@@ -21,6 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -232,11 +235,14 @@ private fun PadButton(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = if (mode == TriggerPadMode.Parallel && isActive) "🔊"
-                               else if (isActive) "▶"
-                               else "🔊",
-                        style = MaterialTheme.typography.headlineSmall
+                    val padIcon = if (mode == TriggerPadMode.Parallel && isActive) Icons.Filled.VolumeUp
+                                 else if (isActive) Icons.Filled.PlayArrow
+                                 else Icons.Filled.VolumeUp
+                    Icon(
+                        imageVector = padIcon,
+                        contentDescription = null,
+                        tint = if (isActive) LocalAccentColor.current else TextSecondary,
+                        modifier = Modifier.size(28.dp)
                     )
                     Text(
                         text = pad.name,
@@ -272,7 +278,12 @@ private fun PadButton(
                         .align(Alignment.TopEnd)
                         .size(24.dp)
                 ) {
-                    Text("✕", color = ErrorRed, style = MaterialTheme.typography.labelSmall)
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.common_remove),
+                        tint = ErrorRed,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             } else {
                 Column(
