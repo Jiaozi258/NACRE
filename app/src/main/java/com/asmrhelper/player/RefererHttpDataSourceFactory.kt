@@ -33,6 +33,10 @@ class RefererHttpDataSourceFactory(
         host == "music.126.net" || host.endsWith(".music.126.net") -> "https://music.163.com"
         host == "y.qq.com" || host.endsWith(".y.qq.com") ||
             host.endsWith(".qqmusic.qq.com") || host.endsWith(".tc.qq.com") -> "https://y.qq.com/"
+        // B站 DASH 音频流 CDN（*.bilivideo.com / *.mcdn.bilivideo.cn 等）校验 Referer，
+        // 缺失时返回 403/412 导致「B站视频全部无法播放」。
+        host.endsWith(".bilivideo.com") || host.endsWith(".bilivideo.cn") ||
+            host.endsWith(".hdslb.com") || host.endsWith(".biliimg.com") -> "https://www.bilibili.com"
         else -> null
     }
 }

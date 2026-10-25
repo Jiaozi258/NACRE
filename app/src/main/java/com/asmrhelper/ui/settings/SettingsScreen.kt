@@ -2359,7 +2359,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
             border = HairlineBorder
         ) {
-            AboutRow(label = stringResource(R.string.settings_version_info), value = "NACRE $versionName")
+            AboutRow(label = stringResource(R.string.settings_version_info), value = "NACRE$versionName")
 
             HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
 

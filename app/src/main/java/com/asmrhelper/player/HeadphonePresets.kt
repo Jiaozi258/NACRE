@@ -25,6 +25,15 @@ object HeadphonePresets {
 
         HeadphonePreset("Bose", "QuietComfort 35 II", listOf(2f, 3f, 2f, 1f, 0f, -1f, 0f, 1f, 1f, 2f)),
 
+        HeadphonePreset("Huawei", "FreeBuds Pro", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 2f, 2f, 2f)),
+        HeadphonePreset("Huawei", "FreeBuds 5", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 1f, 2f, 2f)),
+        HeadphonePreset("Huawei", "FreeBuds 4i", listOf(3f, 3f, 2f, 1f, 0f, 0f, 1f, 2f, 2f, 2f)),
+        HeadphonePreset("Huawei", "FreeLace Pro", listOf(3f, 3f, 2f, 1f, 0f, 0f, 1f, 2f, 3f, 3f)),
+
+        HeadphonePreset("OPPO", "Enco X2", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 2f, 2f, 3f)),
+        HeadphonePreset("OPPO", "Enco Free2", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 1f, 2f, 2f)),
+        HeadphonePreset("OPPO", "Enco Air3", listOf(2f, 2f, 1f, 0f, -1f, 0f, 1f, 2f, 2f, 2f)),
+
         HeadphonePreset("Samsung", "EO-IG955 (AKG)", listOf(3f, 3f, 2f, 1f, 0f, 0f, 1f, 2f, 3f, 3f)),
         HeadphonePreset("Samsung", "Galaxy Buds", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 1f, 2f, 2f)),
         HeadphonePreset("Samsung", "Galaxy Buds+", listOf(2f, 2f, 1f, 0f, 0f, 0f, 1f, 1f, 2f, 2f)),

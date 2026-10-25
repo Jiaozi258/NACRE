@@ -13,7 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalDensity
@@ -23,6 +23,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.asmrhelper.player.PlayerManager
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.ui.navigation.AsmrNavHost
@@ -110,17 +113,29 @@ class MainActivity : ComponentActivity() {
             // 浅色模式下系统状态栏/导航栏图标需切为深色，否则白图标压在浅灰背景上不可见
             val view = LocalView.current
             if (!view.isInEditMode) {
-                SideEffect {
-                    val window = (view.context as Activity).window
-                    WindowCompat.getInsetsController(window, view).apply {
-                        isAppearanceLightStatusBars = !darkTheme
-                        isAppearanceLightNavigationBars = !darkTheme
+                val window = (view.context as Activity).window
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                DisposableEffect(insetsController, hideStatusBar, darkTheme) {
+                    // 让系统条可被短暂划出而非常驻，避免 edge-to-edge 下 hide 被立即回弹
+                    insetsController.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    fun applyBars() {
+                        insetsController.isAppearanceLightStatusBars = !darkTheme
+                        insetsController.isAppearanceLightNavigationBars = !darkTheme
                         if (hideStatusBar) {
-                            hide(WindowInsetsCompat.Type.statusBars())
+                            insetsController.hide(WindowInsetsCompat.Type.statusBars())
                         } else {
-                            show(WindowInsetsCompat.Type.statusBars())
+                            insetsController.show(WindowInsetsCompat.Type.statusBars())
                         }
                     }
+                    applyBars()
+                    // 从后台/设置返回时系统可能把状态栏重新显示，ON_RESUME 再应用一次
+                    val activity = view.context as? ComponentActivity
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) applyBars()
+                    }
+                    activity?.lifecycle?.addObserver(observer)
+                    onDispose { activity?.lifecycle?.removeObserver(observer) }
                 }
             }
 

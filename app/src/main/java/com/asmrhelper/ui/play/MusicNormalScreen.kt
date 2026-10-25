@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.AlertDialog
@@ -1316,16 +1317,13 @@ private fun NormalControls(
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
-    // 纯白循环图标：NONE 用 Repeat 降透明（不再用 Stop 方块），其余单曲/列表/随机
+    // 四种播放模式各用不同图标区分：播完即停=Stop、单曲=RepeatOne、列表=Repeat、随机=Shuffle。
+    // 颜色统一跟随旁边控制按钮（TextPrimary），不再用「灰/亮」表达状态。
     val loopIcon = when (loopMode) {
+        LoopMode.NONE -> Icons.Filled.Stop
         LoopMode.SINGLE -> Icons.Filled.RepeatOne
         LoopMode.LIST -> Icons.Filled.Repeat
         LoopMode.SHUFFLE -> Icons.Filled.Shuffle
-        LoopMode.NONE -> Icons.Filled.Repeat
-    }
-    val loopTint = when (loopMode) {
-        LoopMode.NONE -> TextSecondary.copy(alpha = 0.4f)
-        else -> accent
     }
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
@@ -1421,7 +1419,7 @@ private fun NormalControls(
                 Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.menu_title), tint = TextSecondary)
             }
             IconButton(onClick = onCycleLoopMode) {
-                Icon(loopIcon, contentDescription = null, tint = loopTint)
+                Icon(loopIcon, contentDescription = null, tint = TextPrimary)
             }
         }
     }
