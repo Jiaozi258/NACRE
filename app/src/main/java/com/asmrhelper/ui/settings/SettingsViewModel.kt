@@ -183,7 +183,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _selectedAmbient.value = settingsRepository.getSelectedAmbientAudio()
         }
-        refreshAccounts()
     }
 
     fun selectAmbient(path: String?) {
