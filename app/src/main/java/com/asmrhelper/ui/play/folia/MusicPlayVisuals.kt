@@ -112,18 +112,22 @@ fun AudioReactiveBackground(
     fft: FloatArray?,
     mode: PlaybackBackgroundMode = PlaybackBackgroundMode.BLURRED_COVER,
     modifier: Modifier = Modifier,
-    contrastMode: Boolean = false
+    contrastMode: Boolean = false,
+    coverFilePath: String? = null
 ) {
     val accent = LocalAccentColor.current
     val fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL
     // 次调做红蓝交换（而非同色加深），保证双色调永不塌成纯色
     val fallbackSecondary = Duotone.swapRedBlue(fallbackPrimary)
+    // 封面源统一：在线 coverUrl 优先，否则本地文件的内嵌图（保证背景模糊图与真实封面一致）
+    val embeddedArt = rememberEmbeddedArt(coverFilePath)
+    val coverModel: Any? = coverUrl?.takeIf { it.isNotBlank() } ?: embeddedArt
     // 反差模式：用主题色反色（互补色）替代封面/主题混合，突出歌词
     val (primaryLong, secondaryLong) = if (contrastMode) {
         val inverse = Duotone.inverse(fallbackPrimary)
         inverse to Duotone.swapRedBlue(inverse)
     } else {
-        rememberCoverPalette(coverUrl, fallbackPrimary, fallbackSecondary)
+        rememberCoverPalette(coverModel, fallbackPrimary, fallbackSecondary)
     }
     val primary = Color(primaryLong.toInt())
     val secondary = Color(secondaryLong.toInt())
@@ -168,9 +172,9 @@ fun AudioReactiveBackground(
         when (mode) {
             PlaybackBackgroundMode.BLURRED_COVER -> {
                 Box(modifier = Modifier.fillMaxSize().background(primary)) {
-                    if (!coverUrl.isNullOrBlank()) {
+                    if (coverModel != null) {
                         AsyncImage(
-                            model = coverUrl,
+                            model = coverModel,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -509,6 +513,8 @@ fun FoliaCommandBar(
     onCycleLoopMode: () -> Unit,
     onMore: () -> Unit,
     onAddToPlaylist: (() -> Unit)? = null,
+    timerActive: Boolean = false,
+    timerRemainingMs: Long = 0L,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
@@ -579,6 +585,16 @@ fun FoliaCommandBar(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
+                    if (timerActive) {
+                        val min = timerRemainingMs / 60000
+                        val sec = (timerRemainingMs % 60000) / 1000
+                        Text(
+                            text = "⏱ %02d:%02d".format(min, sec),
+                            color = accent,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
                     Text(if (expanded) "▾" else "▴", color = TextSecondary, fontSize = 12.sp)
                 }
                 // 展开区：弹性展开/收缩

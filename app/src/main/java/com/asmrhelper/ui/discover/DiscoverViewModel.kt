@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -50,6 +51,14 @@ class DiscoverViewModel @Inject constructor(
 
     private val _searchResults = MutableStateFlow<List<RemoteSong>>(emptyList())
     val searchResults: StateFlow<List<RemoteSong>> = _searchResults.asStateFlow()
+
+    /** 初始/刷新加载中：发现页首次进入或重试时显示加载态。 */
+    private val _loading = MutableStateFlow(true)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    /** 加载失败（公共模块推荐/榜单均为空，大概率断网）；失败时各标签显示重试按钮。 */
+    private val _loadFailed = MutableStateFlow(false)
+    val loadFailed: StateFlow<Boolean> = _loadFailed.asStateFlow()
 
     private val _recommendations = MutableStateFlow<List<RemoteSong>>(emptyList())
     val recommendations: StateFlow<List<RemoteSong>> = _recommendations.asStateFlow()
@@ -108,11 +117,24 @@ class DiscoverViewModel @Inject constructor(
 
     /** 重新拉取推荐 + 排行榜 + 电台 + 用户歌单（音源切换/登录后调用）。 */
     fun refresh() {
-        loadRecommendations()
-        loadCharts()
-        loadDailyRecommend()
-        loadRadio()
-        loadUserPlaylists()
+        _loading.value = true
+        _loadFailed.value = false
+        viewModelScope.launch {
+            val source = activeSource.value
+            coroutineScope {
+                launch { source.getRecommendations().collect { _recommendations.value = it } }
+                launch { source.getCharts().collect { _charts.value = it } }
+                launch { source.getDailyRecommendSongs().collect { _dailyRecommend.value = it } }
+                launch { source.getRadio().collect { _radio.value = it } }
+                launch { source.getUserPlaylists().collect { _userPlaylists.value = it } }
+            }
+            _loading.value = false
+            // 推荐 + 排行榜为免登录公共模块：两者都为空即视为加载失败（大概率断网），
+            // 避免各标签静默显示「暂无内容」而被误认为模块被关闭。
+            if (_recommendations.value.isEmpty() && _charts.value.isEmpty()) {
+                _loadFailed.value = true
+            }
+        }
     }
 
     fun onQueryChange(value: String) {

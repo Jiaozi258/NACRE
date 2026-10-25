@@ -87,6 +87,9 @@
     <string name="discover_tab_playlists">歌单</string>
     <string name="discover_settings_title">发现页设置</string>
     <string name="discover_empty_tab">暂无内容</string>
+    <string name="discover_loading">加载中…</string>
+    <string name="discover_load_failed">加载失败，请检查网络</string>
+    <string name="discover_retry">重试</string>
 
     <!-- MUSIC 播放页 -->
     <string name="lyric_mode">歌词模式</string>

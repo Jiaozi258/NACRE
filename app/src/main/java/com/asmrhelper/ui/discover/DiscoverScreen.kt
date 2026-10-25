@@ -92,6 +92,8 @@ fun DiscoverScreen(
     val messageRes by viewModel.messageRes.collectAsStateWithLifecycle()
     val fetchingSongId by viewModel.fetchingSongId.collectAsStateWithLifecycle()
     val hiddenModules by viewModel.hiddenModules.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val loadFailed by viewModel.loadFailed.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -140,13 +142,16 @@ fun DiscoverScreen(
                 else -> {
                     DiscoverTabRow(selectedTab) { selectedTab = it }
                     when (selectedTab) {
-                        0 -> RecommendTab(recommendations, hiddenModules, playSongs)
-                        1 -> DailyTab(dailyRecommend, radio, hiddenModules, playSongs)
+                        0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
+                        1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
                         2 -> ChartsTab(
                             charts = charts,
                             expandedChartId = expandedChartId,
                             expandedChartSongs = expandedChartSongs,
                             hiddenModules = hiddenModules,
+                            loading = loading,
+                            loadFailed = loadFailed,
+                            onRetry = viewModel::refresh,
                             onPlay = playSongs,
                             onToggleChart = viewModel::toggleChart
                         )
@@ -156,6 +161,9 @@ fun DiscoverScreen(
                             expandedPlaylistId = expandedPlaylistId,
                             expandedPlaylistSongs = expandedPlaylistSongs,
                             hiddenModules = hiddenModules,
+                            loading = loading,
+                            loadFailed = loadFailed,
+                            onRetry = viewModel::refresh,
                             onPlay = playSongs,
                             onPlayRecent = playRecentEntries,
                             onTogglePlaylist = viewModel::toggleUserPlaylist
@@ -315,10 +323,17 @@ private fun SearchResults(
 private fun RecommendTab(
     recommendations: List<RemoteSong>,
     hiddenModules: Set<String>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit
 ) {
-    if (DiscoverModule.RECOMMEND in hiddenModules || recommendations.isEmpty()) {
+    if (DiscoverModule.RECOMMEND in hiddenModules) {
         EmptyTab()
+        return
+    }
+    if (recommendations.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRetry)
         return
     }
     LazyColumn(
@@ -337,13 +352,18 @@ private fun DailyTab(
     dailyRecommend: List<RemoteSong>,
     radio: List<RemoteSong>,
     hiddenModules: Set<String>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit
 ) {
     val daily = if (DiscoverModule.DAILY in hiddenModules) emptyList() else dailyRecommend
     val radioList = if (DiscoverModule.RADIO in hiddenModules) emptyList() else radio
     val combined = daily + radioList
     if (combined.isEmpty()) {
-        EmptyTab()
+        // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
+        if (DiscoverModule.DAILY in hiddenModules && DiscoverModule.RADIO in hiddenModules) EmptyTab()
+        else ModuleEmptyState(loading, loadFailed, onRetry)
         return
     }
     LazyColumn(
@@ -372,11 +392,18 @@ private fun ChartsTab(
     expandedChartId: String?,
     expandedChartSongs: List<RemoteSong>,
     hiddenModules: Set<String>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onToggleChart: (RemoteChart) -> Unit
 ) {
-    if (DiscoverModule.CHARTS in hiddenModules || charts.isEmpty()) {
+    if (DiscoverModule.CHARTS in hiddenModules) {
         EmptyTab()
+        return
+    }
+    if (charts.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRetry)
         return
     }
     LazyColumn(
@@ -409,6 +436,9 @@ private fun PlaylistsTab(
     expandedPlaylistId: String?,
     expandedPlaylistSongs: List<RemoteSong>,
     hiddenModules: Set<String>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onPlayRecent: (List<PlayHistoryEntity>, Int) -> Unit,
     onTogglePlaylist: (RemotePlaylist) -> Unit
@@ -416,7 +446,9 @@ private fun PlaylistsTab(
     val playlists = if (DiscoverModule.PLAYLISTS in hiddenModules) emptyList() else userPlaylists
     val recentList = if (DiscoverModule.RECENT in hiddenModules) emptyList() else recent
     if (playlists.isEmpty() && recentList.isEmpty()) {
-        EmptyTab()
+        // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
+        if (DiscoverModule.PLAYLISTS in hiddenModules && DiscoverModule.RECENT in hiddenModules) EmptyTab()
+        else ModuleEmptyState(loading, loadFailed, onRetry)
         return
     }
     LazyColumn(
@@ -515,6 +547,31 @@ private fun SectionHeader(title: String) {
 private fun EmptyTab() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(stringResource(R.string.discover_empty_tab), color = TextHint, fontSize = 14.sp)
+    }
+}
+
+/** 模块空态：加载中显示进度，加载失败显示重试按钮，否则显示「暂无内容」。
+ *  用于区分「用户主动隐藏」「断网失败」「确实无数据」三种情况，避免模块无端"消失"。 */
+@Composable
+private fun ModuleEmptyState(loading: Boolean, loadFailed: Boolean, onRetry: () -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            when {
+                loading -> {
+                    CircularProgressIndicator(color = LocalAccentColor.current)
+                    Spacer(Modifier.height(10.dp))
+                    Text(stringResource(R.string.discover_loading), color = TextHint, fontSize = 14.sp)
+                }
+                loadFailed -> {
+                    Text(stringResource(R.string.discover_load_failed), color = TextSecondary, fontSize = 14.sp)
+                    Spacer(Modifier.height(10.dp))
+                    TextButton(onClick = onRetry) {
+                        Text(stringResource(R.string.discover_retry), color = LocalAccentColor.current)
+                    }
+                }
+                else -> Text(stringResource(R.string.discover_empty_tab), color = TextHint, fontSize = 14.sp)
+            }
+        }
     }
 }
 

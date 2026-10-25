@@ -339,12 +339,18 @@ fun PlayScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 播放控制行：上一首 | 播放/暂停 | 下一首
+            // 播放控制行：快退 | 上一首 | 播放/暂停 | 下一首 | 快进
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = { viewModel.rewind15s() }) {
+                    Text("⏪", fontSize = 24.sp, color = TextPrimary)
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
                 IconButton(onClick = { viewModel.previous() }) {
                     Icon(
                         Icons.Filled.SkipPrevious,
@@ -354,14 +360,14 @@ fun PlayScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(20.dp))
 
                 PlayPauseButton(
                     isPlaying = state.playerState.isPlaying,
                     onClick = { viewModel.togglePlayPause() }
                 )
 
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(20.dp))
 
                 IconButton(onClick = { viewModel.next() }) {
                     Icon(
@@ -370,6 +376,12 @@ fun PlayScreen(
                         modifier = Modifier.size(40.dp),
                         tint = TextPrimary
                     )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                IconButton(onClick = { viewModel.forward15s() }) {
+                    Text("⏩", fontSize = 24.sp, color = TextPrimary)
                 }
             }
 

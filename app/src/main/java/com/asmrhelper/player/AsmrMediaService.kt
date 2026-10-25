@@ -5,20 +5,32 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.media.session.MediaButtonReceiver
+import coil.Coil
+import coil.request.ImageRequest
 import com.asmrhelper.MainActivity
 import com.asmrhelper.R
+import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.util.Constants
 import com.asmrhelper.widget.AsmrWidgetProvider
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -27,6 +39,12 @@ class AsmrMediaService : Service() {
     @Inject lateinit var playerManager: PlayerManager
     private lateinit var mediaSession: MediaSessionCompat
     private var channelReady = false
+
+    // ── 封面异步加载（通知栏 / 锁屏专辑封面）─────────────
+    private val coverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var lastState: PlayerState? = null
+    private var artworkKey: String? = null
+    private var coverBitmap: Bitmap? = null
 
     // ── WakeLock: prevent CPU sleep during playback ──────
     private var wakeLock: PowerManager.WakeLock? = null
@@ -66,6 +84,7 @@ class AsmrMediaService : Service() {
 
         setupMediaSession()
         playerManager.setStateListener { state ->
+            lastState = state
             updateNotification(state)
             updateMediaSessionState(state)
             manageWakeLock(state.isPlaying || state.isBackgroundPlaying)
@@ -79,6 +98,7 @@ class AsmrMediaService : Service() {
                     this, state.isPlaying, currentTitle
                 )
             }
+            maybeRefreshArtwork(state.currentAudio)
         }
     }
 
@@ -154,6 +174,7 @@ class AsmrMediaService : Service() {
 
     override fun onDestroy() {
         releaseWakeLock()
+        coverScope.cancel()
         mediaSession.isActive = false
         mediaSession.release()
         playerManager.setStateListener(null)
@@ -199,6 +220,7 @@ class AsmrMediaService : Service() {
             .setContentTitle(title)
             .setContentText(subtitle)
             .setSmallIcon(android.R.drawable.ic_media_play)
+            .setLargeIcon(coverBitmap)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(android.app.Notification.CATEGORY_TRANSPORT)
             .setOnlyAlertOnce(true)           // no sound/vibration on updates
@@ -254,7 +276,7 @@ class AsmrMediaService : Service() {
 
     /** Smart notification update — only rebuilds when content changes.
      *  Progress-only ticks are skipped (throttled to once per second). */
-    private fun updateNotification(state: PlayerState) {
+    private fun updateNotification(state: PlayerState, force: Boolean = false) {
         // Always show a notification — Android requires it for foreground
         // services. The pref only controls lock-screen visibility, not whether
         // the notification exists. Without a notification, startForeground()
@@ -272,7 +294,7 @@ class AsmrMediaService : Service() {
         val timeSinceLast = now - lastNotifTime
         val needsThrottle = timeSinceLast < minNotifInterval
 
-        if (contentChanged || (!needsThrottle && now - lastPostedProgress >= minNotifInterval)) {
+        if (force || contentChanged || (!needsThrottle && now - lastPostedProgress >= minNotifInterval)) {
             try {
                 val nm = getSystemService(NOTIFICATION_SERVICE) as? NotificationManager ?: return
                 nm.notify(Constants.NOTIFICATION_ID, buildNotification(state))
@@ -282,6 +304,64 @@ class AsmrMediaService : Service() {
                 lastNotifTime = now
                 lastPostedProgress = now
             } catch (_: Exception) { }
+        }
+    }
+
+    // ── 封面异步加载 ─────────────────────────────────────
+    // 切歌时异步读取封面（在线封面 URL / 本地内嵌图），完成后强制刷新通知与
+    // MediaSession 元数据，让下拉状态栏和锁屏显示专辑封面。
+
+    private fun artworkKeyFor(audio: Audio?): String? {
+        if (audio == null) return null
+        val cover = audio.coverUrl
+        if (!cover.isNullOrBlank()) return cover
+        return if (audio.sourceId.isBlank() && audio.filePath.isNotBlank()) "file:${audio.filePath}" else null
+    }
+
+    private fun maybeRefreshArtwork(audio: Audio?) {
+        val key = artworkKeyFor(audio)
+        if (key == artworkKey) return
+        artworkKey = key
+        coverBitmap = null
+        if (key == null) {
+            refreshNotificationAndSession()
+            return
+        }
+        coverScope.launch {
+            val bmp = loadCoverBitmap(audio)
+            coverBitmap = bmp
+            refreshNotificationAndSession()
+        }
+    }
+
+    private suspend fun loadCoverBitmap(audio: Audio?): Bitmap? {
+        if (audio == null) return null
+        return try {
+            val cover = audio.coverUrl
+            if (!cover.isNullOrBlank()) {
+                val request = ImageRequest.Builder(this)
+                    .data(cover)
+                    .allowHardware(false)
+                    .build()
+                Coil.imageLoader(this).execute(request).drawable?.toBitmap()
+            } else if (audio.sourceId.isBlank() && audio.filePath.isNotBlank()) {
+                val mmr = MediaMetadataRetriever()
+                try {
+                    mmr.setDataSource(audio.filePath)
+                    mmr.embeddedPicture?.let { pic ->
+                        BitmapFactory.decodeByteArray(pic, 0, pic.size)
+                    }
+                } finally {
+                    runCatching { mmr.release() }
+                }
+            } else null
+        } catch (_: Exception) { null }
+    }
+
+    private fun refreshNotificationAndSession() {
+        lastState?.let { state ->
+            updateNotification(state, force = true)
+            updateMediaSessionState(state, force = true)
         }
     }
 
@@ -331,7 +411,7 @@ class AsmrMediaService : Service() {
         mediaSession.isActive = true
     }
 
-    private fun updateMediaSessionState(state: PlayerState) {
+    private fun updateMediaSessionState(state: PlayerState, force: Boolean = false) {
         val playing = state.isPlaying
         val title = state.currentAudio?.title
         val artist = state.currentAudio?.artist
@@ -342,7 +422,7 @@ class AsmrMediaService : Service() {
         val stateChanged = playing != lastSessionPlaying
         val metaChanged = title != lastSessionTitle || artist != lastSessionArtist || duration != lastSessionDuration
         val progressDue = now - lastSessionTime >= minNotifInterval
-        if (!stateChanged && !metaChanged && !progressDue) return
+        if (!force && !stateChanged && !metaChanged && !progressDue) return
 
         lastSessionPlaying = playing
         lastSessionTitle = title
@@ -363,12 +443,15 @@ class AsmrMediaService : Service() {
                     PlaybackStateCompat.ACTION_STOP
                 ).build()
         )
-        mediaSession.setMetadata(
-            android.support.v4.media.MediaMetadataCompat.Builder()
-                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, title)
-                .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
-                .putLong(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION, duration)
-                .build()
-        )
+        val meta = android.support.v4.media.MediaMetadataCompat.Builder()
+            .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE, title)
+            .putString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+            .putLong(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION, duration)
+        coverBitmap?.let { bmp ->
+            meta.putBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bmp)
+            meta.putBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART, bmp)
+            meta.putBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, bmp)
+        }
+        mediaSession.setMetadata(meta.build())
     }
 }

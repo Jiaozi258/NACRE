@@ -50,6 +50,10 @@ import com.asmrhelper.util.Cookies
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** 登录 WebView 的移动端 User-Agent，避免音源返回桌面版登录页。 */
+private const val MOBILE_UA =
+    "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
 /** 在线音乐平台登录对话框：按音源声明的登录方式（账号密码 + WebView 网页登录）渲染。 */
 @Composable
 fun MusicLoginDialog(source: MusicSource, onDismiss: () -> Unit) {
@@ -152,8 +156,11 @@ private fun AccountLoginPanel(source: MusicSource, onDone: () -> Unit) {
                         result.onSuccess {
                             Toast.makeText(context, context.getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                             onDone()
-                        }.onFailure {
-                            Toast.makeText(context, context.getString(R.string.login_failed), Toast.LENGTH_SHORT).show()
+                        }.onFailure { t ->
+                            // 展示服务器返回的具体原因（如「需要验证码」），而非笼统的「登录失败」
+                            val msg = t.message?.takeIf { it.isNotBlank() }
+                                ?: context.getString(R.string.login_failed)
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -198,11 +205,18 @@ private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone:
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    // 强制移动端 UA，避免 y.qq.com 等返回桌面版页面导致无法登录
+                    settings.userAgentString = MOBILE_UA
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             status = context.getString(R.string.login_qr_hint)
                         }
+                    }
+                    // 打开登录页前清空旧 Cookie，避免退出后再次扫码自动登回上个账号
+                    CookieManager.getInstance().run {
+                        removeAllCookies(null)
+                        flush()
                     }
                     loadUrl(config.url)
                 }

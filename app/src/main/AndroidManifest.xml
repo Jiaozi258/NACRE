@@ -38,6 +38,13 @@
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="text/html" />
             </intent-filter>
+            <!-- App shortcuts use android.intent.action.VIEW; some OEM launchers
+                 (MIUI/ColorOS) refuse to resolve them unless the activity also
+                 declares a matching intent-filter. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
 
             <meta-data
                 android:name="android.app.shortcuts"

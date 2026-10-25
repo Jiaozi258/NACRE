@@ -87,6 +87,9 @@
     <string name="discover_tab_playlists">Playlists</string>
     <string name="discover_settings_title">Discover settings</string>
     <string name="discover_empty_tab">Nothing here</string>
+    <string name="discover_loading">Loading…</string>
+    <string name="discover_load_failed">Failed to load, check your network</string>
+    <string name="discover_retry">Retry</string>
 
     <!-- MUSIC player -->
     <string name="lyric_mode">Lyric mode</string>

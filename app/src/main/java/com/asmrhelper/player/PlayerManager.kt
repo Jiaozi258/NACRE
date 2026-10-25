@@ -8,6 +8,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.asmrhelper.R
+import com.asmrhelper.data.music.MusicSourceManager
+import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlayerState
@@ -22,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.asmrhelper.di.MainPlayer
@@ -36,7 +39,8 @@ class PlayerManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val playHistoryRepository: com.asmrhelper.data.repository.PlayHistoryRepositoryImpl,
     private val audioFocusManager: AudioFocusManager,
-    private val audioDeviceMonitor: AudioDeviceMonitor
+    private val audioDeviceMonitor: AudioDeviceMonitor,
+    private val musicSourceManager: MusicSourceManager
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -51,6 +55,9 @@ class PlayerManager @Inject constructor(
     private var resumeBackgroundOnFocus = false
     // 因设备断开而暂停（连接耳机时按设置续播）
     private var pausedByDeviceDisconnect = false
+    // 在线歌曲流 URL 过期后的重解析重试计数（播约半小时失效时自动换新地址续播）
+    private var remoteRetryCount = 0
+    private val maxRemoteRetry = 2
 
     // External state change listener (e.g., for MediaService notification updates)
     private var onStateChanged: ((PlayerState) -> Unit)? = null
@@ -81,7 +88,8 @@ class PlayerManager @Inject constructor(
         if (!isRememberPlaybackEnabled()) return
         prefs.edit()
             .putLong("last_id", audio.id)
-            .putString("last_file_path", audio.filePath)
+            // 在线歌曲的 filePath 是临时流 URL（会过期），不持久化；恢复时按 source 动态重解析
+            .putString("last_file_path", if (audio.isRemoteSong()) "" else audio.filePath)
             .putString("last_title", audio.title)
             .putString("last_artist", audio.artist)
             .putLong("last_duration_ms", audio.durationMs)
@@ -132,12 +140,33 @@ class PlayerManager @Inject constructor(
         )
     }
 
+    /** 在线歌曲 → 重新解析流 URL 作为 filePath；本地歌曲原样返回，解析失败返回 null。 */
+    private suspend fun resolveRemoteUrlOrNull(audio: Audio): Audio? {
+        if (!audio.isRemoteSong()) return audio
+        val source = musicSourceManager.sourceForId(audio.sourceId) ?: return null
+        val songId = audio.sourceSongId ?: audio.id.toString()
+        val quality = settingsPrefs.getString("playback_quality", "excellent") ?: "excellent"
+        val url = runCatching { source.getSongUrl(songId, quality).first() }.getOrNull()
+        return if (url.isNullOrBlank()) null else audio.copy(filePath = url)
+    }
+
+    private fun showUnplayableToast() {
+        _state.update { it.copy(isPlaying = false) }
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.play_error_unplayable),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+
     /** 序列化当前播放队列（含元数据），供重启后恢复完整队列而非仅最后一首。 */
     private fun savePlaylistState() {
         if (!isRememberPlaybackEnabled()) return
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
         prefs.edit()
-            .putString("playlist_json", PlaylistStateCodec.encode(currentPlaylist))
+            .putString("playlist_json", PlaylistStateCodec.encode(
+                currentPlaylist.map { if (it.isRemoteSong()) it.copy(filePath = "") else it }
+            ))
             .putInt("playlist_index", currentIndex)
             .putString("loop_mode", _state.value.loopMode.name)
             .apply()
@@ -172,13 +201,18 @@ class PlayerManager @Inject constructor(
      *  Does NOT re-start the service (caller is already the service). */
     fun resumeLastPlayback() {
         val audio = restoreSavedQueue() ?: return
-        val mediaItem = MediaItem.fromUri(audio.filePath)
-        mainPlayer.setMediaItem(mediaItem)
-        mainPlayer.prepare()
-        mainPlayer.seekTo(loadLastPosition())
-        audioFocusManager.requestFocus()
-        mainPlayer.play()
-        _state.update { it.copy(currentAudio = audio, isPlaying = true) }
+        scope.launch {
+            val toPlay = if (audio.isRemoteSong() && audio.filePath.isBlank()) {
+                resolveRemoteUrlOrNull(audio) ?: return@launch
+            } else audio
+            val mediaItem = MediaItem.fromUri(toPlay.filePath)
+            mainPlayer.setMediaItem(mediaItem)
+            mainPlayer.prepare()
+            mainPlayer.seekTo(loadLastPosition())
+            audioFocusManager.requestFocus()
+            mainPlayer.play()
+            _state.update { it.copy(currentAudio = toPlay, isPlaying = true) }
+        }
     }
 
     /** 进程被杀时是否处于播放中，用于前台服务重启后判断是否续播。 */
@@ -245,10 +279,21 @@ class PlayerManager @Inject constructor(
             val saved = restoreSavedQueue()
             if (saved != null) {
                 _state.update { it.copy(currentAudio = saved, durationMs = saved.durationMs) }
-                val mediaItem = MediaItem.fromUri(saved.filePath)
-                mainPlayer.setMediaItem(mediaItem)
-                mainPlayer.prepare()
-                mainPlayer.seekTo(loadLastPosition())
+                if (saved.isRemoteSong() && saved.filePath.isBlank()) {
+                    scope.launch {
+                        val toPlay = resolveRemoteUrlOrNull(saved) ?: return@launch
+                        _state.update { it.copy(currentAudio = toPlay) }
+                        val mediaItem = MediaItem.fromUri(toPlay.filePath)
+                        mainPlayer.setMediaItem(mediaItem)
+                        mainPlayer.prepare()
+                        mainPlayer.seekTo(loadLastPosition())
+                    }
+                } else {
+                    val mediaItem = MediaItem.fromUri(saved.filePath)
+                    mainPlayer.setMediaItem(mediaItem)
+                    mainPlayer.prepare()
+                    mainPlayer.seekTo(loadLastPosition())
+                }
             }
         } else {
             clearSavedPlayback()
@@ -274,12 +319,28 @@ class PlayerManager @Inject constructor(
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                _state.update { it.copy(isPlaying = false) }
-                android.widget.Toast.makeText(
-                    context,
-                    context.getString(R.string.play_error_unplayable),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                val audio = _state.value.currentAudio
+                if (audio != null && audio.isRemoteSong() && remoteRetryCount < maxRemoteRetry) {
+                    // 在线歌曲流地址过期（播约半小时失效）：重解析换新地址后从原位置续播
+                    remoteRetryCount++
+                    val resumePos = _state.value.progressMs
+                    scope.launch {
+                        val resolved = resolveRemoteUrlOrNull(audio)
+                        if (resolved != null) {
+                            val mediaItem = MediaItem.fromUri(resolved.filePath)
+                            mainPlayer.setMediaItem(mediaItem)
+                            mainPlayer.prepare()
+                            mainPlayer.seekTo(resumePos)
+                            mainPlayer.play()
+                            _state.update { it.copy(currentAudio = resolved) }
+                        } else {
+                            remoteRetryCount = maxRemoteRetry
+                            showUnplayableToast()
+                        }
+                    }
+                } else {
+                    showUnplayableToast()
+                }
             }
         })
 
@@ -525,6 +586,20 @@ class PlayerManager @Inject constructor(
     }
 
     private fun play(audio: Audio, playlist: List<Audio>) {
+        // 恢复队列里的在线歌曲 filePath 已清空：先重解析流 URL 再播，避免空 URI 报错。
+        if (audio.isRemoteSong() && audio.filePath.isBlank()) {
+            scope.launch {
+                val resolved = resolveRemoteUrlOrNull(audio)
+                if (resolved != null) playResolved(resolved, playlist)
+                else showUnplayableToast()
+            }
+            return
+        }
+        playResolved(audio, playlist)
+    }
+
+    private fun playResolved(audio: Audio, playlist: List<Audio>) {
+        remoteRetryCount = 0
         crossfadeJob?.cancel()
         crossfadeJob = null
         pendingFadeOutAtEnd = false

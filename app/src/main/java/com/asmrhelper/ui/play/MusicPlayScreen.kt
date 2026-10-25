@@ -150,7 +150,10 @@ fun MusicPlayScreen(
         label = "modeButtonAlpha"
     )
 
-    val coverUrl = state.playerState.currentAudio?.coverUrl
+    val currentAudio = state.playerState.currentAudio
+    val coverUrl = currentAudio?.coverUrl
+    // 本地文件无 coverUrl 时用内嵌图做背景模糊，避免与真实封面"匹配不上"
+    val coverFilePath = currentAudio?.takeIf { !it.isRemoteSong() }?.filePath
     val progressMs = state.playerState.progressMs
     val durationMs = state.playerState.durationMs
 
@@ -159,7 +162,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode)
+        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath)
 
         Column(
             modifier = Modifier
@@ -223,6 +226,8 @@ fun MusicPlayScreen(
                 onCycleLoopMode = { viewModel.cycleLoopMode() },
                 onMore = { showMoreDialog = true },
                 onAddToPlaylist = { showPlaylistDialog = true },
+                timerActive = state.timerActive,
+                timerRemainingMs = state.timerRemainingMs,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
