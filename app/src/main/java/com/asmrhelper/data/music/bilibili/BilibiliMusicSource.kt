@@ -88,7 +88,7 @@ class BilibiliMusicSource(
         val params = mapOf(
             "bvid" to songId,
             "cid" to cid.toString(),
-            "fnval" to "16",
+            "fnval" to "4048",
             "fnver" to "0",
             "fourk" to "1",
             "qn" to "0"
@@ -164,10 +164,18 @@ class BilibiliMusicSource(
 
     // ── HTTP ───────────────────────────────────────────
 
-    /** WBI 签名 GET。 */
+    /** WBI 签名 GET。失败（空结果或业务码非 0，常见 412/风控）时刷新 mixinKey 与
+     *  指纹后重试一次：WBI key 会周期性轮换、buvid 也可能被标记，重试能自愈大部分情况。 */
     private suspend fun wbiGet(path: String, params: Map<String, String>): JSONObject {
-        val mixin = mixinKey() ?: return JSONObject()
-        return get(path, BilibiliWbi.sign(mixin, params))
+        var mixin = mixinKey() ?: return JSONObject()
+        var result = get(path, BilibiliWbi.sign(mixin, params))
+        if (result.length() == 0 || result.optInt("code", -1) != 0) {
+            cachedMixinKey = null
+            rotateBuvid()
+            mixin = mixinKey() ?: return result
+            result = get(path, BilibiliWbi.sign(mixin, params))
+        }
+        return result
     }
 
     private suspend fun get(path: String, query: String): JSONObject = withContext(Dispatchers.IO) {
@@ -177,6 +185,7 @@ class BilibiliMusicSource(
                 .url(url)
                 .header("User-Agent", PC_UA)
                 .header("Referer", refererFor(query))
+                .header("Origin", "https://www.bilibili.com")
                 .header("X-Bili-Api-Source", "pc")
                 .header("X-Requested-With", "XMLHttpRequest")
             val ck = buildCookie()
@@ -222,8 +231,10 @@ class BilibiliMusicSource(
     private fun buvidCookie(): String {
         var b3 = cachedBuvid3
         var b4 = cachedBuvid4
-        if (b3.isNullOrEmpty()) {
-            val (nb3, nb4) = obtainBuvid()
+        // 旧版本持久化的是 finger/spi 网络指纹，格式/信任度都不同且可能已被风控标记；
+        // 这里在「为空」或「格式不符（非 UUID+infoc）」时统一换成本地生成的现代指纹。
+        if (b3.isNullOrEmpty() || !b3.endsWith("infoc")) {
+            val (nb3, nb4) = BilibiliWbi.newBuvid()
             b3 = nb3; b4 = nb4
             cachedBuvid3 = b3; cachedBuvid4 = b4
             biliPrefs.edit().putString("buvid3", b3).putString("buvid4", b4).apply()
@@ -237,22 +248,11 @@ class BilibiliMusicSource(
         }
     }
 
-    private fun obtainBuvid(): Pair<String?, String?> {
-        return try {
-            val req = Request.Builder()
-                .url("$BASE/x/frontend/finger/spi")
-                .header("User-Agent", PC_UA)
-                .header("Referer", "https://www.bilibili.com")
-                .get().build()
-            client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) return null to null
-                val data = JSONObject(resp.body?.string() ?: "{}").optJSONObject("data")
-                data?.optString("b_3", "")?.takeIf { it.isNotEmpty() } to
-                    data?.optString("b_4", "")?.takeIf { it.isNotEmpty() }
-            }
-        } catch (_: Exception) {
-            null to null
-        }
+    /** 被风控/412 拦截后轮换一次指纹，下次请求用新 buvid 自愈。 */
+    private fun rotateBuvid() {
+        val (nb3, nb4) = BilibiliWbi.newBuvid()
+        cachedBuvid3 = nb3; cachedBuvid4 = nb4
+        biliPrefs.edit().putString("buvid3", nb3).putString("buvid4", nb4).apply()
     }
 
     companion object {

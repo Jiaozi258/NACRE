@@ -195,8 +195,10 @@ class VideoAudioExtractor @Inject constructor(
     private fun buvidCookie(): String {
         var b3 = cachedBuvid3
         var b4 = cachedBuvid4
-        if (b3.isNullOrEmpty()) {
-            val (nb3, nb4) = obtainBuvid()
+        // 旧版本持久化的是 finger/spi 网络指纹，格式/信任度都不同且可能已被风控标记；
+        // 这里在「为空」或「格式不符（非 UUID+infoc）」时统一换成本地生成的现代指纹。
+        if (b3.isNullOrEmpty() || !b3.endsWith("infoc")) {
+            val (nb3, nb4) = BilibiliWbi.newBuvid()
             b3 = nb3; b4 = nb4
             cachedBuvid3 = b3; cachedBuvid4 = b4
             biliPrefs.edit().putString("buvid3", b3).putString("buvid4", b4).apply()
@@ -212,46 +214,35 @@ class VideoAudioExtractor @Inject constructor(
         }
     }
 
-    /** 调 B站免费指纹接口获取 buvid3/buvid4，失败则返回 null 降级为无 Cookie。 */
-    private fun obtainBuvid(): Pair<String?, String?> {
-        return try {
-            val conn = (URL("https://api.bilibili.com/x/frontend/finger/spi")
-                .openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 10_000
-                setRequestProperty("Referer", "https://www.bilibili.com")
-                setRequestProperty("User-Agent", PC_UA)
-                setRequestProperty("X-Bili-Api-Source", "pc")
-                setRequestProperty("X-Requested-With", "XMLHttpRequest")
-            }
-            val code = conn.responseCode
-            val body = if (code in 200..299)
-                conn.inputStream?.bufferedReader()?.use { it.readText() } ?: ""
-            else
-                conn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
-            conn.disconnect()
-            val data = JSONObject(body).optJSONObject("data")
-            val b3 = data?.optString("b_3", "")?.takeIf { it.isNotEmpty() }
-            val b4 = data?.optString("b_4", "")?.takeIf { it.isNotEmpty() }
-            b3 to b4
-        } catch (_: Exception) {
-            null to null
-        }
+    /** 被风控/412 拦截后轮换一次指纹，下次请求用新 buvid 自愈。 */
+    private fun rotateBuvid() {
+        val (nb3, nb4) = BilibiliWbi.newBuvid()
+        cachedBuvid3 = nb3; cachedBuvid4 = nb4
+        biliPrefs.edit().putString("buvid3", nb3).putString("buvid4", nb4).apply()
     }
 
     /** WBI 签名后请求 `x/player/wbi/playurl`（B站取流接口现在必须带 w_rid，否则风控拦 412/-403）。 */
     private fun bilibiliPlayurlApi(bvid: String, cid: Long): JSONObject? {
-        val mixin = fetchMixinKey()
         val params = mapOf(
             "bvid" to bvid,
             "cid" to cid.toString(),
-            "fnval" to "16",
+            "fnval" to "4048",
             "fnver" to "0",
             "fourk" to "1",
             "qn" to "0"
         )
-        val query = if (mixin != null) BilibiliWbi.sign(mixin, params)
+        var mixin = fetchMixinKey()
+        fun query() = if (mixin != null) BilibiliWbi.sign(mixin!!, params)
             else params.entries.joinToString("&") { "${it.key}=${it.value}" }
-        return bilibiliApi("x/player/wbi/playurl", query)
+        var resp = bilibiliApi("x/player/wbi/playurl", query())
+        // 412/风控/业务失败 → 刷新 WBI key 并轮换指纹后重试一次
+        if (resp == null || resp.optInt("code", -1) != 0) {
+            android.util.Log.w("Extractor", "B站取流首次失败，刷新指纹+WBI key 后重试")
+            rotateBuvid()
+            mixin = fetchMixinKey()
+            resp = bilibiliApi("x/player/wbi/playurl", query())
+        }
+        return resp
     }
 
     /** 拉取 WBI mixinKey（nav `data.wbi_img`），失败返回 null。 */
@@ -274,6 +265,7 @@ class VideoAudioExtractor @Inject constructor(
             val conn = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 30_000
                 setRequestProperty("Referer", referer)
+                setRequestProperty("Origin", "https://www.bilibili.com")
                 setRequestProperty("User-Agent", PC_UA)
                 setRequestProperty("X-Bili-Api-Source", "pc")
                 setRequestProperty("X-Requested-With", "XMLHttpRequest")
