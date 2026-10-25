@@ -665,10 +665,17 @@ private fun MusicPlatformRow(
     onAction: (Boolean) -> Unit
 ) {
     val loggedIn by source.isLoggedIn.collectAsStateWithLifecycle()
+    // 无任何登录能力（如 YouTube 匿名源）→ 显示「匿名」，点击不进入登录/退出。
+    val canLogin = source.webLogin != null || source.supportsAccountLogin
+    val stateText = when {
+        loggedIn -> stringResource(R.string.profile_logged_in)
+        !canLogin -> stringResource(R.string.profile_anonymous)
+        else -> stringResource(R.string.profile_not_logged_in)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onAction(loggedIn) }
+            .clickable(enabled = canLogin) { onAction(loggedIn) }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -676,7 +683,7 @@ private fun MusicPlatformRow(
         Text(stringResource(config.displayNameRes), color = TextPrimary, fontSize = 14.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (loggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
+                stateText,
                 color = if (loggedIn) LocalAccentColor.current else TextHint,
                 fontSize = 12.sp
             )

@@ -30,6 +30,7 @@ class YoutubeMusicSource(
     override val id: String = "youtube"
     override val displayNameRes: Int = R.string.source_youtube
     override val isLoggedIn: StateFlow<Boolean> = MutableStateFlow(false)
+    override val requiresLogin: Boolean = false
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         emit(YoutubeJson.parseSearch(post("search", YoutubeInnerTube.searchBody(keyword))))

@@ -105,6 +105,8 @@
     <string name="discover_switch_platform">Switch</string>
     <string name="discover_switch_platform_title">Choose platform</string>
     <string name="discover_login_required">Please log in to use this platform</string>
+    <string name="discover_anonymous">Anonymous</string>
+    <string name="discover_unknown_uploader">Unknown uploader</string>
 
     <!-- MUSIC player -->
     <string name="lyric_mode">Lyric mode</string>
@@ -479,6 +481,7 @@
     <string name="profile_default_user">User</string>
     <string name="profile_not_logged_in">Not signed in</string>
     <string name="profile_logged_in">Signed in</string>
+    <string name="profile_anonymous">Anonymous</string>
     <string name="profile_login_hint">Sign in to unlock more features</string>
     <string name="profile_welcome">Welcome back, %s</string>
     <string name="profile_logged_out">Signed out</string>

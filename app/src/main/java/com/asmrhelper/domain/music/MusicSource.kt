@@ -34,6 +34,10 @@ interface MusicSource {
     val supportsAccountLogin: Boolean
         get() = false
 
+    /** 未登录是否允许切换到该源浏览（B站/YouTube 可匿名搜索/热门，网易云/QQ 需登录）。 */
+    val requiresLogin: Boolean
+        get() = true
+
     fun search(keyword: String, page: Int): Flow<List<RemoteSong>>
 
     /** 搜索歌手；不支持时返回空。 */

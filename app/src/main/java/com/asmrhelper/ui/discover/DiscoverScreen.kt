@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -513,7 +514,7 @@ private fun CenteredLoading() {
     }
 }
 
-/** 推荐标签：热门推荐。 */
+/** 推荐标签：热门推荐（视频源渲染为横滑视频架，音乐源为纵向列表）。 */
 @Composable
 private fun RecommendTab(
     recommendations: List<RemoteSong>,
@@ -529,6 +530,15 @@ private fun RecommendTab(
     }
     if (recommendations.isEmpty()) {
         ModuleEmptyState(loading, loadFailed, onRetry)
+        return
+    }
+    if (isVideoSource(recommendations.first().sourceId)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+        ) {
+            item { VideoShelf(recommendations, onPlay) }
+        }
         return
     }
     LazyColumn(
@@ -698,13 +708,14 @@ private fun PlatformSwitchDialog(
                     val source = sourceFor(config)
                     val isLoggedIn by source.isLoggedIn.collectAsStateWithLifecycle()
                     val isActive = config.id == activeSourceId
+                    val canSelect = isLoggedIn || !source.requiresLogin
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 when {
                                     isActive -> onDismiss()
-                                    isLoggedIn -> { onSelect(config.id); onDismiss() }
+                                    canSelect -> { onSelect(config.id); onDismiss() }
                                     else -> Toast.makeText(
                                         context,
                                         context.getString(R.string.discover_login_required),
@@ -723,7 +734,9 @@ private fun PlatformSwitchDialog(
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            if (isLoggedIn) stringResource(R.string.profile_logged_in) else stringResource(R.string.profile_not_logged_in),
+                            if (isLoggedIn) stringResource(R.string.profile_logged_in)
+                            else if (!source.requiresLogin) stringResource(R.string.discover_anonymous)
+                            else stringResource(R.string.profile_not_logged_in),
                             color = if (isLoggedIn) LocalAccentColor.current else TextHint,
                             fontSize = 12.sp
                         )
@@ -986,8 +999,14 @@ private fun PlaylistRow(name: String, coverUrl: String?, expanded: Boolean, onCl
     }
 }
 
+/** 在线歌曲行：视频源渲染为视频行（封面+时长角标+上传者+发布时间），否则音乐行。 */
 @Composable
 private fun SongRow(song: RemoteSong, onPlay: () -> Unit) {
+    if (isVideoSource(song.sourceId)) VideoRow(song, onPlay) else MusicSongRow(song, onPlay)
+}
+
+@Composable
+private fun MusicSongRow(song: RemoteSong, onPlay: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1020,6 +1039,145 @@ private fun SongRow(song: RemoteSong, onPlay: () -> Unit) {
                 formatDuration(song.durationMs),
                 color = TextHint,
                 fontSize = 12.sp
+            )
+        }
+    }
+}
+
+/** 视频行：封面（16:9 + 时长角标）+ 名称/上传者/发布时间。 */
+@Composable
+private fun VideoRow(song: RemoteSong, onPlay: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPlay)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .width(112.dp)
+                .height(63.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(DarkSurface),
+            contentAlignment = Alignment.Center
+        ) {
+            if (song.coverUrl.isNullOrBlank()) {
+                Icon(Icons.Filled.MusicNote, null, tint = TextSecondary, modifier = Modifier.size(24.dp))
+            } else {
+                AsyncImage(
+                    model = song.coverUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (song.durationMs > 0) {
+                Text(
+                    formatDuration(song.durationMs),
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                song.title,
+                color = TextPrimary,
+                fontSize = 14.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            val publish = formatPublishTime(song.publishTime)
+            Text(
+                buildString {
+                    append(song.artist)
+                    if (publish.isNotBlank()) append(" · ").append(publish)
+                }.ifBlank { stringResource(R.string.discover_unknown_uploader) },
+                color = TextSecondary,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** 横滑视频架（推荐模块，视频源）。 */
+@Composable
+private fun VideoShelf(songs: List<RemoteSong>, onPlay: (List<RemoteSong>, Int) -> Unit) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        itemsIndexed(songs, key = { _, it -> "shelf:${it.sourceId}:${it.id}" }) { index, song ->
+            VideoCard(song = song, onClick = { onPlay(songs, index) })
+        }
+    }
+}
+
+@Composable
+private fun VideoCard(song: RemoteSong, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(84.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(DarkSurface),
+            contentAlignment = Alignment.Center
+        ) {
+            if (song.coverUrl.isNullOrBlank()) {
+                Icon(Icons.Filled.MusicNote, null, tint = TextSecondary, modifier = Modifier.size(24.dp))
+            } else {
+                AsyncImage(
+                    model = song.coverUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (song.durationMs > 0) {
+                Text(
+                    formatDuration(song.durationMs),
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            song.title,
+            color = TextPrimary,
+            fontSize = 12.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (song.artist.isNotBlank()) {
+            Text(
+                song.artist,
+                color = TextSecondary,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -1114,4 +1272,17 @@ private fun formatDuration(ms: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%d:%02d".format(min, sec)
+}
+
+private fun isVideoSource(sourceId: String): Boolean = sourceId == "bilibili" || sourceId == "youtube"
+
+/** 发布时间（毫秒时间戳 → "yyyy-MM-dd"；拿不到返回空串）。 */
+private fun formatPublishTime(ms: Long): String {
+    if (ms <= 0) return ""
+    val c = java.util.Calendar.getInstance().apply { timeInMillis = ms }
+    return "%04d-%02d-%02d".format(
+        c.get(java.util.Calendar.YEAR),
+        c.get(java.util.Calendar.MONTH) + 1,
+        c.get(java.util.Calendar.DAY_OF_MONTH)
+    )
 }

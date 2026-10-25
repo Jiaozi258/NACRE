@@ -43,6 +43,7 @@ class BilibiliMusicSource(
     override val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
     override val supportsAccountLogin: Boolean = false
+    override val requiresLogin: Boolean = false
     override val webLogin: WebLoginConfig =
         WebLoginConfig("https://passport.bilibili.com/login", "https://www.bilibili.com", setOf("SESSDATA"))
 
