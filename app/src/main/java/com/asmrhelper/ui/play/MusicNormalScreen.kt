@@ -87,7 +87,7 @@ import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.player.HeadphonePreset
 import com.asmrhelper.player.HeadphonePresets
-import com.asmrhelper.player.SceneEffect
+import com.asmrhelper.player.V3ReverbPreset
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.rememberCoverPalette
 import com.asmrhelper.ui.playlist.PlaylistViewModel
@@ -128,7 +128,7 @@ fun MusicNormalScreen(
     val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
     val eqCurrentPreset by viewModel.eqCurrentPreset.collectAsStateWithLifecycle()
-    val currentSceneEffect by viewModel.currentSceneEffect.collectAsStateWithLifecycle()
+    val currentV3Reverb by viewModel.currentV3Reverb.collectAsStateWithLifecycle()
     val songNotes by viewModel.songNotes.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
@@ -221,11 +221,11 @@ fun MusicNormalScreen(
                 2 -> EqualizerPanel(
                     audio = currentAudio,
                     eqCurrentPreset = eqCurrentPreset,
-                    currentSceneEffect = currentSceneEffect,
+                    currentV3Reverb = currentV3Reverb,
                     savedNote = songKey?.let { songNotes[it] } ?: "",
                     onApplyHeadphonePreset = { viewModel.applyEqPreset(it.toEqPreset()) },
                     onResetEq = { viewModel.resetEq() },
-                    onApplySceneEffect = { viewModel.applySceneEffect(it) },
+                    onApplyV3Reverb = { viewModel.applyV3Reverb(it) },
                     onOpenSongNote = { showSongNoteDialog = true },
                     onToggleMusicStyle = onToggleMusicStyle,
                     onBack = backToDefault
@@ -980,11 +980,11 @@ private fun NormalModeContent(
 private fun EqualizerPanel(
     audio: com.asmrhelper.domain.model.Audio?,
     eqCurrentPreset: String,
-    currentSceneEffect: SceneEffect,
+    currentV3Reverb: V3ReverbPreset,
     savedNote: String,
     onApplyHeadphonePreset: (HeadphonePreset) -> Unit,
     onResetEq: () -> Unit,
-    onApplySceneEffect: (SceneEffect) -> Unit,
+    onApplyV3Reverb: (V3ReverbPreset) -> Unit,
     onOpenSongNote: () -> Unit,
     onToggleMusicStyle: () -> Unit,
     onBack: () -> Unit
@@ -1052,7 +1052,7 @@ private fun EqualizerPanel(
                     .padding(horizontal = 4.dp, vertical = 6.dp)
             )
         }
-        // 混响
+        // 混响（V3，独立于沉浸模式场景效果）
         item { SubTitle(stringResource(R.string.eq_reverb)) }
         item {
             Row(
@@ -1061,11 +1061,11 @@ private fun EqualizerPanel(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SceneEffect.entries.forEach { scene ->
+                V3ReverbPreset.entries.forEach { preset ->
                     Chip(
-                        text = stringResource(scene.labelRes),
-                        selected = scene == currentSceneEffect
-                    ) { onApplySceneEffect(scene) }
+                        text = stringResource(preset.labelRes),
+                        selected = preset == currentV3Reverb
+                    ) { onApplyV3Reverb(preset) }
                 }
             }
         }

@@ -704,6 +704,14 @@
     <string name="scene_effect_bathroom">浴室</string>
     <string name="scene_effect_theater">影院</string>
 
+    <!-- V3 混响 -->
+    <string name="v3_reverb_none">关闭混响</string>
+    <string name="v3_reverb_studio">录音室</string>
+    <string name="v3_reverb_chamber">室内</string>
+    <string name="v3_reverb_hall">音乐厅</string>
+    <string name="v3_reverb_cathedral">大教堂</string>
+    <string name="v3_reverb_plate">板式混响</string>
+
     <!-- 内置环境音 -->
     <string name="ambient_rain">🌧️ 雨声</string>
     <string name="ambient_stream">🌊 溪流</string>

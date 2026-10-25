@@ -704,6 +704,14 @@
     <string name="scene_effect_bathroom">Bathroom</string>
     <string name="scene_effect_theater">Theater</string>
 
+    <!-- V3 reverb -->
+    <string name="v3_reverb_none">Reverb off</string>
+    <string name="v3_reverb_studio">Studio</string>
+    <string name="v3_reverb_chamber">Chamber</string>
+    <string name="v3_reverb_hall">Hall</string>
+    <string name="v3_reverb_cathedral">Cathedral</string>
+    <string name="v3_reverb_plate">Plate</string>
+
     <!-- Built-in ambient sounds -->
     <string name="ambient_rain">🌧️ Rain</string>
     <string name="ambient_stream">🌊 Stream</string>

@@ -42,6 +42,8 @@ import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.player.EqPreset
+import com.asmrhelper.player.V3ReverbController
+import com.asmrhelper.player.V3ReverbPreset
 import com.asmrhelper.util.LrcParser
 import com.asmrhelper.util.LyricCaptionMode
 import com.asmrhelper.util.LyricMode
@@ -141,6 +143,7 @@ class PlayViewModel @Inject constructor(
     private val bookmarkRepository: BookmarkRepository,
     private val equalizerController: EqualizerController,
     private val sceneEffectsController: SceneEffectsController,
+    private val v3ReverbController: V3ReverbController,
     private val musicSourceManager: MusicSourceManager,
     private val remoteFavoritesStore: RemoteFavoritesStore,
     private val audioDeviceMonitor: AudioDeviceMonitor,
@@ -990,6 +993,10 @@ class PlayViewModel @Inject constructor(
     // ── 场景效果 ──────────────────────────────────────────
     val currentSceneEffect: StateFlow<SceneEffect> = sceneEffectsController.currentScene
     val loudnessGain: StateFlow<Int> = sceneEffectsController.loudnessGain
+
+    // ── V3 混响（正常模式均衡器，独立于场景效果）──────────
+    val currentV3Reverb: StateFlow<V3ReverbPreset> = v3ReverbController.currentPreset
+    fun applyV3Reverb(preset: V3ReverbPreset) = v3ReverbController.apply(preset)
 
     fun applySceneEffect(scene: SceneEffect) = sceneEffectsController.applyScene(scene)
     fun setLoudnessGain(gainDbX100: Int) = sceneEffectsController.setLoudnessGain(gainDbX100)
