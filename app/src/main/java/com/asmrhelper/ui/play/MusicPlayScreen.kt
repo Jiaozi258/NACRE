@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
@@ -59,6 +58,7 @@ import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
+import com.asmrhelper.ui.components.FrostedAlertDialog
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.AudioReactiveBackground
@@ -68,6 +68,7 @@ import com.asmrhelper.ui.play.folia.ScrollLyrics
 import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.FrostedSurface
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.TextHint
@@ -288,7 +289,7 @@ fun MusicPlayScreen(
 
     // ── 更多菜单 ───────────────────────────────────────
     if (showMoreDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showMoreDialog = false },
             title = { Text(stringResource(R.string.more), color = TextPrimary) },
             text = {
@@ -336,14 +337,14 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showMoreDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 歌词副文本（翻译/谐音）选择 ──────────────────────
     if (showLyricCaptionDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricCaptionDialog = false },
             title = { Text(stringResource(R.string.lyric_caption_title), color = TextPrimary) },
             text = {
@@ -372,7 +373,7 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showLyricCaptionDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -386,7 +387,7 @@ fun MusicPlayScreen(
             "qq" -> stringResource(R.string.source_qq)
             else -> stringResource(R.string.song_info_source_local)
         }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSongInfoDialog = false },
             title = { Text(stringResource(R.string.song_info_title), color = TextPrimary) },
             text = {
@@ -402,14 +403,14 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showSongInfoDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 背景选择对话框 ─────────────────────────────────
     if (showBackgroundDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBackgroundDialog = false },
             title = { Text(stringResource(R.string.menu_background), color = TextPrimary) },
             text = {
@@ -455,7 +456,7 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showBackgroundDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -463,7 +464,7 @@ fun MusicPlayScreen(
     // ── 蓝牙设备对话框 ─────────────────────────────────
     if (showBluetoothDialog) {
         val devices = remember { viewModel.connectedAudioDevices() }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBluetoothDialog = false },
             title = { Text(stringResource(R.string.bluetooth_device_title), color = TextPrimary) },
             text = {
@@ -488,14 +489,14 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showBluetoothDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 音质选择对话框 ─────────────────────────────────
     if (showQualityDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showQualityDialog = false },
             title = { Text(stringResource(R.string.menu_quality), color = TextPrimary) },
             text = {
@@ -527,7 +528,7 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showQualityDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -536,7 +537,7 @@ fun MusicPlayScreen(
     if (showQueueDialog) {
         val playlist = state.playerState.playlist
         val currentIndex = state.playerState.playlistIndex
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showQueueDialog = false },
             title = { Text(stringResource(R.string.menu_queue), color = TextPrimary) },
             text = {
@@ -577,14 +578,14 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showQueueDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 歌词偏移校准对话框 ─────────────────────────────
     if (showLyricOffsetDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricOffsetDialog = false },
             title = { Text(stringResource(R.string.lyric_offset_title), color = TextPrimary) },
             text = {
@@ -610,7 +611,7 @@ fun MusicPlayScreen(
                     }
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -618,7 +619,7 @@ fun MusicPlayScreen(
     // ── 定时对话框 ─────────────────────────────────────
     if (showTimerDialog) {
         var minutes by remember { mutableStateOf(30) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showTimerDialog = false },
             title = { Text(stringResource(R.string.play_sleep_timer), color = TextPrimary) },
             text = {
@@ -643,7 +644,7 @@ fun MusicPlayScreen(
                     Text(stringResource(R.string.play_cancel_timer), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -651,7 +652,7 @@ fun MusicPlayScreen(
     // ── 歌词编辑浮层 ───────────────────────────────────
     if (showLyricsDialog) {
         var lyricText by remember(showLyricsDialog) { mutableStateOf(rawLyricsText) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricsDialog = false },
             title = { Text(stringResource(R.string.play_lyrics_title), color = TextPrimary) },
             text = {
@@ -683,7 +684,7 @@ fun MusicPlayScreen(
                     Text(stringResource(R.string.common_close), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -694,7 +695,7 @@ fun MusicPlayScreen(
         var showCreateDialog by remember { mutableStateOf(false) }
         val currentAudio = state.playerState.currentAudio
 
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showPlaylistDialog = false },
             title = { Text(stringResource(R.string.play_add_to_playlist), color = TextPrimary) },
             text = {
@@ -740,13 +741,13 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showPlaylistDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
 
         if (showCreateDialog) {
             var name by remember { mutableStateOf("") }
-            AlertDialog(
+            FrostedAlertDialog(
                 onDismissRequest = { showCreateDialog = false },
                 title = { Text(stringResource(R.string.play_create_playlist_title), color = TextPrimary) },
                 text = {
@@ -770,7 +771,7 @@ fun MusicPlayScreen(
                     ) { Text(stringResource(R.string.play_create), color = LocalAccentColor.current) }
                 },
                 dismissButton = { TextButton(onClick = { showCreateDialog = false }) { Text(stringResource(R.string.common_cancel), color = TextSecondary) } },
-                containerColor = DarkSurface,
+                containerColor = FrostedSurface,
                 shape = RoundedCornerShape(16.dp)
             )
         }
@@ -788,7 +789,7 @@ fun MusicPlayScreen(
         val minThresholdDb by viewModel.minThresholdDb.collectAsStateWithLifecycle()
         val maxThresholdDb by viewModel.maxThresholdDb.collectAsStateWithLifecycle()
 
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showEffectsDialog = false },
             title = { Text(stringResource(R.string.play_effects_title), color = TextPrimary) },
             text = {
@@ -915,7 +916,7 @@ fun MusicPlayScreen(
                 TextButton(onClick = { showEffectsDialog = false }) { Text(stringResource(R.string.common_done), color = LocalAccentColor.current) }
             },
             dismissButton = {},
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -925,7 +926,7 @@ fun MusicPlayScreen(
         val duration = state.playerState.durationMs
         var startMs by remember(duration) { mutableStateOf(0f) }
         var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSliceDialog = false },
             title = { Text(stringResource(R.string.play_slice_title), color = TextPrimary) },
             text = {
@@ -956,14 +957,14 @@ fun MusicPlayScreen(
                     Text(stringResource(R.string.play_clear), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 工具箱对话框 ───────────────────────────────────
     if (showToolboxDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showToolboxDialog = false },
             title = { Text(stringResource(R.string.play_toolbox_title), color = TextPrimary) },
             text = {
@@ -1018,14 +1019,14 @@ fun MusicPlayScreen(
             dismissButton = {
                 TextButton(onClick = { showToolboxDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 双耳节拍选择对话框 ─────────────────────────────
     if (showBinauralDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBinauralDialog = false },
             title = { Text(stringResource(R.string.play_binaural_title), color = TextPrimary) },
             text = {
@@ -1078,14 +1079,14 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showBinauralDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 噪音生成选择对话框 ─────────────────────────────
     if (showNoiseDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showNoiseDialog = false },
             title = { Text(stringResource(R.string.play_noise_title), color = TextPrimary) },
             text = {
@@ -1134,14 +1135,14 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // ── 环境音选择对话框 ───────────────────────────────
     if (showAmbientDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showAmbientDialog = false },
             title = { Text(stringResource(R.string.play_ambient_title), color = TextPrimary) },
             text = {
@@ -1246,7 +1247,7 @@ fun MusicPlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }

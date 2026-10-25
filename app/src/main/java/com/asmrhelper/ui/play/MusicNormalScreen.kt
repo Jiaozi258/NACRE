@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -89,6 +88,7 @@ import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.player.HeadphonePreset
 import com.asmrhelper.player.HeadphonePresets
 import com.asmrhelper.player.V3ReverbPreset
+import com.asmrhelper.ui.components.FrostedAlertDialog
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.rememberCoverPalette
 import com.asmrhelper.ui.playlist.PlaylistViewModel
@@ -173,6 +173,9 @@ fun MusicNormalScreen(
             .fillMaxSize()
             .background(DarkSurface)
     ) {
+        // 磨砂封面背景提升到页面容器层，让上滑/下滑面板（歌词页、音效页）也共享磨砂背景，
+        // 而非露出纯色底。
+        NormalCoverBackground(coverUrl = coverUrl, accent = LocalAccentColor.current)
         VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             when (page) {
                 0 -> FullScreenLyrics(
@@ -248,7 +251,7 @@ fun MusicNormalScreen(
 
     // ── 更多菜单（与沉浸模式一致 + 写歌评）─────────────────
     if (showMenuDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showMenuDialog = false },
             title = { Text(stringResource(R.string.menu_title), color = TextPrimary) },
             text = {
@@ -305,7 +308,7 @@ fun MusicNormalScreen(
     if (showQueueDialog) {
         val playlist = state.playerState.playlist
         val currentIndex = state.playerState.playlistIndex
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showQueueDialog = false },
             title = { Text(stringResource(R.string.menu_queue), color = TextPrimary) },
             text = {
@@ -354,7 +357,7 @@ fun MusicNormalScreen(
     // ── 定时 ───────────────────────────────────────────
     if (showTimerDialog) {
         var minutes by remember { mutableStateOf(30) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showTimerDialog = false },
             title = { Text(stringResource(R.string.play_sleep_timer), color = TextPrimary) },
             text = {
@@ -393,7 +396,7 @@ fun MusicNormalScreen(
             "qq" -> stringResource(R.string.source_qq)
             else -> stringResource(R.string.song_info_source_local)
         }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSongInfoDialog = false },
             title = { Text(stringResource(R.string.song_info_title), color = TextPrimary) },
             text = {
@@ -416,7 +419,7 @@ fun MusicNormalScreen(
 
     // ── 歌词偏移 ───────────────────────────────────────
     if (showLyricOffsetDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricOffsetDialog = false },
             title = { Text(stringResource(R.string.lyric_offset_title), color = TextPrimary) },
             text = {
@@ -449,7 +452,7 @@ fun MusicNormalScreen(
 
     // ── 歌词副文本 ─────────────────────────────────────
     if (showLyricCaptionDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricCaptionDialog = false },
             title = { Text(stringResource(R.string.lyric_caption_title), color = TextPrimary) },
             text = {
@@ -482,7 +485,7 @@ fun MusicNormalScreen(
 
     // ── 背景 ───────────────────────────────────────────
     if (showBackgroundDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBackgroundDialog = false },
             title = { Text(stringResource(R.string.menu_background), color = TextPrimary) },
             text = {
@@ -518,7 +521,7 @@ fun MusicNormalScreen(
 
     // ── 音质 ───────────────────────────────────────────
     if (showQualityDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showQualityDialog = false },
             title = { Text(stringResource(R.string.menu_quality), color = TextPrimary) },
             text = {
@@ -558,7 +561,7 @@ fun MusicNormalScreen(
     // ── 歌词编辑 ───────────────────────────────────────
     if (showLyricsEditDialog) {
         var lyricText by remember(showLyricsEditDialog) { mutableStateOf(rawLyricsText) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showLyricsEditDialog = false },
             title = { Text(stringResource(R.string.play_lyrics_title), color = TextPrimary) },
             text = {
@@ -592,7 +595,7 @@ fun MusicNormalScreen(
     if (showSongNoteDialog) {
         val key = songKey
         var note by remember(key) { mutableStateOf(key?.let { songNotes[it] } ?: "") }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSongNoteDialog = false },
             title = { Text(stringResource(R.string.menu_song_note), color = TextPrimary) },
             text = {
@@ -635,7 +638,7 @@ fun MusicNormalScreen(
     if (showPlaylistDialog) {
         val playlists by playlistViewModel.playlists.collectAsStateWithLifecycle()
         val audio = currentAudio
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showPlaylistDialog = false },
             title = { Text(stringResource(R.string.play_add_to_playlist), color = TextPrimary) },
             text = {
@@ -678,7 +681,7 @@ fun MusicNormalScreen(
 
     // ── 工具箱（精简版）────────────────────────────────
     if (showToolboxDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showToolboxDialog = false },
             title = { Text(stringResource(R.string.play_toolbox_title), color = TextPrimary) },
             text = {
@@ -727,7 +730,7 @@ fun MusicNormalScreen(
         val duration = state.playerState.durationMs
         var startMs by remember(duration) { mutableStateOf(0f) }
         var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSliceDialog = false },
             title = { Text(stringResource(R.string.play_slice_title), color = TextPrimary) },
             text = {
@@ -882,7 +885,6 @@ private fun NormalModeContent(
 ) {
     val accent = LocalAccentColor.current
     Box(modifier = Modifier.fillMaxSize()) {
-        NormalCoverBackground(coverUrl = coverUrl, accent = accent)
         Column(
             modifier = Modifier
                 .fillMaxSize()

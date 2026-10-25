@@ -39,7 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.asmrhelper.R
-import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.FrostedContent
+import com.asmrhelper.ui.theme.FrostedSurface
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
@@ -88,13 +89,14 @@ fun AsmrDropdownMenu(
                     enter = fadeIn() + slideInVertically { -it / 4 },
                     exit = fadeOut() + slideOutVertically { -it / 4 }
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .width(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(DarkSurfaceVariant)
-                            .padding(4.dp)
-                    ) {
+                    FrostedContent {
+                        Column(
+                            modifier = Modifier
+                                .width(200.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(FrostedSurface)
+                                .padding(4.dp)
+                        ) {
                         // Header row with title
                         Row(
                             modifier = Modifier
@@ -127,6 +129,7 @@ fun AsmrDropdownMenu(
                             if (index < items.lastIndex) {
                                 HorizontalDivider(color = TextSecondary.copy(alpha = 0.2f))
                             }
+                        }
                         }
                     }
                 }

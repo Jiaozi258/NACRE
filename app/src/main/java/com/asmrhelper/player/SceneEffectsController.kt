@@ -102,54 +102,56 @@ class SceneEffectsController @Inject constructor(
     /** 应用场景预设（只控制混响/低音；响度由 [setLoudnessGain] 独立控制） */
     fun applyScene(scene: SceneEffect) {
         _currentScene.value = scene
+        // 先关闭、再设参数、最后开启：避免「开启后再跳参数」在切换瞬间产生爆音/电流声。
+        reverb?.let { it.enabled = false }
+        bassBoost?.let { it.enabled = false }
         when (scene) {
             SceneEffect.NONE -> {
-                reverb?.let { it.enabled = false }
-                bassBoost?.let { it.enabled = false }
+                // 保持关闭即可
             }
             SceneEffect.BLANKET -> {
                 // 被窝声：低音增强 + 小房间混响（闷声包裹感）
                 bassBoost?.apply {
-                    enabled = true
                     setStrength(700.toShort())
+                    enabled = true
                 }
                 reverb?.apply {
-                    enabled = true
                     preset = PresetReverb.PRESET_SMALLROOM
+                    enabled = true
                 }
             }
             SceneEffect.DISTORTED -> {
                 // 失真声：低音增强 + 无混响（颗粒感）
                 bassBoost?.apply {
-                    enabled = true
                     setStrength(500.toShort())
+                    enabled = true
                 }
                 reverb?.let { it.enabled = false }
             }
             SceneEffect.CONCERT -> {
                 // 演唱会：大厅混响
                 reverb?.apply {
-                    enabled = true
                     preset = PresetReverb.PRESET_LARGEHALL
+                    enabled = true
                 }
                 bassBoost?.apply {
-                    enabled = true
                     setStrength(300.toShort())
+                    enabled = true
                 }
             }
             SceneEffect.BATHROOM -> {
                 // 浴室：小房间混响
                 reverb?.apply {
-                    enabled = true
                     preset = PresetReverb.PRESET_SMALLROOM
+                    enabled = true
                 }
                 bassBoost?.let { it.enabled = false }
             }
             SceneEffect.THEATER -> {
                 // 影院：中型厅混响
                 reverb?.apply {
-                    enabled = true
                     preset = PresetReverb.PRESET_MEDIUMHALL
+                    enabled = true
                 }
                 bassBoost?.let { it.enabled = false }
             }
@@ -167,8 +169,13 @@ class SceneEffectsController @Inject constructor(
     private fun applyLoudness() {
         val gain = _loudnessGain.value
         loudness?.apply {
-            enabled = gain > 0
-            if (gain > 0) setTargetGain(gain)
+            if (gain > 0) {
+                // 先设目标增益再开启，避免开启后增益跳变产生爆音
+                setTargetGain(gain)
+                enabled = true
+            } else {
+                enabled = false
+            }
         }
     }
 

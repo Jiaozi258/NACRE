@@ -93,7 +93,8 @@ class V3ReverbController @Inject constructor(
                 return
             }
             val p = paramsOf(preset)
-            r.enabled = true
+            // 先关闭、再设参数、最后开启：避免开启后参数逐个跳变产生爆音/电流声。
+            r.enabled = false
             r.setRoomLevel(p.roomLevel.toShort())
             r.setRoomHFLevel(p.roomHFLevel.toShort())
             r.setDecayTime(p.decayTime)
@@ -104,6 +105,7 @@ class V3ReverbController @Inject constructor(
             r.setReverbDelay(p.reverbDelay)
             r.setDiffusion(p.diffusion.toShort())
             r.setDensity(p.density.toShort())
+            r.enabled = true
         } catch (_: Exception) {
             r.enabled = false
         }
@@ -111,11 +113,12 @@ class V3ReverbController @Inject constructor(
 
     private fun paramsOf(preset: V3ReverbPreset): V3Params = when (preset) {
         V3ReverbPreset.NONE -> V3Params(0, 0, 0, 1000, 0, 0, 0, 0, 1000, 1000)
-        V3ReverbPreset.STUDIO -> V3Params(-2200, -2600, 300, 400, -1200, 10, -1800, 20, 800, 900)
-        V3ReverbPreset.CHAMBER -> V3Params(-2600, -3000, 400, 500, -1600, 8, -2000, 15, 700, 800)
-        V3ReverbPreset.HALL -> V3Params(-1800, -2200, 1200, 600, -900, 30, -1400, 40, 900, 1000)
-        V3ReverbPreset.CATHEDRAL -> V3Params(-1400, -1800, 3200, 700, -700, 50, -1000, 60, 1000, 1000)
-        V3ReverbPreset.PLATE -> V3Params(-2000, -1600, 600, 900, -600, 5, -1500, 10, 1000, 1000)
+        // 空间感参数整体上调（较原版更靠近 0 dB / 更长衰减），让各预设差异更明显、可闻。
+        V3ReverbPreset.STUDIO -> V3Params(-1200, -1400, 250, 500, -800, 5, -1200, 15, 800, 800)
+        V3ReverbPreset.CHAMBER -> V3Params(-1000, -1200, 450, 600, -700, 8, -1000, 12, 750, 850)
+        V3ReverbPreset.HALL -> V3Params(-500, -700, 1500, 600, -400, 25, -700, 35, 900, 1000)
+        V3ReverbPreset.CATHEDRAL -> V3Params(-250, -500, 3500, 700, -300, 40, -500, 50, 1000, 1000)
+        V3ReverbPreset.PLATE -> V3Params(-700, -400, 700, 900, -500, 5, -900, 8, 1000, 1000)
     }
 
     private fun release() {

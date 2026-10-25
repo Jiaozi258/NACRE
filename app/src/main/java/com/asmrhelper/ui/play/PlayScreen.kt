@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -92,6 +91,7 @@ import com.asmrhelper.R
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.player.BinauralPreset
 import com.asmrhelper.ui.components.AsmrDropdownMenu
+import com.asmrhelper.ui.components.FrostedAlertDialog
 import com.asmrhelper.ui.components.HypnosisBackground
 import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.components.MenuItem
@@ -102,6 +102,7 @@ import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.ErrorRed
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.FrostedSurface
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
@@ -578,7 +579,7 @@ fun PlayScreen(
         var showCustomPicker by remember { mutableStateOf(false) }
         var showPomodoroCustom by remember { mutableStateOf(false) }
 
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showTimerDialog = false },
             title = {
                 Text(stringResource(R.string.play_timer_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
@@ -703,14 +704,14 @@ fun PlayScreen(
                     Text(stringResource(R.string.common_cancel), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // 双耳节拍选择对话框
     if (showBinauralDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBinauralDialog = false },
             title = {
                 Text(
@@ -792,14 +793,14 @@ fun PlayScreen(
                     Text(stringResource(R.string.common_close), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // 噪音类型选择对话框
     if (showNoiseDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showNoiseDialog = false },
             title = { Text(stringResource(R.string.play_noise_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
@@ -858,14 +859,14 @@ fun PlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showNoiseDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
 
     // 环境音选择对话框
     if (showAmbientDialog) {
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showAmbientDialog = false },
             title = { Text(stringResource(R.string.play_ambient_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
@@ -1026,7 +1027,7 @@ fun PlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showAmbientDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -1035,7 +1036,7 @@ fun PlayScreen(
     if (showSceneDialog) {
         var sceneName by remember { mutableStateOf("") }
         var sceneTab by remember { mutableIntStateOf(0) } // 0=save, 1=load
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showSceneDialog = false },
             title = { Text(stringResource(R.string.play_scene_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
@@ -1141,7 +1142,7 @@ fun PlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showSceneDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -1149,7 +1150,7 @@ fun PlayScreen(
     // 书签管理对话框
     if (showBookmarkDialog) {
         var newBookmarkName by remember { mutableStateOf("") }
-        AlertDialog(
+        FrostedAlertDialog(
             onDismissRequest = { showBookmarkDialog = false },
             title = { Text(stringResource(R.string.play_bookmark_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium) },
             text = {
@@ -1223,7 +1224,7 @@ fun PlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showBookmarkDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }

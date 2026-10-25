@@ -1,6 +1,7 @@
 package com.asmrhelper.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -75,9 +76,32 @@ val ControlWhite: Color @Composable @ReadOnlyComposable get() = LocalAppColors.c
 val ErrorRed: Color @Composable @ReadOnlyComposable get() = LocalAppColors.current.errorRed
 val SuccessGreen: Color @Composable @ReadOnlyComposable get() = LocalAppColors.current.successGreen
 
-/** 透明磨砂质感开关：开启后菜单/对话框改用半透明玻璃面，而非不透明卡片。 */
+/** 透明磨砂质感开关：开启后菜单/对话框/面板改用白色磨砂玻璃面。 */
 val LocalFrostedGlass = staticCompositionLocalOf { false }
 
-/** 菜单/对话框表面色：开启磨砂质感时为半透明玻璃，否则为不透明 surface。 */
+/**
+ * 磨砂玻璃表面色：白色磨砂（高不透明度，保证文字不重叠）。
+ *
+ * 之前的实现是 `DarkSurface.copy(alpha = 0.55f)`，本质上只是「提高透明度」，
+ * 深色背景上的白字会与透出的封面/界面重叠。这里改为高不透明度的白色磨砂，
+ * 与 [FrostedContent] 搭配后，磨砂面上的文字自动切换为深色，形成真正的
+ * 浅色磨砂玻璃卡片（iOS 风格），而非单纯透明。
+ */
 val FrostedSurface: Color @Composable @ReadOnlyComposable get() =
-    if (LocalFrostedGlass.current) DarkSurface.copy(alpha = 0.55f) else DarkSurface
+    if (LocalFrostedGlass.current) Color(0xFFF2F2F7).copy(alpha = 0.92f) else DarkSurface
+
+/**
+ * 磨砂玻璃内容容器：开启磨砂质感后，向内容注入浅色语义色（[LightAppColors]），
+ * 使白色磨砂面上的 [TextPrimary] / [TextSecondary] 等自动变为深色，保证可读。
+ * 未开启磨砂时原样渲染内容。
+ */
+@Composable
+fun FrostedContent(content: @Composable () -> Unit) {
+    if (LocalFrostedGlass.current) {
+        CompositionLocalProvider(LocalAppColors provides LightAppColors) {
+            content()
+        }
+    } else {
+        content()
+    }
+}
