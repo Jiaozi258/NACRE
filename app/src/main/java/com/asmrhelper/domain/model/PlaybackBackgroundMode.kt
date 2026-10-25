@@ -4,5 +4,6 @@ package com.asmrhelper.domain.model
 enum class PlaybackBackgroundMode {
     BLURRED_COVER,  // 虚化封面（默认）
     FOLIA_DUOTONE,  // Folia 双色油画漫游（概念复刻）
-    SYSTEM_SOLID    // 跟随系统深浅纯色
+    SYSTEM_SOLID,   // 跟随系统深浅纯色
+    CUSTOM_IMAGE    // 自定义图片（背景图库上传/选用，可模糊化）
 }

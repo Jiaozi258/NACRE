@@ -158,4 +158,28 @@ interface SettingsRepository {
     // 隐藏的模块 id 集合（DiscoverModule.*），默认空 = 全显示
     fun getDiscoverHiddenModules(): Flow<Set<String>>
     suspend fun setDiscoverModuleHidden(module: String, hidden: Boolean)
+
+    // ── 外观与主题：背景图模糊化 ───────────────────────────
+    // 上传/选用的背景图片是否模糊化处理（默认关闭）
+    fun getBlurBackgroundImage(): Flow<Boolean>
+    suspend fun setBlurBackgroundImage(enabled: Boolean)
+
+    // ── 个人偏好：自动播放 ────────────────────────────────
+    // 打开软件后自动续播上次的歌曲（默认关闭）
+    fun getAutoPlayEnabled(): Flow<Boolean>
+    suspend fun setAutoPlayEnabled(enabled: Boolean)
+
+    // ── 个人偏好：从最近任务清除时结束进程 ─────────────────
+    // 开启后从最近任务划掉 NACRE 时主动结束进程（默认关闭）
+    fun getKillOnTaskRemoved(): Flow<Boolean>
+    suspend fun setKillOnTaskRemoved(enabled: Boolean)
+
+    // ── 无障碍：显示大小缩放 ──────────────────────────────
+    // UI 整体缩放系数（1.0 = 100%，默认 1.0）
+    fun getDisplayScale(): Flow<Float>
+    suspend fun setDisplayScale(scale: Float)
+
+    // ── 个人偏好：隐藏状态栏 ──────────────────────────────
+    fun getHideStatusBar(): Flow<Boolean>
+    suspend fun setHideStatusBar(enabled: Boolean)
 }

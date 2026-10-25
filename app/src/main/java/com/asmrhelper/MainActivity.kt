@@ -12,13 +12,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Density
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import com.asmrhelper.player.PlayerManager
 import com.asmrhelper.domain.repository.SettingsRepository
 import com.asmrhelper.ui.navigation.AsmrNavHost
 import com.asmrhelper.ui.theme.ASMRHelperTheme
@@ -37,6 +42,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var playerManager: PlayerManager
 
     /** Android 13+ requires runtime permission for notifications. Without this,
      *  the foreground service notification is silently suppressed by the system. */
@@ -59,6 +67,11 @@ class MainActivity : ComponentActivity() {
         CrashHandler.showLastCrash(this)
         intent?.let { handleShareIntent(it) }
         handleShortcutIntent(intent)
+
+        // 「自动播放」：打开软件后（非旋转等重建）自动续播上次的歌曲（默认关闭）
+        if (savedInstanceState == null) {
+            playerManager.autoPlayIfEnabled()
+        }
 
         // Request notification permission on Android 13+ if not yet granted.
         // Only on first creation, not on recreation (rotation etc.) to avoid
@@ -83,6 +96,12 @@ class MainActivity : ComponentActivity() {
                 .collectAsState(initial = 0)
             val darkTheme = ThemeMode.entries.getOrElse(themeModeOrdinal) { ThemeMode.FOLLOW_SYSTEM }
                 .resolveDark(isSystemInDarkTheme())
+            // 无障碍：显示大小缩放（默认 1.0 = 100%）
+            val displayScale by settingsRepository.getDisplayScale()
+                .collectAsState(initial = 1f)
+            // 个人偏好：隐藏状态栏
+            val hideStatusBar by settingsRepository.getHideStatusBar()
+                .collectAsState(initial = false)
 
             // 浅色模式下系统状态栏/导航栏图标需切为深色，否则白图标压在浅灰背景上不可见
             val view = LocalView.current
@@ -92,12 +111,25 @@ class MainActivity : ComponentActivity() {
                     WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !darkTheme
                         isAppearanceLightNavigationBars = !darkTheme
+                        if (hideStatusBar) {
+                            hide(WindowInsetsCompat.Type.statusBars())
+                        } else {
+                            show(WindowInsetsCompat.Type.statusBars())
+                        }
                     }
                 }
             }
 
             ASMRHelperTheme(preset = preset, darkTheme = darkTheme, customFontFamily = fontFamily) {
-                AsmrNavHost()
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(
+                        density.density * displayScale,
+                        density.fontScale * displayScale
+                    )
+                ) {
+                    AsmrNavHost()
+                }
             }
         }
     }

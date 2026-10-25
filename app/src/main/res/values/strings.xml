@@ -131,6 +131,12 @@
     <string name="bg_blurred_cover">模糊封面</string>
     <string name="bg_folia_duotone">双色流动</string>
     <string name="bg_system_solid">纯色（跟随系统）</string>
+    <string name="bg_custom_image">自定义图片</string>
+    <string name="bg_custom_image_desc">从背景图库上传/选择图片作为背景</string>
+    <string name="menu_bluetooth_devices">蓝牙设备</string>
+    <string name="bluetooth_device_title">当前连接的蓝牙设备</string>
+    <string name="bluetooth_none_connected">未连接耳机或音响</string>
+    <string name="bluetooth_unnamed_device">音频设备</string>
     <string name="quality_standard">标准</string>
     <string name="quality_higher">较高</string>
     <string name="quality_excellent">极高</string>
@@ -514,6 +520,15 @@
     <string name="settings_open_failed">无法打开设置: %s</string>
     <string name="settings_lock_screen">锁屏界面展示</string>
     <string name="settings_lock_screen_desc">开启后，音频信息将在锁屏界面可见</string>
+    <string name="settings_auto_play">自动播放</string>
+    <string name="settings_auto_play_desc">打开软件后自动续播上次播放的歌曲</string>
+    <string name="settings_kill_on_task_removed">清除最近任务时结束进程</string>
+    <string name="settings_kill_on_task_removed_desc">从最近任务划掉 NACRE 时主动结束进程并停止后台播放</string>
+    <string name="settings_hide_status_bar">隐藏状态栏</string>
+    <string name="settings_hide_status_bar_desc">开启后隐藏顶部状态栏，界面更沉浸</string>
+    <string name="settings_accessibility_section">无障碍</string>
+    <string name="settings_display_scale">显示大小缩放</string>
+    <string name="settings_display_scale_desc">调整整个应用界面的显示大小，当前 %d%%</string>
 
     <!-- 播放设置 -->
     <string name="settings_default_loop">默认循环模式</string>
@@ -559,6 +574,8 @@
     <string name="settings_theme_accent">主题色彩</string>
     <string name="settings_bg_contrast">反差模式</string>
     <string name="settings_bg_contrast_desc">用主题色的反色调替代「主题色+专辑色」混合，让歌词更显眼</string>
+    <string name="settings_blur_bg_image">背景图模糊化</string>
+    <string name="settings_blur_bg_image_desc">开启后上传/选用的背景图片将做模糊处理</string>
     <string name="theme_apple_blue">苹果蓝</string>
     <string name="theme_purple">暗夜紫</string>
     <string name="theme_warm_orange">暖橙</string>

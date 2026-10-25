@@ -219,6 +219,17 @@ class PlayerManager @Inject constructor(
     fun shouldResumeAfterProcessDeath(): Boolean =
         isRememberPlaybackEnabled() && prefs.getBoolean("was_playing", false)
 
+    /** 「自动播放」：打开软件后若设置开启且有上次播放记录，则自动续播（默认关闭）。
+     *  已在播放或无可续播记录（如关闭了记忆播放）则无动作。 */
+    fun autoPlayIfEnabled() {
+        if (!settingsPrefs.getBoolean("auto_play", false)) return
+        if (mainPlayer.isPlaying) return
+        if (_state.value.currentAudio == null) return
+        // 正常播放需前台服务保活；resumeLastPlayback 自身不启动服务（服务重启路径专用）
+        startMediaServiceIfNeeded()
+        resumeLastPlayback()
+    }
+
     init {
         // ── 音频焦点：统一管理主播放器与环境音的暂停/恢复 ──
         audioFocusManager.onFocusLost = {

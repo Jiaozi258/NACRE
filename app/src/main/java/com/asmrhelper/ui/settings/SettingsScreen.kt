@@ -52,6 +52,8 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -270,6 +272,10 @@ private fun PersonalPreferenceScreen(
     val showNotification by viewModel.showNotification.collectAsStateWithLifecycle()
     val showOnLockScreen by viewModel.showOnLockScreen.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
+    val autoPlayEnabled by viewModel.autoPlayEnabled.collectAsStateWithLifecycle()
+    val killOnTaskRemoved by viewModel.killOnTaskRemoved.collectAsStateWithLifecycle()
+    val hideStatusBar by viewModel.hideStatusBar.collectAsStateWithLifecycle()
+    val displayScale by viewModel.displayScale.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // Android 13+ requires runtime permission for notifications
@@ -488,6 +494,122 @@ private fun PersonalPreferenceScreen(
                         }
                     }
                 }
+            }
+        }
+        SectionSpacer()
+
+        SectionHeader(icon = Icons.Filled.PlayArrow, title = stringResource(R.string.settings_auto_play))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            // 自动播放
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_auto_play), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_auto_play_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Switch(
+                    checked = autoPlayEnabled,
+                    onCheckedChange = { viewModel.setAutoPlayEnabled(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
+            }
+
+            HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+            // 清除最近任务时结束进程
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_kill_on_task_removed), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_kill_on_task_removed_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Switch(
+                    checked = killOnTaskRemoved,
+                    onCheckedChange = { viewModel.setKillOnTaskRemoved(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
+            }
+        }
+
+        SectionSpacer()
+
+        SectionHeader(icon = Icons.Filled.Accessibility, title = stringResource(R.string.settings_accessibility_section))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            // 显示大小缩放
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                var scaleValue by remember { mutableStateOf(displayScale) }
+                Text(stringResource(R.string.settings_display_scale), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.settings_display_scale_desc, (scaleValue * 100).toInt()),
+                    color = TextHint,
+                    fontSize = 12.sp
+                )
+                Slider(
+                    value = scaleValue,
+                    onValueChange = { scaleValue = it },
+                    onValueChangeFinished = { viewModel.setDisplayScale(scaleValue) },
+                    valueRange = 0.8f..1.3f,
+                    steps = 9,
+                    colors = SliderDefaults.colors(
+                        thumbColor = LocalAccentColor.current,
+                        activeTrackColor = LocalAccentColor.current,
+                        inactiveTrackColor = DarkSurfaceVariant
+                    )
+                )
+            }
+
+            HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+            // 隐藏状态栏
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_hide_status_bar), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_hide_status_bar_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Switch(
+                    checked = hideStatusBar,
+                    onCheckedChange = { viewModel.setHideStatusBar(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
             }
         }
     }
@@ -974,6 +1096,7 @@ private fun AppearanceSettingsScreen(
     val themePresetOrdinal by viewModel.themePresetOrdinal.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
+    val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
     val appFontPath by viewModel.appFontPath.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showFontDialog by remember { mutableStateOf(false) }
@@ -1153,6 +1276,36 @@ private fun AppearanceSettingsScreen(
                 Switch(
                     checked = backgroundContrastMode,
                     onCheckedChange = { viewModel.setBackgroundContrastMode(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_blur_bg_image), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_blur_bg_image_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = blurBackgroundImage,
+                    onCheckedChange = { viewModel.setBlurBackgroundImage(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = LocalAccentColor.current,
                         checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)

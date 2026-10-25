@@ -60,6 +60,11 @@ class AudioDeviceMonitor @Inject constructor(
         registered = false
     }
 
+    /** 当前连接的头戴/蓝牙/有线耳机与蓝牙音响（供「蓝牙设备」弹窗列出）。 */
+    fun connectedAudioDevices(): List<AudioDeviceInfo> =
+        audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .filter { it.isHeadphoneOrBluetooth() }
+
     private fun AudioDeviceInfo.isHeadphoneOrBluetooth(): Boolean =
         when (type) {
             AudioDeviceInfo.TYPE_WIRED_HEADPHONES,

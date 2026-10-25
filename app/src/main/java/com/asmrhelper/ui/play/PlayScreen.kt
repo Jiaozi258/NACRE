@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -118,6 +119,7 @@ fun PlayScreen(
     onNavigateToSleepJournal: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
     var showTimerDialog by remember { mutableStateOf(false) }
     var breathingGuide by remember { mutableStateOf(false) }
     var showBinauralDialog by remember { mutableStateOf(false) }
@@ -173,7 +175,9 @@ fun PlayScreen(
                             .crossfade(true)
                             .build(),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(if (blurBackgroundImage) Modifier.blur(40.dp) else Modifier),
                         contentScale = ContentScale.Crop
                     )
                     Box(

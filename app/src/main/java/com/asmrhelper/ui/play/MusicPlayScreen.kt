@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -106,6 +110,7 @@ fun MusicPlayScreen(
     val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
     val backgroundMode by viewModel.backgroundMode.collectAsStateWithLifecycle()
     val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
+    val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
     val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
@@ -135,6 +140,7 @@ fun MusicPlayScreen(
     var showQueueDialog by remember { mutableStateOf(false) }
     var showLyricOffsetDialog by remember { mutableStateOf(false) }
     var showLyricCaptionDialog by remember { mutableStateOf(false) }
+    var showBluetoothDialog by remember { mutableStateOf(false) }
 
     // 模式按钮 2 秒无交互淡出；任意触摸递增 tick 重置计时（Review Focus #6）。
     var interactionTick by remember { mutableIntStateOf(0) }
@@ -162,7 +168,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath)
+        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath, customImagePath = state.backgroundImagePath, blurCustomImage = blurBackgroundImage)
 
         Column(
             modifier = Modifier
@@ -224,6 +230,7 @@ fun MusicPlayScreen(
                 onSeek = { viewModel.seekTo(it) },
                 onToggleFavorite = { viewModel.toggleFavorite() },
                 onCycleLoopMode = { viewModel.cycleLoopMode() },
+                onBluetoothDevices = { showBluetoothDialog = true },
                 onMore = { showMoreDialog = true },
                 onAddToPlaylist = { showPlaylistDialog = true },
                 timerActive = state.timerActive,
@@ -423,11 +430,61 @@ fun MusicPlayScreen(
                             )
                         }
                     }
+                    // 自定义图片：同 ASMR 界面，跳转背景图库上传/选用
+                    val customSelected = backgroundMode == PlaybackBackgroundMode.CUSTOM_IMAGE
+                    TextButton(
+                        onClick = {
+                            viewModel.setBackgroundMode(PlaybackBackgroundMode.CUSTOM_IMAGE)
+                            showBackgroundDialog = false
+                            onNavigateToBackground()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (customSelected) "▶ ${stringResource(R.string.bg_custom_image)}" else stringResource(R.string.bg_custom_image),
+                            color = if (customSelected) LocalAccentColor.current else TextSecondary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             },
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showBackgroundDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 蓝牙设备对话框 ─────────────────────────────────
+    if (showBluetoothDialog) {
+        val devices = remember { viewModel.connectedAudioDevices() }
+        AlertDialog(
+            onDismissRequest = { showBluetoothDialog = false },
+            title = { Text(stringResource(R.string.bluetooth_device_title), color = TextPrimary) },
+            text = {
+                if (devices.isEmpty()) {
+                    Text(stringResource(R.string.bluetooth_none_connected), color = TextSecondary, fontSize = 14.sp)
+                } else {
+                    Column {
+                        devices.forEach { name ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)
+                            ) {
+                                Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = LocalAccentColor.current, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text(name, color = TextPrimary, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showBluetoothDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
             containerColor = DarkSurface,
             shape = RoundedCornerShape(16.dp)

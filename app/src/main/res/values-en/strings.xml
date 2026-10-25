@@ -131,6 +131,12 @@
     <string name="bg_blurred_cover">Blurred cover</string>
     <string name="bg_folia_duotone">Duotone flow</string>
     <string name="bg_system_solid">Solid (follow system)</string>
+    <string name="bg_custom_image">Custom image</string>
+    <string name="bg_custom_image_desc">Upload or pick an image from the background gallery</string>
+    <string name="menu_bluetooth_devices">Bluetooth devices</string>
+    <string name="bluetooth_device_title">Connected Bluetooth devices</string>
+    <string name="bluetooth_none_connected">No headphones or speakers connected</string>
+    <string name="bluetooth_unnamed_device">Audio device</string>
     <string name="quality_standard">Standard</string>
     <string name="quality_higher">Higher</string>
     <string name="quality_excellent">Excellent</string>
@@ -514,6 +520,15 @@
     <string name="settings_open_failed">Cannot open settings: %s</string>
     <string name="settings_lock_screen">Show on lock screen</string>
     <string name="settings_lock_screen_desc">When enabled, audio info is shown on the lock screen</string>
+    <string name="settings_auto_play">Auto play</string>
+    <string name="settings_auto_play_desc">Automatically resume the last played track when the app opens</string>
+    <string name="settings_kill_on_task_removed">End process when cleared from recents</string>
+    <string name="settings_kill_on_task_removed_desc">Actively end the process and stop background playback when NACRE is swiped away from recents</string>
+    <string name="settings_hide_status_bar">Hide status bar</string>
+    <string name="settings_hide_status_bar_desc">Hide the top status bar for a more immersive view</string>
+    <string name="settings_accessibility_section">Accessibility</string>
+    <string name="settings_display_scale">Display size scale</string>
+    <string name="settings_display_scale_desc">Adjust the display size of the whole interface, currently %d%%</string>
 
     <!-- Playback settings -->
     <string name="settings_default_loop">Default loop mode</string>
@@ -559,6 +574,8 @@
     <string name="settings_theme_accent">Accent color</string>
     <string name="settings_bg_contrast">Contrast mode</string>
     <string name="settings_bg_contrast_desc">Use the inverse of the theme color instead of the theme + album blend, making lyrics stand out</string>
+    <string name="settings_blur_bg_image">Blur background image</string>
+    <string name="settings_blur_bg_image_desc">Blur uploaded/selected background images</string>
     <string name="theme_apple_blue">Apple blue</string>
     <string name="theme_purple">Night purple</string>
     <string name="theme_warm_orange">Warm orange</string>

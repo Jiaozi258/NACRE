@@ -152,8 +152,18 @@ class AsmrMediaService : Service() {
      * system "keep the service running — the user wants background playback."
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // Intentionally do NOT call stopSelf() or super.onTaskRemoved()
-        android.util.Log.i("AsmrMedia", "Task removed — service staying alive for playback")
+        // 「从最近任务清除时结束进程」：开启后主动停止服务并结束进程；
+        // 关闭则保持现状（后台播放不中断，不主动终止）。
+        val killOnTaskRemoved = getSharedPreferences("asmr_settings", MODE_PRIVATE)
+            .getBoolean("kill_on_task_removed", false)
+        if (killOnTaskRemoved) {
+            android.util.Log.i("AsmrMedia", "Task removed — killing process per setting")
+            stopAndDestroy()
+            android.os.Process.killProcess(android.os.Process.myPid())
+        } else {
+            // Intentionally do NOT call stopSelf() or super.onTaskRemoved()
+            android.util.Log.i("AsmrMedia", "Task removed — service staying alive for playback")
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

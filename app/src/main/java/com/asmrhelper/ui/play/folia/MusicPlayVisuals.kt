@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
@@ -113,7 +114,9 @@ fun AudioReactiveBackground(
     mode: PlaybackBackgroundMode = PlaybackBackgroundMode.BLURRED_COVER,
     modifier: Modifier = Modifier,
     contrastMode: Boolean = false,
-    coverFilePath: String? = null
+    coverFilePath: String? = null,
+    customImagePath: String? = null,
+    blurCustomImage: Boolean = false
 ) {
     val accent = LocalAccentColor.current
     val fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL
@@ -246,6 +249,29 @@ fun AudioReactiveBackground(
             PlaybackBackgroundMode.SYSTEM_SOLID -> {
                 val solid = if (isSystemInDarkTheme()) Color(0xFF1C1C1E) else Color(0xFFF2F2F7)
                 Box(modifier = Modifier.fillMaxSize().background(solid))
+            }
+            PlaybackBackgroundMode.CUSTOM_IMAGE -> {
+                // 自定义图片：无图时回退纯色；按「背景图模糊化」设置决定是否模糊
+                if (customImagePath != null) {
+                    AsyncImage(
+                        model = customImagePath,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { scaleX = scale; scaleY = scale }
+                            .then(if (blurCustomImage) Modifier.blur(40.dp) else Modifier)
+                    )
+                    // 暗色遮罩保证前景歌词/文字可读
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.35f))
+                    )
+                } else {
+                    val solid = if (isSystemInDarkTheme()) Color(0xFF1C1C1E) else Color(0xFFF2F2F7)
+                    Box(modifier = Modifier.fillMaxSize().background(solid))
+                }
             }
         }
 
@@ -511,6 +537,7 @@ fun FoliaCommandBar(
     onSeek: (Long) -> Unit,
     onToggleFavorite: () -> Unit,
     onCycleLoopMode: () -> Unit,
+    onBluetoothDevices: () -> Unit = {},
     onMore: () -> Unit,
     onAddToPlaylist: (() -> Unit)? = null,
     timerActive: Boolean = false,
@@ -683,6 +710,7 @@ fun FoliaCommandBar(
                                     )
                                 }
                             }
+                            Spacer(Modifier.weight(1f))
                             Row(
                                 modifier = Modifier
                                     .clickable { interactionTick++; onCycleLoopMode() }
@@ -692,6 +720,10 @@ fun FoliaCommandBar(
                                 Icon(loopIcon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(loopLabel, color = TextSecondary, fontSize = 12.sp)
+                            }
+                            // 蓝牙设备入口：显示当前连接的耳机/音响
+                            IconButton(onClick = { interactionTick++; onBluetoothDevices() }) {
+                                Icon(Icons.Filled.Bluetooth, contentDescription = stringResource(R.string.menu_bluetooth_devices), tint = TextSecondary)
                             }
                         }
                     }

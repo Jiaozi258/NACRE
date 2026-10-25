@@ -3,6 +3,7 @@ package com.asmrhelper.ui.play
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.asmrhelper.R
 import com.asmrhelper.domain.model.AmbientSource
 import com.asmrhelper.domain.model.Audio
 import com.asmrhelper.domain.model.BackgroundImage
@@ -33,6 +34,7 @@ import com.asmrhelper.player.HapticFeedbackController
 import com.asmrhelper.player.NoiseGenerator
 import com.asmrhelper.player.NoiseType
 import com.asmrhelper.player.PlayerEvent
+import com.asmrhelper.player.AudioDeviceMonitor
 import com.asmrhelper.player.PlayerManager
 import com.asmrhelper.player.SpatialAudioController
 import com.asmrhelper.player.SpatialMode
@@ -138,7 +140,8 @@ class PlayViewModel @Inject constructor(
     private val equalizerController: EqualizerController,
     private val sceneEffectsController: SceneEffectsController,
     private val musicSourceManager: MusicSourceManager,
-    private val remoteFavoritesStore: RemoteFavoritesStore
+    private val remoteFavoritesStore: RemoteFavoritesStore,
+    private val audioDeviceMonitor: AudioDeviceMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -204,6 +207,16 @@ class PlayViewModel @Inject constructor(
     fun setBackgroundContrastMode(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setBackgroundContrastMode(enabled) }
     }
+
+    // ── 外观：上传/选用背景图模糊化（应用于 ASMR 与 MUSIC 的自定义背景） ──
+    val blurBackgroundImage: StateFlow<Boolean> = settingsRepository.getBlurBackgroundImage()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** 当前连接的耳机/蓝牙音响名称列表（供 MUSIC 播放页「蓝牙设备」弹窗展示）。 */
+    fun connectedAudioDevices(): List<String> =
+        audioDeviceMonitor.connectedAudioDevices()
+            .map { it.productName?.toString()?.takeIf { n -> n.isNotBlank() } ?: context.getString(R.string.bluetooth_unnamed_device) }
+            .distinct()
 
     // ── 音质（仅影响下一首） ────────────────────────────
     val playbackQuality: StateFlow<PlaybackQuality> = settingsRepository.getPlaybackQuality()

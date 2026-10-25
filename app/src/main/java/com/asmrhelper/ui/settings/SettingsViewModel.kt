@@ -319,6 +319,43 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setRememberPlayback(enabled) }
     }
 
+    // ── 个人偏好：自动播放 / 结束进程 ───────────────────
+
+    val autoPlayEnabled: StateFlow<Boolean> = settingsRepository.getAutoPlayEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val killOnTaskRemoved: StateFlow<Boolean> = settingsRepository.getKillOnTaskRemoved()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val hideStatusBar: StateFlow<Boolean> = settingsRepository.getHideStatusBar()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setAutoPlayEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAutoPlayEnabled(enabled) }
+    }
+    fun setKillOnTaskRemoved(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setKillOnTaskRemoved(enabled) }
+    }
+    fun setHideStatusBar(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideStatusBar(enabled) }
+    }
+
+    // ── 无障碍：显示大小缩放 ───────────────────────────
+
+    val displayScale: StateFlow<Float> = settingsRepository.getDisplayScale()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1f)
+
+    fun setDisplayScale(scale: Float) {
+        viewModelScope.launch { settingsRepository.setDisplayScale(scale) }
+    }
+
+    // ── 外观与主题：背景图模糊化 ───────────────────────
+
+    val blurBackgroundImage: StateFlow<Boolean> = settingsRepository.getBlurBackgroundImage()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setBlurBackgroundImage(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setBlurBackgroundImage(enabled) }
+    }
+
     // ── 播放设置 ──────────────────────────────────────
 
     val bluetoothStopEnabled: StateFlow<Boolean> = settingsRepository.getBluetoothStopEnabled()

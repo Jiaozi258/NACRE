@@ -543,4 +543,49 @@ class SettingsRepositoryImpl @Inject constructor(
         prefs.edit().putStringSet("discover_hidden_modules", set).apply()
         _discoverHiddenModules.value = set
     }
+
+    // ── 外观与主题：背景图模糊化 ───────────────────────────
+
+    private val _blurBackgroundImage = MutableStateFlow(prefs.getBoolean("blur_bg_image", false))
+    override fun getBlurBackgroundImage(): Flow<Boolean> = _blurBackgroundImage
+    override suspend fun setBlurBackgroundImage(enabled: Boolean) {
+        prefs.edit().putBoolean("blur_bg_image", enabled).apply()
+        _blurBackgroundImage.value = enabled
+    }
+
+    // ── 个人偏好：自动播放 ────────────────────────────────
+
+    private val _autoPlayEnabled = MutableStateFlow(prefs.getBoolean("auto_play", false))
+    override fun getAutoPlayEnabled(): Flow<Boolean> = _autoPlayEnabled
+    override suspend fun setAutoPlayEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_play", enabled).apply()
+        _autoPlayEnabled.value = enabled
+    }
+
+    // ── 个人偏好：从最近任务清除时结束进程 ─────────────────
+
+    private val _killOnTaskRemoved = MutableStateFlow(prefs.getBoolean("kill_on_task_removed", false))
+    override fun getKillOnTaskRemoved(): Flow<Boolean> = _killOnTaskRemoved
+    override suspend fun setKillOnTaskRemoved(enabled: Boolean) {
+        prefs.edit().putBoolean("kill_on_task_removed", enabled).apply()
+        _killOnTaskRemoved.value = enabled
+    }
+
+    // ── 无障碍：显示大小缩放 ──────────────────────────────
+
+    private val _displayScale = MutableStateFlow(prefs.getFloat("display_scale", 1.0f))
+    override fun getDisplayScale(): Flow<Float> = _displayScale
+    override suspend fun setDisplayScale(scale: Float) {
+        prefs.edit().putFloat("display_scale", scale).apply()
+        _displayScale.value = scale
+    }
+
+    // ── 个人偏好：隐藏状态栏 ──────────────────────────────
+
+    private val _hideStatusBar = MutableStateFlow(prefs.getBoolean("hide_status_bar", false))
+    override fun getHideStatusBar(): Flow<Boolean> = _hideStatusBar
+    override suspend fun setHideStatusBar(enabled: Boolean) {
+        prefs.edit().putBoolean("hide_status_bar", enabled).apply()
+        _hideStatusBar.value = enabled
+    }
 }
