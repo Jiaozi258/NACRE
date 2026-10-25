@@ -301,6 +301,13 @@
     <string name="play_pause">Pause</string>
     <string name="play_play">Play</string>
     <string name="play_toggle_style">Toggle player style</string>
+    <string name="play_switch_immersive">Switch to immersive</string>
+    <string name="play_lyrics_back">Swipe down to return</string>
+    <string name="eq_headphone_presets">Headphone presets</string>
+    <string name="eq_reverb">Reverb</string>
+    <string name="song_note_title">Song notes</string>
+    <string name="song_note_hint">Write a note about this song (up to 400 characters)</string>
+    <string name="song_note_empty">No note yet</string>
 
     <!-- Common -->
     <string name="common_remove">Remove</string>

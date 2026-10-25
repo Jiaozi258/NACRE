@@ -21,6 +21,7 @@ import com.asmrhelper.data.local.db.entity.BookmarkEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
+import com.asmrhelper.data.SongNoteStore
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.music.RemoteFavoritesStore
 import com.asmrhelper.data.music.isRemoteSong
@@ -40,6 +41,7 @@ import com.asmrhelper.player.SpatialAudioController
 import com.asmrhelper.player.SpatialMode
 import com.asmrhelper.player.SceneEffectsController
 import com.asmrhelper.player.SceneEffect
+import com.asmrhelper.player.EqPreset
 import com.asmrhelper.util.LrcParser
 import com.asmrhelper.util.LyricCaptionMode
 import com.asmrhelper.util.LyricMode
@@ -141,7 +143,8 @@ class PlayViewModel @Inject constructor(
     private val sceneEffectsController: SceneEffectsController,
     private val musicSourceManager: MusicSourceManager,
     private val remoteFavoritesStore: RemoteFavoritesStore,
-    private val audioDeviceMonitor: AudioDeviceMonitor
+    private val audioDeviceMonitor: AudioDeviceMonitor,
+    private val songNoteStore: SongNoteStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -163,6 +166,11 @@ class PlayViewModel @Inject constructor(
     // Equalizer
     val eqBandLevels: StateFlow<List<Float>> = equalizerController.bandLevels
     val eqEnabled: StateFlow<Boolean> = equalizerController.isEnabled
+    val eqCurrentPreset: StateFlow<String> = equalizerController.currentPreset
+
+    // 歌曲笔记（歌评）：以歌曲稳定标识为键
+    val songNotes: StateFlow<Map<String, String>> = songNoteStore.notes
+    fun setSongNote(songKey: String, note: String) = songNoteStore.setNote(songKey, note)
 
     // Ambiance effects (particles + glow)
     private val _ambianceEffectsEnabled = MutableStateFlow(true)
@@ -640,6 +648,7 @@ class PlayViewModel @Inject constructor(
 
     fun setEqBand(band: Int, levelDb: Float) = equalizerController.setBandLevel(band, levelDb)
     fun resetEq() = equalizerController.reset()
+    fun applyEqPreset(preset: EqPreset) = equalizerController.applyPreset(preset)
 
     fun togglePlayPause() {
         val event = if (uiState.value.playerState.isPlaying) PlayerEvent.Pause

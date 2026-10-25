@@ -301,6 +301,13 @@
     <string name="play_pause">暂停</string>
     <string name="play_play">播放</string>
     <string name="play_toggle_style">切换播放界面</string>
+    <string name="play_switch_immersive">切回沉浸模式</string>
+    <string name="play_lyrics_back">下滑返回</string>
+    <string name="eq_headphone_presets">耳机适配</string>
+    <string name="eq_reverb">混响</string>
+    <string name="song_note_title">歌曲笔记</string>
+    <string name="song_note_hint">写下这首歌的歌评（最多 400 字）</string>
+    <string name="song_note_empty">暂无歌评</string>
 
     <!-- 通用 -->
     <string name="common_remove">移除</string>
