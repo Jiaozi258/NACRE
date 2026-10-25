@@ -734,6 +734,9 @@
     <!-- 音源平台 -->
     <string name="source_netease">网易云音乐</string>
     <string name="source_qq">QQ音乐</string>
+    <string name="source_bilibili">哔哩哔哩</string>
+    <string name="bili_popular">B站热门</string>
+    <string name="login_bili_use_web">B站登录请使用网页登录（支持扫码与账号密码）</string>
 
     <!-- 通知 -->
     <string name="notif_channel_name">ASMR 播放</string>

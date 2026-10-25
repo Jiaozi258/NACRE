@@ -1,6 +1,7 @@
 package com.asmrhelper.data.music
 
 import android.content.Context
+import com.asmrhelper.data.music.bilibili.BilibiliMusicSource
 import com.asmrhelper.data.music.netease.NeteaseMusicSource
 import com.asmrhelper.data.music.qq.QqMusicSource
 import com.asmrhelper.domain.model.music.MusicLogin
@@ -71,6 +72,13 @@ class MusicSourceManager @Inject constructor(
             }
             when (config.id) {
                 "qq" -> QqMusicSource(
+                    client = okHttpClient,
+                    context = context,
+                    persistedCookie = login.cookie,
+                    persistedNickname = login.nickname,
+                    onLoginChanged = onLoginChanged
+                )
+                "bilibili" -> BilibiliMusicSource(
                     client = okHttpClient,
                     context = context,
                     persistedCookie = login.cookie,
