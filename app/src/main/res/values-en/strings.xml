@@ -22,6 +22,7 @@
 
     <!-- Menu -->
     <string name="menu_title">Menu</string>
+    <string name="menu_song_note">Write a note</string>
 
     <!-- Settings hub -->
     <string name="settings_title">Settings</string>

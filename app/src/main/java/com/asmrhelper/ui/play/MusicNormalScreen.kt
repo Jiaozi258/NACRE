@@ -24,23 +24,28 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -48,6 +53,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +63,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -72,13 +80,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.asmrhelper.R
+import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.LoopMode
+import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.domain.model.PlaybackMode
+import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.player.HeadphonePreset
 import com.asmrhelper.player.HeadphonePresets
 import com.asmrhelper.player.SceneEffect
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.rememberCoverPalette
+import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
 import com.asmrhelper.ui.theme.LocalAccentColor
@@ -86,6 +98,8 @@ import com.asmrhelper.ui.theme.Radius
 import com.asmrhelper.ui.theme.TextHint
 import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
+import com.asmrhelper.util.LyricCaptionMode
+import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.currentLineIndex
 import kotlinx.coroutines.launch
@@ -105,6 +119,7 @@ fun MusicNormalScreen(
     onToggleMusicStyle: () -> Unit = {}
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
+    val playlistViewModel: PlaylistViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
@@ -115,6 +130,11 @@ fun MusicNormalScreen(
     val eqCurrentPreset by viewModel.eqCurrentPreset.collectAsStateWithLifecycle()
     val currentSceneEffect by viewModel.currentSceneEffect.collectAsStateWithLifecycle()
     val songNotes by viewModel.songNotes.collectAsStateWithLifecycle()
+    val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
+    val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
+    val rawLyricsText by viewModel.rawLyricsText.collectAsStateWithLifecycle()
+    val backgroundMode by viewModel.backgroundMode.collectAsStateWithLifecycle()
+    val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
 
     val currentAudio = state.playerState.currentAudio
     val coverUrl = currentAudio?.coverUrl
@@ -131,6 +151,20 @@ fun MusicNormalScreen(
     val pagerState = rememberPagerState(initialPage = 1) { 3 }
     val scope = rememberCoroutineScope()
     val backToDefault: () -> Unit = { scope.launch { pagerState.animateScrollToPage(1) } }
+
+    var showMenuDialog by remember { mutableStateOf(false) }
+    var showQueueDialog by remember { mutableStateOf(false) }
+    var showTimerDialog by remember { mutableStateOf(false) }
+    var showSongInfoDialog by remember { mutableStateOf(false) }
+    var showLyricOffsetDialog by remember { mutableStateOf(false) }
+    var showLyricCaptionDialog by remember { mutableStateOf(false) }
+    var showBackgroundDialog by remember { mutableStateOf(false) }
+    var showQualityDialog by remember { mutableStateOf(false) }
+    var showLyricsEditDialog by remember { mutableStateOf(false) }
+    var showSongNoteDialog by remember { mutableStateOf(false) }
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var showToolboxDialog by remember { mutableStateOf(false) }
+    var showSliceDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -168,7 +202,8 @@ fun MusicNormalScreen(
                     onSeek = { viewModel.seekTo(it) },
                     onToggleFavorite = { viewModel.toggleFavorite() },
                     onCycleLoopMode = { viewModel.cycleLoopMode() },
-                    onToggleMusicStyle = onToggleMusicStyle
+                    onMenu = { showMenuDialog = true },
+                    onQueue = { showQueueDialog = true }
                 )
                 2 -> EqualizerPanel(
                     audio = currentAudio,
@@ -194,6 +229,523 @@ fun MusicNormalScreen(
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
                 .padding(top = 6.dp, start = 16.dp)
+        )
+    }
+
+    // ── 更多菜单（与沉浸模式一致 + 写歌评）─────────────────
+    if (showMenuDialog) {
+        AlertDialog(
+            onDismissRequest = { showMenuDialog = false },
+            title = { Text(stringResource(R.string.menu_title), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(520.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    MenuRow(stringResource(R.string.menu_timer), "") { showMenuDialog = false; showTimerDialog = true }
+                    MenuRow(stringResource(R.string.menu_song_info), "") { showMenuDialog = false; showSongInfoDialog = true }
+                    MenuRow(stringResource(R.string.menu_lyric_offset), "") { showMenuDialog = false; showLyricOffsetDialog = true }
+                    MenuRow(
+                        stringResource(R.string.lyric_caption_title),
+                        stringResource(
+                            when (lyricCaptionMode) {
+                                LyricCaptionMode.TRANSLATION -> R.string.lyric_caption_translation
+                                LyricCaptionMode.ROMANIZATION -> R.string.lyric_caption_romanization
+                                LyricCaptionMode.OFF -> R.string.lyric_caption_off
+                            }
+                        )
+                    ) { showMenuDialog = false; showLyricCaptionDialog = true }
+                    MenuRow(
+                        stringResource(R.string.lyric_mode),
+                        stringResource(if (lyricsMode == LyricMode.SCROLL) R.string.lyric_mode_scroll else R.string.lyric_mode_jump)
+                    ) {
+                        viewModel.setLyricsMode(if (lyricsMode == LyricMode.SCROLL) LyricMode.JUMP else LyricMode.SCROLL)
+                    }
+                    MenuRow(stringResource(R.string.menu_queue), "") { showMenuDialog = false; showQueueDialog = true }
+                    MenuRow(stringResource(R.string.menu_background), "") { showMenuDialog = false; showBackgroundDialog = true }
+                    MenuRow(stringResource(R.string.menu_quality), "") { showMenuDialog = false; showQualityDialog = true }
+                    MenuRow(stringResource(R.string.menu_lyrics_edit), "") { showMenuDialog = false; showLyricsEditDialog = true }
+                    MenuRow(stringResource(R.string.menu_song_note), "") { showMenuDialog = false; showSongNoteDialog = true }
+                    if (currentAudio?.isRemoteSong() != true) {
+                        MenuRow(stringResource(R.string.menu_playlist), "") { showMenuDialog = false; showPlaylistDialog = true }
+                    }
+                    MenuRow(stringResource(R.string.menu_toolbox), "") { showMenuDialog = false; showToolboxDialog = true }
+                    MenuRow(stringResource(R.string.menu_effects), "") {
+                        showMenuDialog = false
+                        scope.launch { pagerState.animateScrollToPage(2) }
+                    }
+                    MenuRow(stringResource(R.string.menu_slice), "") { showMenuDialog = false; showSliceDialog = true }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showMenuDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 播放队列 ───────────────────────────────────────
+    if (showQueueDialog) {
+        val playlist = state.playerState.playlist
+        val currentIndex = state.playerState.playlistIndex
+        AlertDialog(
+            onDismissRequest = { showQueueDialog = false },
+            title = { Text(stringResource(R.string.menu_queue), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(360.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (playlist.isEmpty()) {
+                        Text(stringResource(R.string.queue_empty), color = TextHint, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    playlist.forEachIndexed { index, audio ->
+                        val isCurrent = index == currentIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.playPlaylist(playlist.drop(index)) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isCurrent) "▶ ${audio.title}" else audio.title,
+                                color = if (isCurrent) LocalAccentColor.current else TextPrimary,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            audio.artist.takeIf { it.isNotBlank() }?.let {
+                                Text(it, color = TextHint, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showQueueDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 定时 ───────────────────────────────────────────
+    if (showTimerDialog) {
+        var minutes by remember { mutableStateOf(30) }
+        AlertDialog(
+            onDismissRequest = { showTimerDialog = false },
+            title = { Text(stringResource(R.string.play_sleep_timer), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.play_timer_stop_after, minutes), color = TextSecondary, fontSize = 14.sp)
+                    Slider(
+                        value = minutes.toFloat(),
+                        onValueChange = { minutes = it.toInt() },
+                        valueRange = 5f..120f,
+                        steps = 22,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.setTimerSeconds(minutes * 60); showTimerDialog = false }) {
+                    Text(stringResource(R.string.common_start), color = LocalAccentColor.current)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelTimer(); showTimerDialog = false }) {
+                    Text(stringResource(R.string.play_cancel_timer), color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌曲信息 ───────────────────────────────────────
+    if (showSongInfoDialog) {
+        val audio = currentAudio
+        val publishTime = audio?.publishTime ?: 0L
+        val sourceText = when (audio?.sourceId) {
+            "netease" -> stringResource(R.string.source_netease)
+            "qq" -> stringResource(R.string.source_qq)
+            else -> stringResource(R.string.song_info_source_local)
+        }
+        AlertDialog(
+            onDismissRequest = { showSongInfoDialog = false },
+            title = { Text(stringResource(R.string.song_info_title), color = TextPrimary) },
+            text = {
+                Column {
+                    SongInfoRow(stringResource(R.string.song_info_title), audio?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_artist), audio?.artist?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_album), audio?.album?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown))
+                    SongInfoRow(stringResource(R.string.song_info_source), sourceText)
+                    SongInfoRow(stringResource(R.string.song_info_publish), if (publishTime > 0L) formatDate(publishTime) else stringResource(R.string.common_unknown))
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showSongInfoDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌词偏移 ───────────────────────────────────────
+    if (showLyricOffsetDialog) {
+        AlertDialog(
+            onDismissRequest = { showLyricOffsetDialog = false },
+            title = { Text(stringResource(R.string.lyric_offset_title), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.lyric_offset_value, lyricOffsetMs), color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = lyricOffsetMs.toFloat(),
+                        onValueChange = { viewModel.setLyricOffsetMs(it.toInt()) },
+                        valueRange = -2000f..2000f,
+                        steps = 39,
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { viewModel.setLyricOffsetMs(0); showLyricOffsetDialog = false }) {
+                        Text(stringResource(R.string.lyric_offset_reset), color = TextSecondary)
+                    }
+                    TextButton(onClick = { showLyricOffsetDialog = false }) {
+                        Text(stringResource(R.string.common_close), color = TextSecondary)
+                    }
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌词副文本 ─────────────────────────────────────
+    if (showLyricCaptionDialog) {
+        AlertDialog(
+            onDismissRequest = { showLyricCaptionDialog = false },
+            title = { Text(stringResource(R.string.lyric_caption_title), color = TextPrimary) },
+            text = {
+                Column {
+                    val options = listOf(
+                        LyricCaptionMode.OFF to R.string.lyric_caption_off,
+                        LyricCaptionMode.TRANSLATION to R.string.lyric_caption_translation,
+                        LyricCaptionMode.ROMANIZATION to R.string.lyric_caption_romanization
+                    )
+                    options.forEach { (mode, labelRes) ->
+                        val selected = lyricCaptionMode == mode
+                        TextButton(onClick = { viewModel.setLyricCaptionMode(mode); showLyricCaptionDialog = false }) {
+                            Text(
+                                text = if (selected) "▶ ${stringResource(labelRes)}" else stringResource(labelRes),
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showLyricCaptionDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 背景 ───────────────────────────────────────────
+    if (showBackgroundDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackgroundDialog = false },
+            title = { Text(stringResource(R.string.menu_background), color = TextPrimary) },
+            text = {
+                Column {
+                    listOf(
+                        PlaybackBackgroundMode.BLURRED_COVER to stringResource(R.string.bg_blurred_cover),
+                        PlaybackBackgroundMode.FOLIA_DUOTONE to stringResource(R.string.bg_folia_duotone),
+                        PlaybackBackgroundMode.SYSTEM_SOLID to stringResource(R.string.bg_system_solid)
+                    ).forEach { (mode, label) ->
+                        val selected = backgroundMode == mode
+                        TextButton(
+                            onClick = { viewModel.setBackgroundMode(mode); showBackgroundDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selected) "▶ $label" else label,
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 14.sp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showBackgroundDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 音质 ───────────────────────────────────────────
+    if (showQualityDialog) {
+        AlertDialog(
+            onDismissRequest = { showQualityDialog = false },
+            title = { Text(stringResource(R.string.menu_quality), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.quality_hint), color = TextHint, fontSize = 12.sp)
+                    Spacer(Modifier.height(6.dp))
+                    listOf(
+                        PlaybackQuality.STANDARD to stringResource(R.string.quality_standard),
+                        PlaybackQuality.HIGHER to stringResource(R.string.quality_higher),
+                        PlaybackQuality.EXCELLENT to stringResource(R.string.quality_excellent),
+                        PlaybackQuality.LOSSLESS to stringResource(R.string.quality_lossless)
+                    ).forEach { (quality, label) ->
+                        val selected = playbackQuality == quality
+                        TextButton(
+                            onClick = { viewModel.setPlaybackQuality(quality); showQualityDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selected) "▶ $label" else label,
+                                color = if (selected) LocalAccentColor.current else TextSecondary,
+                                fontSize = 14.sp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showQualityDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 歌词编辑 ───────────────────────────────────────
+    if (showLyricsEditDialog) {
+        var lyricText by remember(showLyricsEditDialog) { mutableStateOf(rawLyricsText) }
+        AlertDialog(
+            onDismissRequest = { showLyricsEditDialog = false },
+            title = { Text(stringResource(R.string.play_lyrics_title), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.play_lyrics_format_hint), color = TextHint, fontSize = 12.sp)
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = lyricText,
+                        onValueChange = { lyricText = it },
+                        placeholder = { Text(stringResource(R.string.play_lyrics_example), color = TextHint) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.saveLyrics(lyricText); showLyricsEditDialog = false }) {
+                    Text(stringResource(R.string.play_save_lyrics), color = LocalAccentColor.current)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLyricsEditDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 写歌评 ─────────────────────────────────────────
+    if (showSongNoteDialog) {
+        val key = songKey
+        var note by remember(key) { mutableStateOf(key?.let { songNotes[it] } ?: "") }
+        AlertDialog(
+            onDismissRequest = { showSongNoteDialog = false },
+            title = { Text(stringResource(R.string.menu_song_note), color = TextPrimary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { if (it.length <= 400) note = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(Radius.sm),
+                        placeholder = { Text(stringResource(R.string.song_note_hint), color = TextHint) },
+                        minLines = 4,
+                        maxLines = 6,
+                        enabled = key != null,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = LocalAccentColor.current,
+                            unfocusedBorderColor = DarkSurfaceVariant,
+                            cursorColor = LocalAccentColor.current
+                        )
+                    )
+                    Text("${note.length}/400", color = TextHint, fontSize = 11.sp, modifier = Modifier.align(Alignment.End))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { key?.let { viewModel.setSongNote(it, note) }; showSongNoteDialog = false },
+                    enabled = key != null
+                ) { Text(stringResource(R.string.common_save), color = LocalAccentColor.current) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSongNoteDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 添加到歌单 ─────────────────────────────────────
+    if (showPlaylistDialog) {
+        val playlists by playlistViewModel.playlists.collectAsStateWithLifecycle()
+        val audio = currentAudio
+        AlertDialog(
+            onDismissRequest = { showPlaylistDialog = false },
+            title = { Text(stringResource(R.string.play_add_to_playlist), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(260.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (playlists.isEmpty()) {
+                        Text(stringResource(R.string.play_no_playlists), color = TextHint, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    playlists.forEach { pl ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    audio?.let { a ->
+                                        if (a.isRemoteSong()) playlistViewModel.addRemoteAudioToPlaylist(pl.id, a)
+                                        else playlistViewModel.addAudioToPlaylist(pl.id, a.id)
+                                    }
+                                    showPlaylistDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(pl.name, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPlaylistDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 工具箱（精简版）────────────────────────────────
+    if (showToolboxDialog) {
+        AlertDialog(
+            onDismissRequest = { showToolboxDialog = false },
+            title = { Text(stringResource(R.string.play_toolbox_title), color = TextPrimary) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .height(300.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    val tools = listOf(
+                        Triple(stringResource(R.string.play_ambient), state.playerState.isBackgroundPlaying) { viewModel.toggleBackground() },
+                        Triple(stringResource(R.string.play_haptic_feedback), state.hapticEnabled) { viewModel.toggleHaptic() },
+                        Triple(stringResource(R.string.play_fade_out), false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
+                        Triple(stringResource(R.string.play_stop_fully), false) { showToolboxDialog = false; viewModel.stopPlayback() }
+                    )
+                    tools.forEach { (label, active, action) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { action() }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (active) "▶ $label" else label,
+                                color = if (active) LocalAccentColor.current else TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showToolboxDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 切片 ───────────────────────────────────────────
+    if (showSliceDialog) {
+        val duration = state.playerState.durationMs
+        var startMs by remember(duration) { mutableStateOf(0f) }
+        var endMs by remember(duration) { mutableStateOf(duration.toFloat()) }
+        AlertDialog(
+            onDismissRequest = { showSliceDialog = false },
+            title = { Text(stringResource(R.string.play_slice_title), color = TextPrimary) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.play_slice_start, formatTime(startMs.toLong())), color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = startMs,
+                        onValueChange = { startMs = it.coerceAtMost(endMs) },
+                        valueRange = 0f..(duration.takeIf { it > 0 } ?: 1L).toFloat(),
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                    Text(stringResource(R.string.play_slice_end, formatTime(endMs.toLong())), color = TextSecondary, fontSize = 13.sp)
+                    Slider(
+                        value = endMs,
+                        onValueChange = { endMs = it.coerceAtLeast(startMs) },
+                        valueRange = 0f..(duration.takeIf { it > 0 } ?: 1L).toFloat(),
+                        colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.setSlice(startMs.toLong(), endMs.toLong()); showSliceDialog = false }) {
+                    Text(stringResource(R.string.play_slice_start_action), color = LocalAccentColor.current)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.clearSlice(); showSliceDialog = false }) {
+                    Text(stringResource(R.string.play_clear), color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }
@@ -268,98 +820,103 @@ private fun NormalModeContent(
     onSeek: (Long) -> Unit,
     onToggleFavorite: () -> Unit,
     onCycleLoopMode: () -> Unit,
-    onToggleMusicStyle: () -> Unit
+    onMenu: () -> Unit,
+    onQueue: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp)
-    ) {
-        // 顶部留白给左上角模式按钮，避免歌名与其重叠
-        Spacer(Modifier.height(40.dp))
+    val accent = LocalAccentColor.current
+    Box(modifier = Modifier.fillMaxSize()) {
+        NormalCoverBackground(coverUrl = coverUrl, accent = accent)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp)
+        ) {
+            // 顶部留白给左上角模式按钮，避免歌名与其重叠
+            Spacer(Modifier.height(40.dp))
 
-        Text(
-            text = title,
-            color = TextPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-        artist?.takeIf { it.isNotBlank() }?.let {
             Text(
-                text = it,
-                color = TextSecondary,
-                fontSize = 13.sp,
+                text = title,
+                color = TextPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp)
+                modifier = Modifier.fillMaxWidth()
             )
-        }
+            artist?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp)
+                )
+            }
 
-        // 中上：封面（下方叠一层取色晕影，渐变到页面底色，弱化封面边缘切线）
-        val accent = LocalAccentColor.current
-        val coverGlow = rememberCoverPalette(
-            coverUrl,
-            fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL,
-            fallbackSecondary = accent.toArgb().toLong() and 0xFFFFFFFFL
-        ).first
-        val glowColor = Color(coverGlow.toInt())
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.42f),
-            contentAlignment = Alignment.Center
-        ) {
+            // 中上：封面（下方叠一层取色晕影，渐变到页面底色，弱化封面边缘切线）
+            val coverGlow = rememberCoverPalette(
+                coverUrl,
+                fallbackPrimary = accent.toArgb().toLong() and 0xFFFFFFFFL,
+                fallbackSecondary = accent.toArgb().toLong() and 0xFFFFFFFFL
+            ).first
+            val glowColor = Color(coverGlow.toInt())
             Box(
                 modifier = Modifier
-                    .size(320.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(glowColor.copy(alpha = 0.35f), Color.Transparent)
+                    .fillMaxWidth()
+                    .weight(0.46f),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(320.dp)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(glowColor.copy(alpha = 0.35f), Color.Transparent)
+                            )
                         )
-                    )
+                )
+                AlbumCover(coverUrl, coverTitle)
+            }
+
+            // 中下上：滚动歌词（默认不可拖动，占比减小让位控制栏）
+            ScrollingLyrics(
+                lines = lines,
+                progressMs = progressMs,
+                fontSize = lyricsFontSize,
+                lineSpacing = lyricsLineSpacing,
+                alignment = lyricsAlignment,
+                draggable = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.26f)
             )
-            AlbumCover(coverUrl, coverTitle)
+
+            // 中下下：控制组件
+            NormalControls(
+                isPlaying = isPlaying,
+                progress = progress,
+                durationMs = durationMs,
+                isFavorite = isFavorite,
+                loopMode = loopMode,
+                onPlayPause = onPlayPause,
+                onPrevious = onPrevious,
+                onNext = onNext,
+                onSeek = onSeek,
+                onToggleFavorite = onToggleFavorite,
+                onCycleLoopMode = onCycleLoopMode,
+                onMenu = onMenu,
+                onQueue = onQueue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            )
         }
-
-        // 中下上二分之一：滚动歌词（默认不可拖动）
-        ScrollingLyrics(
-            lines = lines,
-            progressMs = progressMs,
-            fontSize = lyricsFontSize,
-            lineSpacing = lyricsLineSpacing,
-            alignment = lyricsAlignment,
-            draggable = false,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.34f)
-        )
-
-        // 中下下二分之一：控制组件
-        NormalControls(
-            isPlaying = isPlaying,
-            progress = progress,
-            durationMs = durationMs,
-            isFavorite = isFavorite,
-            loopMode = loopMode,
-            onPlayPause = onPlayPause,
-            onPrevious = onPrevious,
-            onNext = onNext,
-            onSeek = onSeek,
-            onToggleFavorite = onToggleFavorite,
-            onCycleLoopMode = onCycleLoopMode,
-            onToggleMusicStyle = onToggleMusicStyle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
     }
 }
 
@@ -656,7 +1213,8 @@ private fun ScrollingLyrics(
     }
 }
 
-/** 正常模式底部控制组件：进度条 + 时间，收藏 / 上一曲 / 播放暂停 / 下一曲 / 切回沉浸 / 循环。 */
+/** 正常模式底部控制组件：细进度条 + 时间，收藏 / 上一曲 / 播放暂停 / 下一曲 / 队列 / 菜单 / 循环。 */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NormalControls(
     isPlaying: Boolean,
@@ -670,21 +1228,28 @@ private fun NormalControls(
     onSeek: (Long) -> Unit,
     onToggleFavorite: () -> Unit,
     onCycleLoopMode: () -> Unit,
-    onToggleMusicStyle: () -> Unit,
+    onMenu: () -> Unit,
+    onQueue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accent = LocalAccentColor.current
+    // 纯白循环图标：NONE 用 Repeat 降透明（不再用 Stop 方块），其余单曲/列表/随机
     val loopIcon = when (loopMode) {
-        LoopMode.NONE -> Icons.Filled.Stop
         LoopMode.SINGLE -> Icons.Filled.RepeatOne
         LoopMode.LIST -> Icons.Filled.Repeat
         LoopMode.SHUFFLE -> Icons.Filled.Shuffle
+        LoopMode.NONE -> Icons.Filled.Repeat
+    }
+    val loopTint = when (loopMode) {
+        LoopMode.NONE -> TextSecondary.copy(alpha = 0.4f)
+        else -> accent
     }
     var dragValue by remember { mutableStateOf<Float?>(null) }
     val shownValue = dragValue ?: progress.coerceIn(0f, 1f)
     val currentMs = (shownValue * durationMs).toLong()
 
     Column(modifier = modifier) {
+        // 细进度条：2dp 轨道 + 白色光晕圆点（复用沉浸模式 FoliaCommandBar 质感）
         Slider(
             value = shownValue,
             onValueChange = { dragValue = it },
@@ -697,7 +1262,37 @@ private fun NormalControls(
                 thumbColor = accent,
                 activeTrackColor = accent,
                 inactiveTrackColor = DarkSurfaceVariant.copy(alpha = 0.6f)
-            )
+            ),
+            thumb = {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(accent.copy(alpha = 0.30f), Color.Transparent)
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .size(10.dp)
+                            .background(Color.White, CircleShape)
+                    )
+                }
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    modifier = Modifier.height(2.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = accent,
+                        activeTrackColor = accent,
+                        inactiveTrackColor = DarkSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                )
+            }
         )
         Row(
             modifier = Modifier
@@ -736,15 +1331,14 @@ private fun NormalControls(
             IconButton(onClick = onNext) {
                 Icon(Icons.Filled.SkipNext, contentDescription = stringResource(R.string.play_next_track), tint = TextPrimary)
             }
-            IconButton(onClick = onToggleMusicStyle) {
-                Icon(
-                    imageVector = Icons.Filled.SwapVert,
-                    contentDescription = stringResource(R.string.play_toggle_style),
-                    tint = TextSecondary
-                )
+            IconButton(onClick = onQueue) {
+                Icon(Icons.Filled.QueueMusic, contentDescription = stringResource(R.string.menu_queue), tint = TextSecondary)
+            }
+            IconButton(onClick = onMenu) {
+                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.menu_title), tint = TextSecondary)
             }
             IconButton(onClick = onCycleLoopMode) {
-                Icon(loopIcon, contentDescription = null, tint = TextSecondary)
+                Icon(loopIcon, contentDescription = null, tint = loopTint)
             }
         }
     }
@@ -755,4 +1349,76 @@ private fun formatTime(ms: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%02d:%02d".format(min, sec)
+}
+
+private fun formatDate(ms: Long): String =
+    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(ms))
+
+/** 整页封面取色晕影 + 磨砂背景（封面模糊放大 + 双色调叠加）。 */
+@Composable
+private fun NormalCoverBackground(coverUrl: String?, accent: Color) {
+    val fallback = accent.toArgb().toLong() and 0xFFFFFFFFL
+    val (primaryLong, secondaryLong) = rememberCoverPalette(coverUrl, fallback, fallback)
+    val primary = Color(primaryLong.toInt())
+    val secondary = Color(secondaryLong.toInt())
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().background(primary))
+        if (!coverUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = coverUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(48.dp)
+                    .alpha(0.45f)
+            )
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            primary.copy(alpha = 0.70f),
+                            secondary.copy(alpha = 0.30f),
+                            primary.copy(alpha = 0.62f)
+                        )
+                    )
+                )
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.30f))
+                    )
+                )
+        )
+    }
+}
+
+/** 菜单行：左标签 + 可选右值，整行可点。 */
+@Composable
+private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (value.isNotEmpty()) Text(value, color = LocalAccentColor.current, fontSize = 13.sp)
+    }
+}
+
+/** 歌曲信息行：左标签固定宽度 + 右值。 */
+@Composable
+private fun SongInfoRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
+        Text(label, color = TextHint, fontSize = 13.sp, modifier = Modifier.width(72.dp))
+        Text(value, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+    }
 }

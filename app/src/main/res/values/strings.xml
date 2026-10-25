@@ -22,6 +22,7 @@
 
     <!-- 菜单 -->
     <string name="menu_title">菜单</string>
+    <string name="menu_song_note">写歌评</string>
 
     <!-- 设置首页 -->
     <string name="settings_title">设置</string>
