@@ -17,6 +17,7 @@ object SourcePresets {
     val NETEASE = SourceConfig("netease", R.string.source_netease)
     val QQ = SourceConfig("qq", R.string.source_qq)
     val BILIBILI = SourceConfig("bilibili", R.string.source_bilibili)
+    val YOUTUBE = SourceConfig("youtube", R.string.source_youtube)
 
-    val ALL = listOf(NETEASE, QQ, BILIBILI)
+    val ALL = listOf(NETEASE, QQ, BILIBILI, YOUTUBE)
 }

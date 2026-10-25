@@ -7,8 +7,8 @@ import org.junit.Test
 class SourceConfigTest {
 
     @Test
-    fun presetsContainNeteaseQqAndBilibili() {
-        assertEquals(listOf("netease", "qq", "bilibili"), SourcePresets.ALL.map { it.id })
+    fun presetsContainNeteaseQqBilibiliAndYoutube() {
+        assertEquals(listOf("netease", "qq", "bilibili", "youtube"), SourcePresets.ALL.map { it.id })
     }
 
     @Test
@@ -22,5 +22,6 @@ class SourceConfigTest {
         assertEquals(R.string.source_netease, SourcePresets.NETEASE.displayNameRes)
         assertEquals(R.string.source_qq, SourcePresets.QQ.displayNameRes)
         assertEquals(R.string.source_bilibili, SourcePresets.BILIBILI.displayNameRes)
+        assertEquals(R.string.source_youtube, SourcePresets.YOUTUBE.displayNameRes)
     }
 }

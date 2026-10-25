@@ -4,6 +4,7 @@ import android.content.Context
 import com.asmrhelper.data.music.bilibili.BilibiliMusicSource
 import com.asmrhelper.data.music.netease.NeteaseMusicSource
 import com.asmrhelper.data.music.qq.QqMusicSource
+import com.asmrhelper.data.music.youtube.YoutubeMusicSource
 import com.asmrhelper.domain.model.music.MusicLogin
 import com.asmrhelper.domain.music.MusicSource
 import com.asmrhelper.domain.music.SourceConfig
@@ -84,6 +85,10 @@ class MusicSourceManager @Inject constructor(
                     persistedCookie = login.cookie,
                     persistedNickname = login.nickname,
                     onLoginChanged = onLoginChanged
+                )
+                "youtube" -> YoutubeMusicSource(
+                    client = okHttpClient,
+                    context = context
                 )
                 else -> NeteaseMusicSource(
                     client = okHttpClient,

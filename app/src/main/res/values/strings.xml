@@ -737,6 +737,9 @@
     <string name="source_bilibili">哔哩哔哩</string>
     <string name="bili_popular">B站热门</string>
     <string name="login_bili_use_web">B站登录请使用网页登录（支持扫码与账号密码）</string>
+    <string name="source_youtube">YouTube</string>
+    <string name="youtube_trending">YouTube 热门</string>
+    <string name="login_youtube_not_supported">YouTube 暂不支持登录，当前为匿名使用</string>
 
     <!-- 通知 -->
     <string name="notif_channel_name">ASMR 播放</string>

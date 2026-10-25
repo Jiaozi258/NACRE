@@ -737,6 +737,9 @@
     <string name="source_bilibili">Bilibili</string>
     <string name="bili_popular">Popular on Bilibili</string>
     <string name="login_bili_use_web">Sign in to Bilibili via the web page (QR code or account)</string>
+    <string name="source_youtube">YouTube</string>
+    <string name="youtube_trending">Trending on YouTube</string>
+    <string name="login_youtube_not_supported">YouTube login is not supported yet (anonymous use)</string>
 
     <!-- Notification -->
     <string name="notif_channel_name">ASMR playback</string>
