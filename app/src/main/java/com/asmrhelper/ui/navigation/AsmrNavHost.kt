@@ -33,6 +33,7 @@ import com.asmrhelper.ui.discover.DiscoverScreen
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.library.LibraryScreen
 import com.asmrhelper.ui.play.MusicPlayScreen
+import com.asmrhelper.ui.play.MusicNormalScreen
 import com.asmrhelper.ui.play.PlayScreen
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
@@ -178,6 +179,11 @@ private fun PlayPage(
     val context = LocalContext.current
     val playbackMode by playViewModel.playbackMode.collectAsStateWithLifecycle()
     val mode = PlaybackMode.entries.getOrElse(playbackMode) { PlaybackMode.ASMR }
+    val musicPlayStyle by playViewModel.musicPlayStyle.collectAsStateWithLifecycle()
+    val toggleMusicStyle: () -> Unit = {
+        val next = if (musicPlayStyle == 1) 0 else 1
+        playViewModel.setMusicPlayStyle(next)
+    }
 
     // MUSIC 悬浮控制条入场动画：只在首次进入 MUSIC 播放页时播一次，
     // 子页（歌单/曲库）返回与 ASMR↔MUSIC 模式切换不重播（评审 finding #1）。
@@ -213,22 +219,37 @@ private fun PlayPage(
                                 onNavigateToSleepJournal = navigateToSleepJournal
                             )
                         } else {
-                            // MUSIC 模式：Folia 沉浸式播放页（双色调封面/可视化/居中歌词/悬浮控制）
-                            MusicPlayScreen(
-                                onNavigateToPlaylist = navigateToPlaylist,
-                                onNavigateToLibrary = navigateToLibrary,
-                                onNavigateToBackground = navigateToBackground,
-                                onNavigateToSettings = onOpenSettings,
-                                onNavigateToSlideshow = navigateToSlideshow,
-                                onNavigateToTriggerPad = navigateToTriggerPad,
-                                onNavigateToSleepJournal = navigateToSleepJournal,
-                                onToggleMode = {
-                                    val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
-                                    playViewModel.setPlaybackMode(next)
-                                },
-                                controlsEntered = musicControlsEntered,
-                                onControlsEntered = { musicControlsEntered = true }
-                            )
+                            // MUSIC 模式：沉浸/正常两种风格淡入淡出切换
+                            Crossfade(targetState = musicPlayStyle, label = "music_style") { style ->
+                                if (style == 1) {
+                                    // 正常模式：封面 + 滚动歌词 + 控制组件
+                                    MusicNormalScreen(
+                                        onToggleMode = {
+                                            val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
+                                            playViewModel.setPlaybackMode(next)
+                                        },
+                                        onToggleMusicStyle = toggleMusicStyle
+                                    )
+                                } else {
+                                    // 沉浸模式：Folia 沉浸式播放页（双色调封面/可视化/居中歌词/悬浮控制）
+                                    MusicPlayScreen(
+                                        onNavigateToPlaylist = navigateToPlaylist,
+                                        onNavigateToLibrary = navigateToLibrary,
+                                        onNavigateToBackground = navigateToBackground,
+                                        onNavigateToSettings = onOpenSettings,
+                                        onNavigateToSlideshow = navigateToSlideshow,
+                                        onNavigateToTriggerPad = navigateToTriggerPad,
+                                        onNavigateToSleepJournal = navigateToSleepJournal,
+                                        onToggleMode = {
+                                            val next = (PlaybackMode.MUSIC.ordinal + 1) % PlaybackMode.entries.size
+                                            playViewModel.setPlaybackMode(next)
+                                        },
+                                        onToggleMusicStyle = toggleMusicStyle,
+                                        controlsEntered = musicControlsEntered,
+                                        onControlsEntered = { musicControlsEntered = true }
+                                    )
+                                }
+                            }
                         }
                     }
                     // 左上角模式切换按钮：仅 ASMR 时由播放页统一叠加（常显）；

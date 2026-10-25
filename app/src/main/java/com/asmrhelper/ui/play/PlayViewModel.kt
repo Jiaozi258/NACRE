@@ -191,6 +191,14 @@ class PlayViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setPlaybackMode(mode) }
     }
 
+    // ── 播放页风格（沉浸 0 / 正常 1）───────────────────
+    val musicPlayStyle: StateFlow<Int> = settingsRepository.getMusicPlayStyle()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setMusicPlayStyle(style: Int) {
+        viewModelScope.launch { settingsRepository.setMusicPlayStyle(style) }
+    }
+
     // ── 播放页背景模式 ──────────────────────────────────
     val backgroundMode: StateFlow<PlaybackBackgroundMode> = settingsRepository.getPlaybackBackgroundMode()
         .map { runCatching { PlaybackBackgroundMode.valueOf(it) }.getOrDefault(PlaybackBackgroundMode.BLURRED_COVER) }

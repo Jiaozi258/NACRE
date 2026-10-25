@@ -98,6 +98,7 @@ fun MusicPlayScreen(
     onNavigateToTriggerPad: () -> Unit = {},
     onNavigateToSleepJournal: () -> Unit = {},
     onToggleMode: () -> Unit = {},
+    onToggleMusicStyle: () -> Unit = {},
     controlsEntered: Boolean = false,
     onControlsEntered: () -> Unit = {}
 ) {
@@ -233,6 +234,7 @@ fun MusicPlayScreen(
                 onBluetoothDevices = { showBluetoothDialog = true },
                 onMore = { showMoreDialog = true },
                 onAddToPlaylist = { showPlaylistDialog = true },
+                onToggleMusicStyle = onToggleMusicStyle,
                 timerActive = state.timerActive,
                 timerRemainingMs = state.timerRemainingMs,
                 modifier = Modifier

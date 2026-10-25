@@ -21,6 +21,9 @@ interface SettingsRepository {
     // 播放模式：0 = ASMR（默认），1 = MUSIC
     fun getPlaybackMode(): Flow<Int>
     suspend fun setPlaybackMode(mode: Int)
+    // 播放页风格：0 = 沉浸（默认），1 = 正常
+    fun getMusicPlayStyle(): Flow<Int>
+    suspend fun setMusicPlayStyle(style: Int)
     // 应用语言：0 = 跟随系统（默认），1 = 中文，2 = 英文
     fun getAppLanguage(): Flow<Int>
     suspend fun setAppLanguage(mode: Int)

@@ -300,6 +300,7 @@
     <string name="play_next_track">下一曲</string>
     <string name="play_pause">暂停</string>
     <string name="play_play">播放</string>
+    <string name="play_toggle_style">切换播放界面</string>
 
     <!-- 通用 -->
     <string name="common_remove">移除</string>

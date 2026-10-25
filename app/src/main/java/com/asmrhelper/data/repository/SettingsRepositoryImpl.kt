@@ -110,6 +110,15 @@ class SettingsRepositoryImpl @Inject constructor(
         _playbackMode.value = mode
     }
 
+    // ── 播放页风格（沉浸 / 正常）────────────────────────
+
+    private val _musicPlayStyle = MutableStateFlow(prefs.getInt("music_play_style", 0))
+    override fun getMusicPlayStyle(): Flow<Int> = _musicPlayStyle
+    override suspend fun setMusicPlayStyle(style: Int) {
+        prefs.edit().putInt("music_play_style", style).apply()
+        _musicPlayStyle.value = style
+    }
+
     // ── 应用语言 ───────────────────────────────────────
 
     private val _appLanguage = MutableStateFlow(prefs.getInt("app_language", 0))

@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -540,6 +541,7 @@ fun FoliaCommandBar(
     onBluetoothDevices: () -> Unit = {},
     onMore: () -> Unit,
     onAddToPlaylist: (() -> Unit)? = null,
+    onToggleMusicStyle: (() -> Unit)? = null,
     timerActive: Boolean = false,
     timerRemainingMs: Long = 0L,
     modifier: Modifier = Modifier
@@ -706,6 +708,15 @@ fun FoliaCommandBar(
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                                         contentDescription = stringResource(R.string.menu_playlist),
+                                        tint = TextSecondary
+                                    )
+                                }
+                            }
+                            if (onToggleMusicStyle != null) {
+                                IconButton(onClick = { interactionTick++; onToggleMusicStyle() }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.SwapVert,
+                                        contentDescription = stringResource(R.string.play_toggle_style),
                                         tint = TextSecondary
                                     )
                                 }

@@ -300,6 +300,7 @@
     <string name="play_next_track">Next</string>
     <string name="play_pause">Pause</string>
     <string name="play_play">Play</string>
+    <string name="play_toggle_style">Toggle player style</string>
 
     <!-- Common -->
     <string name="common_remove">Remove</string>
