@@ -74,3 +74,10 @@ val TextHint: Color @Composable @ReadOnlyComposable get() = LocalAppColors.curre
 val ControlWhite: Color @Composable @ReadOnlyComposable get() = LocalAppColors.current.controlWhite
 val ErrorRed: Color @Composable @ReadOnlyComposable get() = LocalAppColors.current.errorRed
 val SuccessGreen: Color @Composable @ReadOnlyComposable get() = LocalAppColors.current.successGreen
+
+/** 透明磨砂质感开关：开启后菜单/对话框改用半透明玻璃面，而非不透明卡片。 */
+val LocalFrostedGlass = staticCompositionLocalOf { false }
+
+/** 菜单/对话框表面色：开启磨砂质感时为半透明玻璃，否则为不透明 surface。 */
+val FrostedSurface: Color @Composable @ReadOnlyComposable get() =
+    if (LocalFrostedGlass.current) DarkSurface.copy(alpha = 0.55f) else DarkSurface

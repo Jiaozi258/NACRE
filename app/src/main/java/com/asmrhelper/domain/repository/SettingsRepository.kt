@@ -167,6 +167,11 @@ interface SettingsRepository {
     fun getBlurBackgroundImage(): Flow<Boolean>
     suspend fun setBlurBackgroundImage(enabled: Boolean)
 
+    // ── 外观与主题：透明磨砂质感 ───────────────────────────
+    // 开启后菜单/对话框改用半透明磨砂玻璃面（默认关闭）
+    fun getFrostedGlassEnabled(): Flow<Boolean>
+    suspend fun setFrostedGlassEnabled(enabled: Boolean)
+
     // ── 个人偏好：自动播放 ────────────────────────────────
     // 打开软件后自动续播上次的歌曲（默认关闭）
     fun getAutoPlayEnabled(): Flow<Boolean>

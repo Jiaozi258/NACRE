@@ -361,6 +361,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setBlurBackgroundImage(enabled) }
     }
 
+    // ── 外观与主题：透明磨砂质感 ───────────────────────
+
+    val frostedGlassEnabled: StateFlow<Boolean> = settingsRepository.getFrostedGlassEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setFrostedGlassEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setFrostedGlassEnabled(enabled) }
+    }
+
     // ── 播放设置 ──────────────────────────────────────
 
     val bluetoothStopEnabled: StateFlow<Boolean> = settingsRepository.getBluetoothStopEnabled()

@@ -30,6 +30,7 @@ import com.asmrhelper.ui.theme.ASMRHelperTheme
 import com.asmrhelper.ui.theme.ThemeMode
 import com.asmrhelper.ui.theme.resolveDark
 import com.asmrhelper.ui.theme.ThemePreset
+import com.asmrhelper.ui.theme.LocalFrostedGlass
 import com.asmrhelper.util.AppLocale
 import com.asmrhelper.util.AppFont
 import com.asmrhelper.util.ShareReceiver
@@ -102,6 +103,9 @@ class MainActivity : ComponentActivity() {
             // 个人偏好：隐藏状态栏
             val hideStatusBar by settingsRepository.getHideStatusBar()
                 .collectAsState(initial = false)
+            // 外观与主题：透明磨砂质感
+            val frostedGlass by settingsRepository.getFrostedGlassEnabled()
+                .collectAsState(initial = false)
 
             // 浅色模式下系统状态栏/导航栏图标需切为深色，否则白图标压在浅灰背景上不可见
             val view = LocalView.current
@@ -126,7 +130,8 @@ class MainActivity : ComponentActivity() {
                     LocalDensity provides Density(
                         density.density * displayScale,
                         density.fontScale * displayScale
-                    )
+                    ),
+                    LocalFrostedGlass provides frostedGlass
                 ) {
                     AsmrNavHost()
                 }

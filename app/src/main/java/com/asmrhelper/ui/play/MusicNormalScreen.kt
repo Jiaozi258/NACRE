@@ -93,6 +93,7 @@ import com.asmrhelper.ui.play.folia.rememberCoverPalette
 import com.asmrhelper.ui.playlist.PlaylistViewModel
 import com.asmrhelper.ui.theme.DarkSurface
 import com.asmrhelper.ui.theme.DarkSurfaceVariant
+import com.asmrhelper.ui.theme.FrostedSurface
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.Radius
 import com.asmrhelper.ui.theme.TextHint
@@ -294,7 +295,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showMenuDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -344,7 +345,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showQueueDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -377,7 +378,7 @@ fun MusicNormalScreen(
                     Text(stringResource(R.string.play_cancel_timer), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -407,7 +408,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showSongInfoDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -440,7 +441,7 @@ fun MusicNormalScreen(
                     }
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -473,7 +474,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showLyricCaptionDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -509,7 +510,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showBackgroundDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -548,7 +549,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showQualityDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -581,7 +582,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showLyricsEditDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -624,7 +625,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showSongNoteDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -669,7 +670,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showPlaylistDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -715,7 +716,7 @@ fun MusicNormalScreen(
             dismissButton = {
                 TextButton(onClick = { showToolboxDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -756,7 +757,7 @@ fun MusicNormalScreen(
                     Text(stringResource(R.string.play_clear), color = TextSecondary)
                 }
             },
-            containerColor = DarkSurface,
+            containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )
     }

@@ -567,6 +567,15 @@ class SettingsRepositoryImpl @Inject constructor(
         _blurBackgroundImage.value = enabled
     }
 
+    // ── 外观与主题：透明磨砂质感 ───────────────────────────
+
+    private val _frostedGlassEnabled = MutableStateFlow(prefs.getBoolean("frosted_glass", false))
+    override fun getFrostedGlassEnabled(): Flow<Boolean> = _frostedGlassEnabled
+    override suspend fun setFrostedGlassEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("frosted_glass", enabled).apply()
+        _frostedGlassEnabled.value = enabled
+    }
+
     // ── 个人偏好：自动播放 ────────────────────────────────
 
     private val _autoPlayEnabled = MutableStateFlow(prefs.getBoolean("auto_play", false))

@@ -1262,6 +1262,7 @@ private fun AppearanceSettingsScreen(
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
     val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
+    val frostedGlassEnabled by viewModel.frostedGlassEnabled.collectAsStateWithLifecycle()
     val appFontPath by viewModel.appFontPath.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showFontDialog by remember { mutableStateOf(false) }
@@ -1476,6 +1477,37 @@ private fun AppearanceSettingsScreen(
                 Switch(
                     checked = blurBackgroundImage,
                     onCheckedChange = { viewModel.setBlurBackgroundImage(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = LocalAccentColor.current,
+                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
+                    )
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_frosted_glass), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.settings_frosted_glass_desc), color = TextHint, fontSize = 12.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = frostedGlassEnabled,
+                    onCheckedChange = { viewModel.setFrostedGlassEnabled(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = LocalAccentColor.current,
                         checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
