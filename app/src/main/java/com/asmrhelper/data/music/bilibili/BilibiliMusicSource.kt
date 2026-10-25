@@ -50,10 +50,9 @@ class BilibiliMusicSource(
     /** WBI mixinKey 内存缓存（nav 拉取一次，失败下次重试）。 */
     @Volatile private var cachedMixinKey: String? = null
 
-    /** B站风控 buvid3/buvid4（与视频链接提取共用同一指纹，避免反复换指纹被风控）。 */
+    /** B站风控指纹 Cookie（服务端下发，持久化复用，避免反复换指纹被风控）。 */
     private val biliPrefs by lazy { context.getSharedPreferences("bili_anti_risk", Context.MODE_PRIVATE) }
-    @Volatile private var cachedBuvid3: String? = biliPrefs.getString("buvid3", null)
-    @Volatile private var cachedBuvid4: String? = biliPrefs.getString("buvid4", null)
+    @Volatile private var cachedFingerprint: Map<String, String>? = loadFingerprint()
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         val params = mapOf(
@@ -90,8 +89,10 @@ class BilibiliMusicSource(
             "cid" to cid.toString(),
             "fnval" to "4048",
             "fnver" to "0",
-            "fourk" to "1",
-            "qn" to "0"
+            "fourk" to "0",
+            "qn" to "0",
+            "otype" to "json",
+            "platform" to "pc"
         )
         emit(BilibiliJson.parsePlayUrl(wbiGet("x/player/wbi/playurl", params)))
     }
@@ -171,7 +172,7 @@ class BilibiliMusicSource(
         var result = get(path, BilibiliWbi.sign(mixin, params))
         if (result.length() == 0 || result.optInt("code", -1) != 0) {
             cachedMixinKey = null
-            rotateBuvid()
+            rotateFingerprint()
             mixin = mixinKey() ?: return result
             result = get(path, BilibiliWbi.sign(mixin, params))
         }
@@ -183,11 +184,8 @@ class BilibiliMusicSource(
             val url = if (query.isBlank()) "$BASE/$path" else "$BASE/$path?$query"
             val builder = Request.Builder()
                 .url(url)
-                .header("User-Agent", PC_UA)
+                .header("User-Agent", BilibiliFingerprint.WEB_UA)
                 .header("Referer", refererFor(query))
-                .header("Origin", "https://www.bilibili.com")
-                .header("X-Bili-Api-Source", "pc")
-                .header("X-Requested-With", "XMLHttpRequest")
             val ck = buildCookie()
             if (ck.isNotBlank()) builder.header("Cookie", ck)
             client.newCall(builder.build()).execute().use { resp ->
@@ -217,9 +215,9 @@ class BilibiliMusicSource(
         return if (bvid != null) "https://www.bilibili.com/video/$bvid/" else "https://www.bilibili.com"
     }
 
-    /** Cookie：风控 buvid + 登录 SESSDATA。 */
+    /** Cookie：风控指纹 + 登录 SESSDATA。 */
     private fun buildCookie(): String {
-        val bili = buvidCookie()
+        val bili = fingerprintCookie()
         val login = cookie.trim()
         return when {
             bili.isBlank() -> login
@@ -228,36 +226,44 @@ class BilibiliMusicSource(
         }
     }
 
-    private fun buvidCookie(): String {
-        var b3 = cachedBuvid3
-        var b4 = cachedBuvid4
-        // 旧版本持久化的是 finger/spi 网络指纹，格式/信任度都不同且可能已被风控标记；
-        // 这里在「为空」或「格式不符（非 UUID+infoc）」时统一换成本地生成的现代指纹。
-        if (b3.isNullOrEmpty() || !b3.endsWith("infoc")) {
-            val (nb3, nb4) = BilibiliWbi.newBuvid()
-            b3 = nb3; b4 = nb4
-            cachedBuvid3 = b3; cachedBuvid4 = b4
-            biliPrefs.edit().putString("buvid3", b3).putString("buvid4", b4).apply()
-        }
-        if (b3.isNullOrEmpty()) return ""
-        val nut = System.currentTimeMillis() / 1000
-        return buildString {
-            append("buvid3=").append(b3)
-            if (!b4.isNullOrEmpty()) append("; buvid4=").append(b4)
-            append("; b_nut=").append(nut)
-        }
+    /** 返回 B站风控指纹 Cookie 头（缓存优先，为空才走 finger/spi 拉取）。 */
+    private fun fingerprintCookie(): String {
+        val fp = cachedFingerprint ?: fetchAndCacheFingerprint()
+        return if (fp.isNullOrEmpty()) "" else BilibiliFingerprint.toCookieHeader(fp)
     }
 
-    /** 被风控/412 拦截后轮换一次指纹，下次请求用新 buvid 自愈。 */
-    private fun rotateBuvid() {
-        val (nb3, nb4) = BilibiliWbi.newBuvid()
-        cachedBuvid3 = nb3; cachedBuvid4 = nb4
-        biliPrefs.edit().putString("buvid3", nb3).putString("buvid4", nb4).apply()
+    private fun loadFingerprint(): Map<String, String>? {
+        val fp = linkedMapOf<String, String>()
+        for (k in BilibiliFingerprint.FINGERPRINT_KEYS) {
+            val v = biliPrefs.getString(k, null)
+            if (v.isNullOrBlank()) return null
+            fp[k] = v
+        }
+        // 旧版本持久化的是本地生成的 UUID+infoc 假指纹，不被服务端认可，必须重取
+        if (fp["buvid3"]?.endsWith("infoc") == true) return null
+        return fp
+    }
+
+    private fun fetchAndCacheFingerprint(): Map<String, String> {
+        val fetched = BilibiliFingerprint.fetch()
+        if (fetched.isNotEmpty()) {
+            cachedFingerprint = fetched
+            val editor = biliPrefs.edit()
+            fetched.forEach { (k, v) -> editor.putString(k, v) }
+            editor.apply()
+        }
+        return fetched
+    }
+
+    /** 被风控/412 拦截后轮换一次指纹，下次请求用新指纹自愈。 */
+    private fun rotateFingerprint() {
+        cachedFingerprint = null
+        val editor = biliPrefs.edit()
+        BilibiliFingerprint.FINGERPRINT_KEYS.forEach { editor.remove(it) }
+        editor.apply()
     }
 
     companion object {
         private const val BASE = "https://api.bilibili.com"
-        private const val PC_UA =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 }

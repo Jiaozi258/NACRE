@@ -3,6 +3,7 @@ package com.asmrhelper.player
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import com.asmrhelper.R
+import com.asmrhelper.data.music.bilibili.BilibiliFingerprint
 import com.asmrhelper.data.music.bilibili.BilibiliWbi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -42,10 +43,9 @@ class VideoAudioExtractor @Inject constructor(
     /** 当前进行中的下载连接，用于取消时主动断开以中断阻塞读取。 */
     @Volatile private var activeConnection: HttpURLConnection? = null
 
-    /** B站风控需要的 buvid3/buvid4 Cookie（持久化复用，避免每次都换新指纹被风控标记）。 */
+    /** B站风控指纹 Cookie（服务端下发，持久化复用，避免频繁换指纹被风控标记）。 */
     private val biliPrefs by lazy { context.getSharedPreferences("bili_anti_risk", Context.MODE_PRIVATE) }
-    @Volatile private var cachedBuvid3: String? = biliPrefs.getString("buvid3", null)
-    @Volatile private var cachedBuvid4: String? = biliPrefs.getString("buvid4", null)
+    @Volatile private var cachedFingerprint: Map<String, String>? = loadFingerprint()
 
     /** 取消进行中的下载：断开底层 socket 使阻塞的 read() 抛出异常。 */
     fun cancelActiveDownload() {
@@ -66,9 +66,6 @@ class VideoAudioExtractor @Inject constructor(
         private const val READ_TIMEOUT = 300_000
         private val CN_UA =
             "Mozilla/5.0 (Linux; Android 14; zh-CN) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-        // B站 Web API（x/web-interface/view 等）按 PC 网页校验 UA，移动 UA 更容易被风控拦截
-        private val PC_UA =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
         // Proxy instances for YouTube — Piped + Invidious.
         // In China, most are blocked by GFW. A VPN is needed.
@@ -191,34 +188,41 @@ class VideoAudioExtractor @Inject constructor(
         return finalizeResult(outputFile, title, platform, url, durSec)
     }
 
-    /** 组装 B站 buvid Cookie 字符串，首次调用会先走指纹接口拿 buvid3/buvid4。 */
+    /** 组装 B站风控指纹 Cookie 头，首次会走 finger/spi 拉取服务端指纹并缓存。 */
     private fun buvidCookie(): String {
-        var b3 = cachedBuvid3
-        var b4 = cachedBuvid4
-        // 旧版本持久化的是 finger/spi 网络指纹，格式/信任度都不同且可能已被风控标记；
-        // 这里在「为空」或「格式不符（非 UUID+infoc）」时统一换成本地生成的现代指纹。
-        if (b3.isNullOrEmpty() || !b3.endsWith("infoc")) {
-            val (nb3, nb4) = BilibiliWbi.newBuvid()
-            b3 = nb3; b4 = nb4
-            cachedBuvid3 = b3; cachedBuvid4 = b4
-            biliPrefs.edit().putString("buvid3", b3).putString("buvid4", b4).apply()
-        }
-        if (b3.isNullOrEmpty()) return ""
-        // b_nut：会话时间戳。B站校验 Cookie 时，若只带 buvid3 而无 b_nut，
-        // 会把 b_nut 记为可疑值 100，更容易触发 412。这里用当前秒级时间戳（与官网 Set-Cookie 行为一致）。
-        val nut = System.currentTimeMillis() / 1000
-        return buildString {
-            append("buvid3=").append(b3)
-            if (!b4.isNullOrEmpty()) append("; buvid4=").append(b4)
-            append("; b_nut=").append(nut)
-        }
+        val fp = cachedFingerprint ?: fetchAndCacheFingerprint()
+        return if (fp.isNullOrEmpty()) "" else BilibiliFingerprint.toCookieHeader(fp)
     }
 
-    /** 被风控/412 拦截后轮换一次指纹，下次请求用新 buvid 自愈。 */
-    private fun rotateBuvid() {
-        val (nb3, nb4) = BilibiliWbi.newBuvid()
-        cachedBuvid3 = nb3; cachedBuvid4 = nb4
-        biliPrefs.edit().putString("buvid3", nb3).putString("buvid4", nb4).apply()
+    private fun loadFingerprint(): Map<String, String>? {
+        val fp = linkedMapOf<String, String>()
+        for (k in BilibiliFingerprint.FINGERPRINT_KEYS) {
+            val v = biliPrefs.getString(k, null)
+            if (v.isNullOrBlank()) return null
+            fp[k] = v
+        }
+        // 旧版本持久化的是本地生成的 UUID+infoc 假指纹，不被服务端认可，必须重取
+        if (fp["buvid3"]?.endsWith("infoc") == true) return null
+        return fp
+    }
+
+    private fun fetchAndCacheFingerprint(): Map<String, String> {
+        val fetched = BilibiliFingerprint.fetch()
+        if (fetched.isNotEmpty()) {
+            cachedFingerprint = fetched
+            val editor = biliPrefs.edit()
+            fetched.forEach { (k, v) -> editor.putString(k, v) }
+            editor.apply()
+        }
+        return fetched
+    }
+
+    /** 被风控/412 拦截后轮换一次指纹，下次请求用新指纹自愈。 */
+    private fun rotateFingerprint() {
+        cachedFingerprint = null
+        val editor = biliPrefs.edit()
+        BilibiliFingerprint.FINGERPRINT_KEYS.forEach { editor.remove(it) }
+        editor.apply()
     }
 
     /** WBI 签名后请求 `x/player/wbi/playurl`（B站取流接口现在必须带 w_rid，否则风控拦 412/-403）。 */
@@ -228,8 +232,10 @@ class VideoAudioExtractor @Inject constructor(
             "cid" to cid.toString(),
             "fnval" to "4048",
             "fnver" to "0",
-            "fourk" to "1",
-            "qn" to "0"
+            "fourk" to "0",
+            "qn" to "0",
+            "otype" to "json",
+            "platform" to "pc"
         )
         var mixin = fetchMixinKey()
         fun query() = if (mixin != null) BilibiliWbi.sign(mixin!!, params)
@@ -238,7 +244,7 @@ class VideoAudioExtractor @Inject constructor(
         // 412/风控/业务失败 → 刷新 WBI key 并轮换指纹后重试一次
         if (resp == null || resp.optInt("code", -1) != 0) {
             android.util.Log.w("Extractor", "B站取流首次失败，刷新指纹+WBI key 后重试")
-            rotateBuvid()
+            rotateFingerprint()
             mixin = fetchMixinKey()
             resp = bilibiliApi("x/player/wbi/playurl", query())
         }
@@ -265,11 +271,8 @@ class VideoAudioExtractor @Inject constructor(
             val conn = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 30_000
                 setRequestProperty("Referer", referer)
-                setRequestProperty("Origin", "https://www.bilibili.com")
-                setRequestProperty("User-Agent", PC_UA)
-                setRequestProperty("X-Bili-Api-Source", "pc")
-                setRequestProperty("X-Requested-With", "XMLHttpRequest")
-                // 缺 buvid3 Cookie 会被 B站风控直接拦成 HTTP 412
+                setRequestProperty("User-Agent", BilibiliFingerprint.WEB_UA)
+                // 缺风控指纹 Cookie 会被 B站风控直接拦成 HTTP 412
                 val cookie = buvidCookie()
                 if (cookie.isNotEmpty()) setRequestProperty("Cookie", cookie)
             }

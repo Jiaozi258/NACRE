@@ -2,7 +2,6 @@ package com.asmrhelper.data.music.bilibili
 
 import java.security.MessageDigest
 import java.net.URLEncoder
-import java.util.UUID
 
 /**
  * B站 WBI 签名。参考公开 wbi-sign 算法：
@@ -41,15 +40,6 @@ object BilibiliWbi {
         }
         val wRid = md5(query + mixinKey)
         return "$query&w_rid=$wRid"
-    }
-
-    /** 生成一对全新的 B站风控指纹 Cookie 值（buvid3, buvid4）。
-     *  现代 buvid3 格式 = UUID + "infoc"（yt-dlp 同款），相比 `finger/spi` 的
-     *  网络指纹更稳：不依赖额外请求，且格式一定正确。 */
-    fun newBuvid(): Pair<String, String> {
-        val b3 = UUID.randomUUID().toString() + "infoc"
-        val b4 = UUID.randomUUID().toString() + "infoc"
-        return b3 to b4
     }
 
     private fun extractKey(url: String): String =
