@@ -179,6 +179,19 @@ fun MusicNormalScreen(
                     fontSize = lyricsFontSize,
                     lineSpacing = lyricsLineSpacing,
                     alignment = lyricsAlignment,
+                    isPlaying = state.playerState.isPlaying,
+                    progress = if (durationMs > 0) progressMs.toFloat() / durationMs else 0f,
+                    durationMs = durationMs,
+                    isFavorite = currentFavorite,
+                    loopMode = state.playerState.loopMode,
+                    onPlayPause = { viewModel.togglePlayPause() },
+                    onPrevious = { viewModel.previous() },
+                    onNext = { viewModel.next() },
+                    onSeek = { viewModel.seekTo(it) },
+                    onToggleFavorite = { viewModel.toggleFavorite() },
+                    onCycleLoopMode = { viewModel.cycleLoopMode() },
+                    onMenu = { showMenuDialog = true },
+                    onQueue = { showQueueDialog = true },
                     onBack = backToDefault
                 )
                 1 -> NormalModeContent(
@@ -209,12 +222,11 @@ fun MusicNormalScreen(
                     audio = currentAudio,
                     eqCurrentPreset = eqCurrentPreset,
                     currentSceneEffect = currentSceneEffect,
-                    songKey = songKey,
                     savedNote = songKey?.let { songNotes[it] } ?: "",
                     onApplyHeadphonePreset = { viewModel.applyEqPreset(it.toEqPreset()) },
                     onResetEq = { viewModel.resetEq() },
                     onApplySceneEffect = { viewModel.applySceneEffect(it) },
-                    onSetSongNote = { note -> songKey?.let { k -> viewModel.setSongNote(k, note) } },
+                    onOpenSongNote = { showSongNoteDialog = true },
                     onToggleMusicStyle = onToggleMusicStyle,
                     onBack = backToDefault
                 )
@@ -750,7 +762,7 @@ fun MusicNormalScreen(
     }
 }
 
-/** 第 0 页：全屏可拖动滚动歌词，点击或下滑返回默认页。 */
+/** 第 0 页：全屏可拖动滚动歌词 + 底部控制栏（与默认页一致），点击歌词行跳转到该句。 */
 @Composable
 private fun FullScreenLyrics(
     lines: List<WordLyricLine>,
@@ -758,6 +770,19 @@ private fun FullScreenLyrics(
     fontSize: Int,
     lineSpacing: Float,
     alignment: Int,
+    isPlaying: Boolean,
+    progress: Float,
+    durationMs: Long,
+    isFavorite: Boolean,
+    loopMode: LoopMode,
+    onPlayPause: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onToggleFavorite: () -> Unit,
+    onCycleLoopMode: () -> Unit,
+    onMenu: () -> Unit,
+    onQueue: () -> Unit,
     onBack: () -> Unit
 ) {
     Box(
@@ -772,7 +797,10 @@ private fun FullScreenLyrics(
             lineSpacing = lineSpacing,
             alignment = alignment,
             draggable = true,
-            modifier = Modifier.fillMaxSize()
+            onLineClick = onSeek,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 170.dp)
         )
         // 顶部居中提示 + 返回（下滑或点按）
         Column(
@@ -793,6 +821,33 @@ private fun FullScreenLyrics(
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.play_lyrics_back), color = TextSecondary, fontSize = 12.sp)
             }
+        }
+        // 底部控制栏（与默认页一致，叠加渐隐遮罩保证可读）
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, DarkSurface)))
+        ) {
+            NormalControls(
+                isPlaying = isPlaying,
+                progress = progress,
+                durationMs = durationMs,
+                isFavorite = isFavorite,
+                loopMode = loopMode,
+                onPlayPause = onPlayPause,
+                onPrevious = onPrevious,
+                onNext = onNext,
+                onSeek = onSeek,
+                onToggleFavorite = onToggleFavorite,
+                onCycleLoopMode = onCycleLoopMode,
+                onMenu = onMenu,
+                onQueue = onQueue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 24.dp, bottom = 16.dp)
+            )
         }
     }
 }
@@ -920,26 +975,21 @@ private fun NormalModeContent(
     }
 }
 
-/** 第 2 页：音效器面板（耳机适配 + 混响）+ 切回沉浸 + 歌曲信息 + 歌曲笔记。 */
+/** 第 2 页：音效器面板（均衡器：耳机适配 + 混响统一入口）+ 切回沉浸 + 歌曲信息 + 歌曲笔记（折叠）。 */
 @Composable
 private fun EqualizerPanel(
     audio: com.asmrhelper.domain.model.Audio?,
     eqCurrentPreset: String,
     currentSceneEffect: SceneEffect,
-    songKey: String?,
     savedNote: String,
     onApplyHeadphonePreset: (HeadphonePreset) -> Unit,
     onResetEq: () -> Unit,
     onApplySceneEffect: (SceneEffect) -> Unit,
-    onSetSongNote: (String) -> Unit,
+    onOpenSongNote: () -> Unit,
     onToggleMusicStyle: () -> Unit,
     onBack: () -> Unit
 ) {
     var selectedBrand by remember { mutableStateOf(HeadphonePresets.BRANDS.firstOrNull() ?: "") }
-    var noteText by remember(songKey, savedNote) { mutableStateOf(savedNote) }
-    // 切换歌曲后同步文本框
-    LaunchedEffect(songKey, savedNote) { noteText = savedNote }
-    var noteSaved by remember { mutableStateOf(false) }
     val accent = LocalAccentColor.current
 
     LazyColumn(
@@ -960,8 +1010,10 @@ private fun EqualizerPanel(
             }
         }
 
-        // ── 耳机适配 ──
-        item { SectionTitle(stringResource(R.string.eq_headphone_presets)) }
+        // ── 均衡器（耳机适配 + 混响统一入口）──
+        item { SectionTitle(stringResource(R.string.category_equalizer)) }
+        // 耳机适配
+        item { SubTitle(stringResource(R.string.eq_headphone_presets)) }
         item {
             Row(
                 modifier = Modifier
@@ -1000,9 +1052,8 @@ private fun EqualizerPanel(
                     .padding(horizontal = 4.dp, vertical = 6.dp)
             )
         }
-
-        // ── 混响 ──
-        item { SectionTitle(stringResource(R.string.eq_reverb)) }
+        // 混响
+        item { SubTitle(stringResource(R.string.eq_reverb)) }
         item {
             Row(
                 modifier = Modifier
@@ -1019,7 +1070,7 @@ private fun EqualizerPanel(
             }
         }
 
-        // ── 歌曲信息 ──
+        // ── 歌曲信息（歌手/专辑带小图占位）──
         item { SectionTitle(stringResource(R.string.song_info_title)) }
         item {
             val sourceText = when {
@@ -1030,50 +1081,35 @@ private fun EqualizerPanel(
                 else -> stringResource(R.string.song_info_source_local)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                InfoRow(stringResource(R.string.song_info_artist), audio?.artist)
-                InfoRow(stringResource(R.string.song_info_album), audio?.album)
+                // 真实歌手/专辑头像数据模型暂无，先以小图占位；点击跳转歌手/专辑主页待补（搜索兜底）
+                SongInfoAvatarRow(stringResource(R.string.song_info_artist), audio?.artist)
+                SongInfoAvatarRow(stringResource(R.string.song_info_album), audio?.album)
                 InfoRow(stringResource(R.string.song_info_source), sourceText)
             }
         }
 
-        // ── 歌曲笔记 ──
+        // ── 歌曲笔记（折叠，点击打开弹窗编辑）──
         item { SectionTitle(stringResource(R.string.song_note_title)) }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = noteText,
-                    onValueChange = { if (it.length <= 400) { noteText = it; noteSaved = false } },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(Radius.sm),
-                    placeholder = { Text(stringResource(R.string.song_note_hint), color = TextHint) },
-                    minLines = 4,
-                    maxLines = 6,
-                    enabled = songKey != null,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        focusedBorderColor = accent,
-                        unfocusedBorderColor = DarkSurfaceVariant,
-                        cursorColor = accent
-                    )
-                )
+            val preview = savedNote.takeIf { it.isNotBlank() }?.let { n -> if (n.length > 24) n.take(24) + "…" else n }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(Radius.md))
+                    .background(DarkSurfaceVariant)
+                    .clickable { onOpenSongNote() }
+                    .padding(horizontal = 14.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "${noteText.length}/400",
-                    color = TextHint,
-                    fontSize = 11.sp,
-                    modifier = Modifier.align(Alignment.End)
+                    text = preview ?: stringResource(R.string.song_note_open_hint),
+                    color = if (preview != null) TextPrimary else TextHint,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                Button(
-                    onClick = {
-                        onSetSongNote(noteText)
-                        noteSaved = true
-                    },
-                    enabled = songKey != null,
-                    modifier = Modifier.align(Alignment.End),
-                    colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color.White)
-                ) {
-                    Text(if (noteSaved) stringResource(R.string.common_done) else stringResource(R.string.common_save))
-                }
+                Text("›", color = TextSecondary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1102,6 +1138,50 @@ private fun InfoRow(label: String, value: String?) {
     ) {
         Text(label, color = TextSecondary, fontSize = 13.sp)
         Text(value?.takeIf { it.isNotBlank() } ?: "—", color = TextPrimary, fontSize = 13.sp, textAlign = TextAlign.End)
+    }
+}
+
+/** 分区小标题（低于 SectionTitle 一级的次级标签，如均衡器下的「耳机适配」「混响」）。 */
+@Composable
+private fun SubTitle(text: String) {
+    Text(text, color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+}
+
+/** 歌曲信息行（歌手/专辑）：左侧小图占位（首字头像），右侧值。 */
+@Composable
+private fun SongInfoAvatarRow(label: String, value: String?) {
+    val accent = LocalAccentColor.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(accent.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = value?.trim()?.firstOrNull()?.toString() ?: "?",
+                color = accent,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(label, color = TextSecondary, fontSize = 13.sp)
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = value?.takeIf { it.isNotBlank() } ?: "—",
+            color = TextPrimary,
+            fontSize = 13.sp,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -1160,7 +1240,8 @@ private fun ScrollingLyrics(
     fontSize: Int = 16,
     lineSpacing: Float = 1.5f,
     alignment: Int = 0,
-    draggable: Boolean = false
+    draggable: Boolean = false,
+    onLineClick: ((Long) -> Unit)? = null
 ) {
     val accent = LocalAccentColor.current
     val textAlign = when (alignment) {
@@ -1206,6 +1287,7 @@ private fun ScrollingLyrics(
                     lineHeight = (fontSize * lineSpacing).sp,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable(enabled = onLineClick != null) { onLineClick?.invoke(line.startMs) }
                         .padding(horizontal = 20.dp, vertical = 6.dp)
                 )
             }

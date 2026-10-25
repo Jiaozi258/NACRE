@@ -310,6 +310,7 @@
     <string name="eq_reverb">Reverb</string>
     <string name="song_note_title">Song notes</string>
     <string name="song_note_hint">Write a note about this song (up to 400 characters)</string>
+    <string name="song_note_open_hint">Tap to view / edit note</string>
     <string name="song_note_empty">No note yet</string>
 
     <!-- Common -->

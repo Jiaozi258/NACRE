@@ -310,6 +310,7 @@
     <string name="eq_reverb">混响</string>
     <string name="song_note_title">歌曲笔记</string>
     <string name="song_note_hint">写下这首歌的歌评（最多 400 字）</string>
+    <string name="song_note_open_hint">点击查看 / 编辑歌评</string>
     <string name="song_note_empty">暂无歌评</string>
 
     <!-- 通用 -->
