@@ -227,13 +227,14 @@ class VideoAudioExtractor @Inject constructor(
 
     /** WBI 签名后请求 `x/player/wbi/playurl`（B站取流接口现在必须带 w_rid，否则风控拦 412/-403）。 */
     private fun bilibiliPlayurlApi(bvid: String, cid: Long): JSONObject? {
+        // fnval 只保留 DASH(16) + Dolby(256) = 272：匿名请求带 4048（8K/Dolby Vision/Hi-Res 等
+        // 大会员专用格式）会被 B站风控拦成 HTTP 412，与 NeriPlayer 取流实现保持一致。
         val params = mapOf(
             "bvid" to bvid,
             "cid" to cid.toString(),
-            "fnval" to "4048",
+            "fnval" to "272",
             "fnver" to "0",
             "fourk" to "0",
-            "qn" to "0",
             "otype" to "json",
             "platform" to "pc"
         )
@@ -265,9 +266,8 @@ class VideoAudioExtractor @Inject constructor(
         return try {
             val apiUrl = "https://api.bilibili.com/$path?$query"
             android.util.Log.d("Extractor", "B站API请求: $apiUrl")
-            // Referer 需指向对应视频页，否则会被风控拦成 412
-            val bvid = Regex("bvid=([a-zA-Z0-9]+)").find(query)?.groupValues?.get(1)
-            val referer = if (bvid != null) "https://www.bilibili.com/video/$bvid/" else "https://www.bilibili.com"
+            // Referer 与 NeriPlayer 取流实现一致，统一用裸域名，避免视频页 Referer 触发风控 412
+            val referer = "https://www.bilibili.com"
             val conn = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = 30_000
                 setRequestProperty("Referer", referer)

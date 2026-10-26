@@ -84,13 +84,14 @@ class BilibiliMusicSource(
             emit("")
             return@flow
         }
+        // fnval 只保留 DASH(16) + Dolby(256) = 272：匿名请求带 4048（8K/Dolby Vision/Hi-Res 等
+        // 大会员专用格式）会被 B站风控拦成 HTTP 412，与 NeriPlayer 取流实现保持一致。
         val params = mapOf(
             "bvid" to songId,
             "cid" to cid.toString(),
-            "fnval" to "4048",
+            "fnval" to "272",
             "fnver" to "0",
             "fourk" to "0",
-            "qn" to "0",
             "otype" to "json",
             "platform" to "pc"
         )
@@ -210,10 +211,7 @@ class BilibiliMusicSource(
     private suspend fun resolveUid(): Long =
         BilibiliJson.parseUid(get("x/web-interface/nav", ""))
 
-    private fun refererFor(query: String): String {
-        val bvid = Regex("bvid=([a-zA-Z0-9]+)").find(query)?.groupValues?.get(1)
-        return if (bvid != null) "https://www.bilibili.com/video/$bvid/" else "https://www.bilibili.com"
-    }
+    private fun refererFor(query: String): String = "https://www.bilibili.com"
 
     /** Cookie：风控指纹 + 登录 SESSDATA。 */
     private fun buildCookie(): String {
