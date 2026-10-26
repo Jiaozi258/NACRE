@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.HorizontalDivider
@@ -59,6 +60,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -94,6 +96,7 @@ import com.asmrhelper.ui.theme.appleClickable
 import com.asmrhelper.util.LyricMode
 import com.asmrhelper.util.LyricScrollStyle
 import com.asmrhelper.util.LyricCaptionMode
+import com.asmrhelper.util.ShareHelper
 import com.asmrhelper.util.captionFor
 import com.asmrhelper.util.currentLineIndex
 import kotlinx.coroutines.delay
@@ -175,6 +178,7 @@ fun MusicPlayScreen(
     )
 
     val currentAudio = state.playerState.currentAudio
+    val context = LocalContext.current
     val coverUrl = currentAudio?.coverUrl
     // 本地文件无 coverUrl 时用内嵌图做背景模糊，避免与真实封面"匹配不上"
     val coverFilePath = currentAudio?.takeIf { !it.isRemoteSong() }?.filePath
@@ -316,6 +320,10 @@ fun MusicPlayScreen(
                 ) {
                     MoreRow(stringResource(R.string.menu_timer), "", Icons.Filled.Timer) { showMoreDialog = false; showTimerDialog = true }
                     MoreRow(stringResource(R.string.menu_song_info), "", Icons.Filled.Info) { showMoreDialog = false; showSongInfoDialog = true }
+                    MoreRow(stringResource(R.string.menu_share), "", Icons.Filled.Share) {
+                        showMoreDialog = false
+                        currentAudio?.let { ShareHelper.share(context, it) }
+                    }
                     MoreRow(stringResource(R.string.menu_lyric_offset), "", Icons.Filled.Schedule) { showMoreDialog = false; showLyricOffsetDialog = true }
                     MoreRow(
                         stringResource(R.string.lyric_caption_title),

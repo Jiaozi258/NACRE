@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -84,6 +85,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -118,6 +120,7 @@ import com.asmrhelper.ui.theme.TextPrimary
 import com.asmrhelper.ui.theme.TextSecondary
 import com.asmrhelper.util.LyricCaptionMode
 import com.asmrhelper.util.LyricMode
+import com.asmrhelper.util.ShareHelper
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.captionFor
 import com.asmrhelper.util.currentLineIndex
@@ -170,6 +173,7 @@ fun MusicNormalScreen(
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
 
     val currentAudio = state.playerState.currentAudio
+    val context = LocalContext.current
     val coverUrl = currentAudio?.coverUrl
     val coverFilePath = currentAudio?.takeIf { !it.isRemoteSong() }?.filePath
     val progressMs = state.playerState.progressMs
@@ -312,6 +316,10 @@ fun MusicNormalScreen(
                 ) {
                     MenuRow(stringResource(R.string.menu_timer), "", Icons.Filled.Timer) { showMenuDialog = false; showTimerDialog = true }
                     MenuRow(stringResource(R.string.menu_song_info), "", Icons.Filled.Info) { showMenuDialog = false; showSongInfoDialog = true }
+                    MenuRow(stringResource(R.string.menu_share), "", Icons.Filled.Share) {
+                        showMenuDialog = false
+                        currentAudio?.let { ShareHelper.share(context, it) }
+                    }
                     MenuRow(stringResource(R.string.menu_lyric_offset), "", Icons.Filled.Schedule) { showMenuDialog = false; showLyricOffsetDialog = true }
                     MenuRow(
                         stringResource(R.string.lyric_caption_title),

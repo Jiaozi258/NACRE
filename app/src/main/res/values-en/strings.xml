@@ -141,6 +141,7 @@
     <string name="menu_toolbox">Toolbox</string>
     <string name="menu_effects">Effects</string>
     <string name="menu_slice">Slice</string>
+    <string name="menu_share">Share</string>
     <string name="menu_song_info">Song info</string>
     <string name="menu_lyric_offset">Lyric offset</string>
     <string name="menu_queue">Queue</string>
