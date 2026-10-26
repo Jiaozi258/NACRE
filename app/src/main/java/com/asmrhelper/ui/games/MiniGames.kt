@@ -3,6 +3,7 @@ package com.asmrhelper.ui.games
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,9 +55,19 @@ enum class MiniGame { GAME_2048, MINESWEEPER }
 /** 全屏小游戏浮层（覆盖在 ASMR 播放页上，音频继续播放）。 */
 @Composable
 fun MiniGameOverlay(game: MiniGame, onClose: () -> Unit) {
-    when (game) {
-        MiniGame.GAME_2048 -> Game2048Screen(onClose)
-        MiniGame.MINESWEEPER -> MinesweeperScreen(onClose)
+    // 外层拦截所有指针事件，避免点击/滑动穿透到下方的播放页进度条与工具按钮。
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { }
+    ) {
+        when (game) {
+            MiniGame.GAME_2048 -> Game2048Screen(onClose)
+            MiniGame.MINESWEEPER -> MinesweeperScreen(onClose)
+        }
     }
 }
 
