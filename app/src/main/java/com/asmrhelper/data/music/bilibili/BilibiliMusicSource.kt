@@ -102,11 +102,11 @@ class BilibiliMusicSource(
     override fun getLyric(songId: String): Flow<RemoteLyric> = flowOf(RemoteLyric())
 
     override fun getCoverUrl(songId: String): Flow<String> = flow {
-        emit(BilibiliJson.parseView(get("x/web-interface/view", "bvid=$songId"))?.coverUrl ?: "")
+        emit(BilibiliJson.parseView(wbiGet("x/web-interface/wbi/view", mapOf("bvid" to songId)))?.coverUrl ?: "")
     }
 
     override fun getSongDetail(songId: String): Flow<RemoteSong> = flow {
-        BilibiliJson.parseView(get("x/web-interface/view", "bvid=$songId"))?.let { emit(it) }
+        BilibiliJson.parseView(wbiGet("x/web-interface/wbi/view", mapOf("bvid" to songId)))?.let { emit(it) }
     }
 
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow {
@@ -205,8 +205,10 @@ class BilibiliMusicSource(
         return BilibiliWbi.mixinKey(keys.first, keys.second).also { cachedMixinKey = it }
     }
 
+    /** 取分 P cid：必须走 WBI 签名版 `x/web-interface/wbi/view`。无签名版
+     *  `x/web-interface/view` 匿名会被风控拦成 HTML（非 JSON），导致 cid 拿不到。 */
     private suspend fun fetchViewCid(bvid: String): Long =
-        BilibiliJson.parseViewCid(get("x/web-interface/view", "bvid=$bvid"))
+        BilibiliJson.parseViewCid(wbiGet("x/web-interface/wbi/view", mapOf("bvid" to bvid)))
 
     /** 当前登录用户 UID（nav `data.mid`），未登录返回 0。 */
     private suspend fun resolveUid(): Long =
@@ -238,8 +240,9 @@ class BilibiliMusicSource(
             if (v.isNullOrBlank()) return null
             fp[k] = v
         }
-        // 旧版本持久化的是本地生成的 UUID+infoc 假指纹，不被服务端认可，必须重取
-        if (fp["buvid3"]?.endsWith("infoc") == true) return null
+        // 注意：服务端下发的真实 buvid3 本身就以 "infoc" 结尾（如 `72E4...infoc`），
+        // 不能再按结尾 "infoc" 判定为「旧版本地假指纹」，否则每次启动都会误删真指纹、
+        // 反复换指纹反而触发风控。缺字段才返回 null 触发重取。
         return fp
     }
 

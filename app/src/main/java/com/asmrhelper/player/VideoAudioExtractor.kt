@@ -131,7 +131,7 @@ class VideoAudioExtractor @Inject constructor(
         val resolvedUrl = if ("b23.tv" in url) resolveRedirect(url) ?: return null else url
         val bvid = extractBvId(resolvedUrl)
             ?: run { lastError = context.getString(R.string.video_extract_bvid_failed); return null }
-        val resp = bilibiliApi("x/web-interface/view", "bvid=$bvid") ?: return null
+        val resp = bilibiliViewApi(bvid) ?: return null
         val data = resp.optJSONObject("data")
             ?: run { lastError = context.getString(R.string.video_extract_bili_api_abnormal); return null }
         val title = data.optString("title", context.getString(R.string.video_extract_unknown_video))
@@ -152,7 +152,7 @@ class VideoAudioExtractor @Inject constructor(
 
         android.util.Log.d("Extractor", "B站BV号: $bvid")
         onProgress(0f)
-        val infoResp = bilibiliApi("x/web-interface/view", "bvid=$bvid") ?: return null
+        val infoResp = bilibiliViewApi(bvid) ?: return null
         val data = infoResp.optJSONObject("data")
             ?: run { lastError = context.getString(R.string.video_extract_bili_no_data); return null }
         val title = data.optString("title", context.getString(R.string.video_extract_unknown_video))
@@ -201,8 +201,8 @@ class VideoAudioExtractor @Inject constructor(
             if (v.isNullOrBlank()) return null
             fp[k] = v
         }
-        // 旧版本持久化的是本地生成的 UUID+infoc 假指纹，不被服务端认可，必须重取
-        if (fp["buvid3"]?.endsWith("infoc") == true) return null
+        // 服务端下发的真实 buvid3 本身就以 "infoc" 结尾，不能再据此误判为旧假指纹
+        // 而每次启动重取，否则频繁换指纹反而触发风控。缺字段才返回 null 触发重取。
         return fp
     }
 
@@ -248,6 +248,24 @@ class VideoAudioExtractor @Inject constructor(
             rotateFingerprint()
             mixin = fetchMixinKey()
             resp = bilibiliApi("x/player/wbi/playurl", query())
+        }
+        return resp
+    }
+
+    /** WBI 签名后请求 `x/web-interface/wbi/view`（视频基础信息/分 P cid）。无签名版
+     *  `x/web-interface/view` 匿名会被风控拦成 HTML/412，拿不到 title 与 cid。 */
+    private fun bilibiliViewApi(bvid: String): JSONObject? {
+        val params = mapOf("bvid" to bvid)
+        var mixin = fetchMixinKey()
+        fun query() = if (mixin != null) BilibiliWbi.sign(mixin!!, params)
+            else params.entries.joinToString("&") { "${it.key}=${it.value}" }
+        var resp = bilibiliApi("x/web-interface/wbi/view", query())
+        // 风控/失败 → 刷新 WBI key 并轮换指纹后重试一次
+        if (resp == null || resp.optInt("code", -1) != 0) {
+            android.util.Log.w("Extractor", "B站视频信息首次失败，刷新指纹+WBI key 后重试")
+            rotateFingerprint()
+            mixin = fetchMixinKey()
+            resp = bilibiliApi("x/web-interface/wbi/view", query())
         }
         return resp
     }

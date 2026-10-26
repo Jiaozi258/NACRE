@@ -95,8 +95,10 @@
     <string name="discover_tab_daily">Daily</string>
     <string name="discover_tab_charts">Charts</string>
     <string name="discover_tab_playlists">Playlists</string>
+    <string name="discover_tab_hot">Hot</string>
     <string name="discover_tab_favorites">Favorites</string>
     <string name="discover_tab_feed">Feed</string>
+    <string name="discover_refresh">Refresh</string>
     <string name="discover_settings_title">Discover settings</string>
     <string name="discover_empty_tab">Nothing here</string>
     <string name="discover_loading">Loading…</string>

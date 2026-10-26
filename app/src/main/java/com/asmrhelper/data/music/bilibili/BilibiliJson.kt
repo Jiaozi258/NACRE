@@ -167,9 +167,13 @@ object BilibiliJson {
         return out
     }
 
-    /** `x/web-interface/view` 的 cid（分 P 音频流需要）。 */
-    fun parseViewCid(json: JSONObject): Long =
-        json.optJSONObject("data")?.optLong("cid", -1L) ?: -1L
+    /** `x/web-interface/wbi/view` 的 cid（分 P 音频流需要）。优先 `data.cid`，回退 `data.pages[0].cid`。 */
+    fun parseViewCid(json: JSONObject): Long {
+        val data = json.optJSONObject("data") ?: return -1L
+        val cid = data.optLong("cid", -1L)
+        if (cid > 0L) return cid
+        return data.optJSONArray("pages")?.optJSONObject(0)?.optLong("cid", -1L) ?: -1L
+    }
 
     /** `x/web-interface/view` → 单个视频详情。 */
     fun parseView(json: JSONObject): RemoteSong? {
