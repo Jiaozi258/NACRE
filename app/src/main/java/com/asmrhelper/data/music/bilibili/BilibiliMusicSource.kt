@@ -64,9 +64,10 @@ class BilibiliMusicSource(
         emit(BilibiliJson.parseSearch(wbiGet("x/web-interface/wbi/search/type", params)))
     }
 
-    /** 热门视频（`x/web-interface/popular`）作为「推荐」。 */
+    /** 热门视频（`x/web-interface/popular`）作为「热门」。拉 50 条做池子随机抽 10 条，刷新即随机重新分配。 */
     override fun getRecommendations(): Flow<List<RemoteSong>> = flow {
-        emit(BilibiliJson.parsePopular(get("x/web-interface/popular", "ps=20&pn=1")))
+        val pool = BilibiliJson.parsePopular(get("x/web-interface/popular", "ps=50&pn=1"))
+        emit(pool.shuffled().take(10))
     }
 
     /** 热门视频也挂到排行榜 tab（单一「热门」榜）。 */
@@ -124,9 +125,9 @@ class BilibiliMusicSource(
         emit(BilibiliJson.parseFavFolders(get("x/v3/fav/folder/created/list-all", "up_mid=$mid")))
     }
 
-    /** 动态（feed）视频（需登录）；匿名/失败返回空。 */
+    /** 动态（feed）视频（需登录）；匿名/失败返回空。最多展示 25 条。 */
     override fun getRadio(): Flow<List<RemoteSong>> = flow {
-        emit(BilibiliJson.parseDynamicFeed(get("x/polymer/web-dynamic/v1/feed/all", "type=video&page=1")))
+        emit(BilibiliJson.parseDynamicFeed(get("x/polymer/web-dynamic/v1/feed/all", "type=video&page=1")).take(25))
     }
 
     /** 每日推荐：B站无对应匿名接口，复用热门视频作为兜底。 */

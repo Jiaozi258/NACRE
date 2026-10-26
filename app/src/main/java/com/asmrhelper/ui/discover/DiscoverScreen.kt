@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -211,7 +212,14 @@ fun DiscoverScreen(
                             onOpenPlatformSwitch = { showPlatformDialog = true }
                         ) { selectedTab = it }
                         when (selectedTab) {
-                            0 -> VideoFavoritesTab(
+                            0 -> VideoHotTab(
+                                hot = recommendations,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRefresh = viewModel::loadRecommendations,
+                                onPlay = playSongs
+                            )
+                            1 -> VideoFavoritesTab(
                                 userPlaylists = userPlaylists,
                                 expandedPlaylistId = expandedPlaylistId,
                                 expandedPlaylistSongs = expandedPlaylistSongs,
@@ -320,8 +328,9 @@ private val discoverTabLabels = listOf(
     R.string.discover_tab_playlists
 )
 
-/** 视频源（B站/YouTube）发现页标签：只有收藏夹 + 动态，不显示音乐向的推荐/每日/排行榜/歌单。 */
+/** 视频源（B站/YouTube）发现页标签：热门 + 收藏夹 + 动态，不显示音乐向的推荐/每日/排行榜/歌单。 */
 private val videoDiscoverTabLabels = listOf(
+    R.string.discover_tab_hot,
     R.string.discover_tab_favorites,
     R.string.discover_tab_feed
 )
@@ -758,6 +767,48 @@ private fun PlaylistsTab(
                     }
                 }
             }
+        }
+    }
+}
+
+/** 视频源「热门」标签：最多 10 条热门视频，右上角可刷新随机重新分配。 */
+@Composable
+private fun VideoHotTab(
+    hot: List<RemoteSong>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRefresh: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    if (hot.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRefresh)
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        item(key = "video_hot_header") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.discover_tab_hot),
+                    color = TextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onRefresh) {
+                    Icon(Icons.Filled.Refresh, stringResource(R.string.discover_refresh), tint = TextSecondary)
+                }
+            }
+        }
+        itemsIndexed(hot, key = { _, it -> "hot:${it.sourceId}:${it.id}" }) { index, song ->
+            SongRow(song = song, onPlay = { onPlay(hot, index) })
         }
     }
 }
