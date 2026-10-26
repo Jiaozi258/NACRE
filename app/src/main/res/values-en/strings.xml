@@ -841,4 +841,23 @@
     <string name="http_error_5xx">Server error (HTTP %d), retry later</string>
     <string name="http_error_other">Download failed (HTTP %d)</string>
     <string name="video_extract_download_stream_empty">Download stream is empty</string>
+
+    <!-- Listen together -->
+    <string name="listen_together_title">Listen Together</string>
+    <string name="listen_together_create_room">Create room</string>
+    <string name="listen_together_join_room">Join room</string>
+    <string name="listen_together_nickname">Nickname</string>
+    <string name="listen_together_nickname_hint">Enter nickname</string>
+    <string name="listen_together_default_nickname">Listener</string>
+    <string name="listen_together_room_id">Room ID</string>
+    <string name="listen_together_role_host">Host</string>
+    <string name="listen_together_role_member">Member</string>
+    <string name="listen_together_copy_invite">Copy invite</string>
+    <string name="listen_together_share_invite">Share invite</string>
+    <string name="listen_together_leave_room">Leave room</string>
+    <string name="listen_together_join_hint">Copy the invite, then tap "Join room" to enter automatically</string>
+    <string name="listen_together_enter_code">Enter room ID</string>
+    <string name="listen_together_room_hint">Share the invite with friends to enter the same room</string>
+    <string name="listen_together_invite_copied">Invite copied</string>
+    <string name="listen_together_join_failed">No valid room ID found. Check the clipboard or enter it manually.</string>
 </resources>

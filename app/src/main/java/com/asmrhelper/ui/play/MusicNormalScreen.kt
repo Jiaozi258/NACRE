@@ -144,6 +144,7 @@ fun MusicNormalScreen(
 ) {
     val viewModel: PlayViewModel = hiltViewModel()
     val playlistViewModel: PlaylistViewModel = hiltViewModel()
+    val listenTogetherViewModel: ListenTogetherViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val lyrics by viewModel.lyrics.collectAsStateWithLifecycle()
     val translatedLyrics by viewModel.translatedLyrics.collectAsStateWithLifecycle()
@@ -157,6 +158,7 @@ fun MusicNormalScreen(
     val currentV3Reverb by viewModel.currentV3Reverb.collectAsStateWithLifecycle()
     val songNotes by viewModel.songNotes.collectAsStateWithLifecycle()
     val currentPlayStat by viewModel.currentPlayStat.collectAsStateWithLifecycle()
+    val listenTogetherState by listenTogetherViewModel.state.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
     val captionLines = when (lyricCaptionMode) {
@@ -207,6 +209,7 @@ fun MusicNormalScreen(
     var showBinauralDialog by remember { mutableStateOf(false) }
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
+    var showListenTogetherDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -301,6 +304,18 @@ fun MusicNormalScreen(
                 .statusBarsPadding()
                 .padding(top = 6.dp, start = 16.dp)
         )
+
+        // 右上角「一起听」入口（仅在默认页显示）
+        if (pagerState.currentPage == 1) {
+            ListenTogetherButton(
+                inRoom = listenTogetherState.inRoom,
+                onClick = { showListenTogetherDialog = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 6.dp, end = 16.dp)
+            )
+        }
     }
 
     // ── 更多菜单（与沉浸模式一致 + 写歌评）─────────────────
@@ -835,6 +850,14 @@ fun MusicNormalScreen(
             },
             containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // ── 一起听 ─────────────────────────────────────────
+    if (showListenTogetherDialog) {
+        ListenTogetherDialog(
+            viewModel = listenTogetherViewModel,
+            onDismiss = { showListenTogetherDialog = false }
         )
     }
 }

@@ -1,11 +1,13 @@
 package com.asmrhelper.di
 
 import com.asmrhelper.data.repository.AudioRepositoryImpl
+import com.asmrhelper.data.repository.ListenTogetherRepositoryImpl
 import com.asmrhelper.data.repository.PlayStatRepositoryImpl
 import com.asmrhelper.data.repository.PlaylistRepositoryImpl
 import com.asmrhelper.data.repository.SettingsRepositoryImpl
 import com.asmrhelper.data.repository.VideoAudioRepositoryImpl
 import com.asmrhelper.domain.repository.AudioRepository
+import com.asmrhelper.domain.repository.ListenTogetherRepository
 import com.asmrhelper.domain.repository.PlayStatRepository
 import com.asmrhelper.domain.repository.PlaylistRepository
 import com.asmrhelper.domain.repository.SettingsRepository
@@ -39,4 +41,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPlayStatRepository(impl: PlayStatRepositoryImpl): PlayStatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindListenTogetherRepository(impl: ListenTogetherRepositoryImpl): ListenTogetherRepository
 }

@@ -841,4 +841,23 @@
     <string name="http_error_5xx">服务器错误 (HTTP %d)，请稍后重试</string>
     <string name="http_error_other">下载失败 (HTTP %d)</string>
     <string name="video_extract_download_stream_empty">下载流为空</string>
+
+    <!-- 一起听 -->
+    <string name="listen_together_title">一起听</string>
+    <string name="listen_together_create_room">创建房间</string>
+    <string name="listen_together_join_room">加入房间</string>
+    <string name="listen_together_nickname">昵称</string>
+    <string name="listen_together_nickname_hint">输入昵称</string>
+    <string name="listen_together_default_nickname">听众</string>
+    <string name="listen_together_room_id">房间号</string>
+    <string name="listen_together_role_host">房主</string>
+    <string name="listen_together_role_member">成员</string>
+    <string name="listen_together_copy_invite">复制邀请</string>
+    <string name="listen_together_share_invite">分享邀请</string>
+    <string name="listen_together_leave_room">离开房间</string>
+    <string name="listen_together_join_hint">复制邀请后点击「加入房间」即可自动进入</string>
+    <string name="listen_together_enter_code">输入房间号</string>
+    <string name="listen_together_room_hint">将邀请分享给好友，一起进入同一房间</string>
+    <string name="listen_together_invite_copied">邀请已复制</string>
+    <string name="listen_together_join_failed">未找到有效房间号，请检查剪贴板或手动输入</string>
 </resources>
