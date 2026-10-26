@@ -30,7 +30,7 @@ NACRE is an Android audio app built around **two modes**:
 | Mode | What it does | Great for |
 |------|--------------|-----------|
 | 🌙 **ASMR mode** | Local audio + white noise + binaural beats + sleep tools | Relaxing, meditating, focusing, sleeping |
-| 🎵 **MUSIC mode** | Online music (NetEase / QQ Music) + lyrics + charts & recommendations | Everyday listening |
+| 🎵 **MUSIC mode** | Online music (NetEase / QQ Music / Bilibili / YouTube) + lyrics + charts & recommendations | Everyday listening |
 
 Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you can layer a background ambient sound on top of the main audio for an immersive feel.
 
@@ -42,15 +42,15 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 
 | Feature | Description |
 |---------|-------------|
-| **Dual sources** | NetEase Cloud Music + QQ Music, implemented natively (no web shell) |
-| **Search** | Cross-platform song search |
-| **Playlists / charts / recommendations** | Leaderboards, daily recommendations, personal FM, user playlists |
-| **Login** | NetEase account/password or QR login; QQ Music web login |
-| **Lyrics** | Word-by-word / line-by-line lyrics, scroll lyrics (flat / fisheye styles), offset calibration |
+| **Four sources** | NetEase / QQ Music / Bilibili / YouTube, implemented natively (no web shell) |
+| **Search** | Cross-platform search for songs / artists / playlists / albums |
+| **Playlists / charts / recommendations** | Leaderboards, daily recommendations, personal FM (one-tap radio), user playlists, Bilibili favorites |
+| **Login** | NetEase account/password or QR login; QQ Music web login; Bilibili web login |
+| **Lyrics** | Word-by-word / line-by-line lyrics, scroll lyrics (flat / fisheye styles), offset calibration, per-mode font size & line spacing (immersive / normal) |
 | **Multiple qualities** | Standard / higher / very high / lossless (per-source fallback) |
 | **Favorites** | Cross-source, login-free favorites saved to a local "Liked" list |
 
-> The NetEase `weapi` / `xeapi` encryption and QQ Music `zzc` signature were implemented from scratch by reading through public documentation — this is the part of the project I'm proudest of, and also where I made the most mistakes (X25519, AES, HMAC are full of traps).
+> The NetEase `weapi` / `xeapi` encryption, QQ Music `zzc` signature, and Bilibili WBI signature were implemented from scratch by reading through public documentation — this is the part of the project I'm proudest of, and also where I made the most mistakes (X25519, AES, HMAC are full of traps).
 
 ### 🌙 ASMR mode (sleep · relaxation)
 
@@ -72,6 +72,7 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | Effect | Description |
 |--------|-------------|
 | **3-band equalizer** | Bass / mid / treble ±10dB, auto-adapts to device frequency ranges |
+| **Effects rack** | Scene reverb · headphone presets · loudness / threshold (limiter + noise gate) · real L/R balance · speed & pitch |
 | **Volume-triggered effects** | Spray / sparkle / fountain animations with customizable colors & emoji |
 | **Audio visualizer** | Real-time FFT; bar / wave / dot / ring / symmetric / glow — 6 styles |
 | **Haptic feedback** | Beat-synced vibration with adjustable intensity |
@@ -127,7 +128,7 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | Crypto | Self-implemented: NetEase weapi / xeapi (RSA, AES, X25519 ECDH, HMAC), QQ zzc signature |
 | Images | Coil + Palette |
 | Async | Kotlin Coroutines + StateFlow |
-| Audio effects | Android Equalizer / Visualizer / Virtualizer + AudioTrack |
+| Audio effects | Android Equalizer / Virtualizer / DynamicsProcessing + Media3 AudioProcessor / AudioTrack |
 | Widget | AppWidgetProvider + RemoteViews |
 | Haptics | Vibrator / VibratorManager |
 
@@ -191,7 +192,7 @@ app/src/main/java/com/asmrhelper/
 
 ```bash
 # Clone the repo
-git clone https://github.com/JiaoZi258/NACRE.git
+git clone https://github.com/Jiaozi258/NACRE.git
 
 # Open with Android Studio → sync Gradle → run
 ```

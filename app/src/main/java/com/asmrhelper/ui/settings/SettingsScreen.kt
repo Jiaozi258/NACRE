@@ -2437,7 +2437,7 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
             ) {
                 Text(stringResource(R.string.profile_github), color = TextPrimary, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("JiaoZi258/NACRE", color = TextSecondary, fontSize = 13.sp)
+                    Text("Jiaozi258/NACRE", color = TextSecondary, fontSize = 13.sp)
                     Spacer(Modifier.width(4.dp))
                     Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
                 }
@@ -2446,15 +2446,15 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
     }
 }
 
-/** 读取当前安装版本名，失败时回退 "0.1"。 */
+/** 读取当前安装版本名，失败时回退 "0.2"。 */
 private fun currentVersionName(context: android.content.Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-        .getOrNull() ?: "0.1"
+        .getOrNull() ?: "0.2"
 
 /** 拉取 GitHub latest release 的 tag 与本地版本对比，返回展示给用户的提示文案。 */
 private fun checkForUpdate(context: android.content.Context): String {
     return try {
-        val conn = (URL("https://api.github.com/repos/JiaoZi258/NACRE/releases/latest")
+        val conn = (URL("https://api.github.com/repos/Jiaozi258/NACRE/releases/latest")
             .openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 10_000
