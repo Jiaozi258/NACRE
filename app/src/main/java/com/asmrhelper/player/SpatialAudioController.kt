@@ -23,7 +23,9 @@ enum class SpatialMode {
 }
 
 @Singleton
-class SpatialAudioController @Inject constructor() {
+class SpatialAudioController @Inject constructor(
+    private val balanceProcessor: StereoBalanceAudioProcessor
+) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var virtualizer: Virtualizer? = null
@@ -32,7 +34,7 @@ class SpatialAudioController @Inject constructor() {
     /** 环绕动画速度倍率（0.5~3.0） */
     @Volatile private var surroundSpeed: Float = 1f
 
-    /** 左右平衡 (-1=全左, 0=居中, 1=全右) —— 通过 Virtualizer 强度近似 */
+    /** 左右平衡 (-1=全左, 0=居中, 1=全右) —— 由 StereoBalanceAudioProcessor 真实作用于 L/R 增益 */
     private val _balance = MutableStateFlow(0f)
     val balanceValue: StateFlow<Float> = _balance.asStateFlow()
 
@@ -97,14 +99,10 @@ class SpatialAudioController @Inject constructor() {
     }
 
     /** 设置左右平衡 (-1.0 = 全左, 0 = 居中, 1 = 全右)。
-     *  通过 Virtualizer 强度近似（Android 无独立 Balance 类）。 */
+     *  由注入主播放器的 StereoBalanceAudioProcessor 真实作用于左右声道增益。 */
     fun setBalance(value: Float) {
         _balance.value = value.coerceIn(-1f, 1f)
-        // 用 Virtualizer 强度变化近似声场偏移
-        try {
-            val strength = (400 + _balance.value * 300).toInt().coerceIn(0, 1000)
-            virtualizer?.setStrength(strength.toShort())
-        } catch (_: Exception) { }
+        balanceProcessor.setBalance(_balance.value)
     }
 
     /** 设置声源距离（Virtualizer 强度 0~1000） */

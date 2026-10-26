@@ -7,9 +7,11 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.asmrhelper.player.BalanceRenderersFactory
 import com.asmrhelper.player.BinauralBeatEngine
 import com.asmrhelper.player.EqualizerController
 import com.asmrhelper.player.RefererHttpDataSourceFactory
+import com.asmrhelper.player.StereoBalanceAudioProcessor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,11 +46,18 @@ object PlayerModule {
     @Provides
     @Singleton
     @MainPlayer
-    fun provideMainPlayer(@ApplicationContext context: Context): ExoPlayer =
-        ExoPlayer.Builder(context)
+    fun provideMainPlayer(
+        @ApplicationContext context: Context,
+        balanceProcessor: StereoBalanceAudioProcessor
+    ): ExoPlayer {
+        // 主播放器用自定义 RenderersFactory，把 StereoBalanceAudioProcessor 注入
+        // 默认 AudioSink 的处理链，使「左右平衡」真正作用于 L/R 声道增益。
+        val renderersFactory = BalanceRenderersFactory(context, balanceProcessor)
+        return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory(context))
             .setAudioAttributes(musicAudioAttributes, /* handleAudioFocus = */ false)
             .build()
+    }
 
     @Provides
     @Singleton

@@ -480,6 +480,17 @@ class PlayViewModel @Inject constructor(
             _uiState.update { it.copy(selectedAmbientPath = settingsRepository.getSelectedAmbientAudio()) }
         }
 
+        // 恢复音量阈值（限幅器/噪声门）参数到音效控制器，保证重启后仍生效
+        viewModelScope.launch {
+            settingsRepository.getVolumeThresholdMode().collect { sceneEffectsController.setThresholdMode(it) }
+        }
+        viewModelScope.launch {
+            settingsRepository.getMinThresholdDb().collect { sceneEffectsController.setMinThreshold(it) }
+        }
+        viewModelScope.launch {
+            settingsRepository.getMaxThresholdDb().collect { sceneEffectsController.setMaxThreshold(it) }
+        }
+
         // Attach spatial audio — re-attach on mode change mid-playback
         viewModelScope.launch {
             combine(

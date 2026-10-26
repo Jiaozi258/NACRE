@@ -531,6 +531,7 @@
     <string name="login_in_progress">Signing in…</string>
     <string name="login_loading">Loading sign-in page…</string>
     <string name="login_qr_hint">Scan the code or use web sign in</string>
+    <string name="login_qq_hint">Tap “Sign in” in the top-right and scan the code, or use account sign in</string>
 
     <!-- Playback history -->
     <string name="history_clear_all">Clear all</string>
