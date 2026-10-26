@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -1262,7 +1263,6 @@ private fun AppearanceSettingsScreen(
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val backgroundContrastMode by viewModel.backgroundContrastMode.collectAsStateWithLifecycle()
     val blurBackgroundImage by viewModel.blurBackgroundImage.collectAsStateWithLifecycle()
-    val frostedGlassEnabled by viewModel.frostedGlassEnabled.collectAsStateWithLifecycle()
     val appFontPath by viewModel.appFontPath.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showFontDialog by remember { mutableStateOf(false) }
@@ -1477,37 +1477,6 @@ private fun AppearanceSettingsScreen(
                 Switch(
                     checked = blurBackgroundImage,
                     onCheckedChange = { viewModel.setBlurBackgroundImage(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = LocalAccentColor.current,
-                        checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
-                    )
-                )
-            }
-        }
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            shape = CardShape,
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
-            border = HairlineBorder
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_frosted_glass), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text(stringResource(R.string.settings_frosted_glass_desc), color = TextHint, fontSize = 12.sp)
-                }
-                Spacer(Modifier.width(12.dp))
-                Switch(
-                    checked = frostedGlassEnabled,
-                    onCheckedChange = { viewModel.setFrostedGlassEnabled(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = LocalAccentColor.current,
                         checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f)
@@ -2007,6 +1976,7 @@ private fun AudioEffectsSettingsScreen(
     val visualizerEnabled by viewModel.audioVisualizerEnabled.collectAsStateWithLifecycle()
     val triggerEnabled by viewModel.volumeTriggerEnabled.collectAsStateWithLifecycle()
     val triggerThreshold by viewModel.volumeTriggerThreshold.collectAsStateWithLifecycle()
+    val hapticTriggerThreshold by viewModel.hapticTriggerThreshold.collectAsStateWithLifecycle()
     val triggerColor by viewModel.volumeTriggerColor.collectAsStateWithLifecycle()
     val triggerEmoji by viewModel.volumeTriggerEmoji.collectAsStateWithLifecycle()
     val triggerAnimType by viewModel.volumeTriggerAnimType.collectAsStateWithLifecycle()
@@ -2232,6 +2202,36 @@ private fun AudioEffectsSettingsScreen(
                         )
                     )
                 }
+            }
+        }
+
+        SectionSpacer()
+
+        SectionHeader(icon = Icons.Filled.Vibration, title = stringResource(R.string.settings_haptic_trigger_section))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = CardShape,
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = HairlineBorder
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Text(stringResource(R.string.settings_haptic_threshold, hapticTriggerThreshold), color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.settings_haptic_threshold_desc), color = TextHint, fontSize = 11.sp)
+                Spacer(Modifier.height(4.dp))
+                Slider(
+                    value = hapticTriggerThreshold.toFloat(),
+                    onValueChange = { viewModel.setHapticTriggerThreshold(it.toInt()) },
+                    valueRange = 10f..100f,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = LocalAccentColor.current,
+                        activeTrackColor = LocalAccentColor.current,
+                        inactiveTrackColor = DarkSurfaceVariant
+                    )
+                )
             }
         }
 

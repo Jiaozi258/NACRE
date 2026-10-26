@@ -677,6 +677,9 @@
     <string name="settings_volume_trigger_section">Volume trigger effects</string>
     <string name="settings_enable_trigger">Enable volume trigger effects</string>
     <string name="settings_trigger_threshold">Trigger threshold: %d%%</string>
+    <string name="settings_haptic_trigger_section">Haptic trigger threshold</string>
+    <string name="settings_haptic_threshold">Trigger threshold: %d%%</string>
+    <string name="settings_haptic_threshold_desc">Vibrates when volume reaches this level</string>
     <string name="settings_trigger_anim">Effect animation type</string>
     <string name="settings_trigger_anim_diffuse">Diffuse</string>
     <string name="settings_trigger_anim_flicker">Flicker</string>

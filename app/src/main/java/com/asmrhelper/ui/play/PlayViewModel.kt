@@ -164,6 +164,7 @@ class PlayViewModel @Inject constructor(
     private val _triggerEffect = MutableSharedFlow<TriggerEffectConfig>(extraBufferCapacity = 2)
     val triggerEffect: SharedFlow<TriggerEffectConfig> = _triggerEffect
     private var lastTriggerMs: Long = 0L
+    private var lastHapticMs: Long = 0L
 
     // Settings: visualizer and volume trigger
     private val _visualizerEnabled = MutableStateFlow(false)
@@ -193,6 +194,8 @@ class PlayViewModel @Inject constructor(
     val volumeTriggerEnabled: StateFlow<Boolean> = _volumeTriggerEnabled
     private val _volumeThreshold = MutableStateFlow(70)
     val volumeThreshold: StateFlow<Int> = _volumeThreshold
+    private val _hapticThreshold = MutableStateFlow(40)
+    val hapticThreshold: StateFlow<Int> = _hapticThreshold
     private val _triggerColor = MutableStateFlow(0xFFFFFFFFL)
     private val _triggerEmoji = MutableStateFlow("")
     private val _triggerAnimType = MutableStateFlow(0)
@@ -384,6 +387,9 @@ class PlayViewModel @Inject constructor(
             settingsRepository.getVolumeTriggerThreshold().collect { _volumeThreshold.value = it }
         }
         viewModelScope.launch {
+            settingsRepository.getHapticTriggerThreshold().collect { _hapticThreshold.value = it }
+        }
+        viewModelScope.launch {
             settingsRepository.getVolumeTriggerColor().collect { _triggerColor.value = it }
         }
         viewModelScope.launch {
@@ -513,17 +519,30 @@ class PlayViewModel @Inject constructor(
                 }
         }
 
-        // 触觉反馈同步
+        // 触觉反馈：音量触发（阈值驱动，阈值来自 设置 → 音频特效 → 触觉触发阈值）
         viewModelScope.launch {
             playerManager.state.collect { state ->
-                if (_uiState.value.hapticEnabled && state.isPlaying) {
-                    hapticFeedbackController.startSync {
-                        val s = playerManager.state.value
-                        if (s.isPlaying && s.durationMs > 0) s.progressMs to s.durationMs
-                        else null
-                    }
-                } else {
+                if (!_uiState.value.hapticEnabled || !state.isPlaying) {
                     hapticFeedbackController.stopSync()
+                    return@collect
+                }
+                val threshold = _hapticThreshold.value
+
+                // 用真实波形估算当前音量（与可视化触发特效一致）
+                val waveform = audioVisualizerController.waveformBytes.value
+                val volume = if (waveform != null && waveform.isNotEmpty()) {
+                    var sum = 0.0
+                    for (b in waveform) sum += ((b.toInt() - 128) * (b.toInt() - 128))
+                    kotlin.math.sqrt(sum / waveform.size).toInt().coerceIn(0, 100)
+                } else {
+                    val progress = if (state.durationMs > 0) state.progressMs.toFloat() / state.durationMs else 0f
+                    (50 + (kotlin.math.sin(progress * 10) * 40)).toInt()
+                }
+
+                val now = System.currentTimeMillis()
+                if (volume >= threshold && now - lastHapticMs > 300L) {
+                    lastHapticMs = now
+                    hapticFeedbackController.pulseOnce()
                 }
             }
         }

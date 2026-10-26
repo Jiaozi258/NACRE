@@ -38,6 +38,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val _visualizerEnabled = MutableStateFlow(prefs.getBoolean("audio_visualizer", false))
     private val _triggerEnabled = MutableStateFlow(prefs.getBoolean("volume_trigger", false))
     private val _triggerThreshold = MutableStateFlow(prefs.getInt("volume_threshold", 70))
+    private val _hapticTriggerThreshold = MutableStateFlow(prefs.getInt("haptic_trigger_threshold", 40))
     private val _triggerEffect = MutableStateFlow(prefs.getInt("volume_effect", 0))
     private val _ambientAudios = MutableStateFlow(loadAmbientList())
     private val _hypnosisEnabled = MutableStateFlow(prefs.getBoolean("hypnosis_mode", false))
@@ -212,6 +213,13 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setVolumeTriggerThreshold(threshold: Int) {
         prefs.edit().putInt("volume_threshold", threshold).apply()
         _triggerThreshold.value = threshold
+    }
+
+    override fun getHapticTriggerThreshold(): Flow<Int> = _hapticTriggerThreshold
+
+    override suspend fun setHapticTriggerThreshold(threshold: Int) {
+        prefs.edit().putInt("haptic_trigger_threshold", threshold.coerceIn(0, 100)).apply()
+        _hapticTriggerThreshold.value = threshold.coerceIn(0, 100)
     }
 
     override fun getVolumeTriggerEffect(): Flow<Int> = _triggerEffect

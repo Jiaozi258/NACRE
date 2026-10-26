@@ -677,6 +677,9 @@
     <string name="settings_volume_trigger_section">音量触发特效</string>
     <string name="settings_enable_trigger">启用音量触发特效</string>
     <string name="settings_trigger_threshold">触发阈值: %d%%</string>
+    <string name="settings_haptic_trigger_section">触觉触发阈值</string>
+    <string name="settings_haptic_threshold">触发阈值: %d%%</string>
+    <string name="settings_haptic_threshold_desc">音量达到该阈值时触发振动反馈</string>
     <string name="settings_trigger_anim">特效动画类型</string>
     <string name="settings_trigger_anim_diffuse">扩散式</string>
     <string name="settings_trigger_anim_flicker">闪烁</string>

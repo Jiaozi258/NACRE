@@ -207,6 +207,9 @@ class SettingsViewModel @Inject constructor(
     val volumeTriggerThreshold: StateFlow<Int> = settingsRepository.getVolumeTriggerThreshold()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 70)
 
+    val hapticTriggerThreshold: StateFlow<Int> = settingsRepository.getHapticTriggerThreshold()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 40)
+
     val volumeTriggerEffect: StateFlow<Int> = settingsRepository.getVolumeTriggerEffect()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -216,6 +219,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setVolumeTriggerThreshold(threshold: Int) {
         viewModelScope.launch { settingsRepository.setVolumeTriggerThreshold(threshold) }
+    }
+
+    fun setHapticTriggerThreshold(threshold: Int) {
+        viewModelScope.launch { settingsRepository.setHapticTriggerThreshold(threshold) }
     }
 
     fun setVolumeTriggerEffect(effect: Int) {

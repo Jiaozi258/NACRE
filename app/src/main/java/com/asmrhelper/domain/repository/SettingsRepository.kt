@@ -44,6 +44,8 @@ interface SettingsRepository {
     suspend fun setVolumeTriggerEnabled(enabled: Boolean)
     fun getVolumeTriggerThreshold(): Flow<Int>
     suspend fun setVolumeTriggerThreshold(threshold: Int)
+    fun getHapticTriggerThreshold(): Flow<Int>
+    suspend fun setHapticTriggerThreshold(threshold: Int)
     fun getVolumeTriggerEffect(): Flow<Int> // now used as animation type (0=spray, 1=flash, 2=fountain)
     suspend fun setVolumeTriggerEffect(effect: Int)
     fun getVolumeTriggerColor(): Flow<Long>
