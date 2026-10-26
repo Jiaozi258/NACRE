@@ -94,6 +94,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.asmrhelper.R
+import com.asmrhelper.data.local.db.entity.PlayStatEntity
 import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.LoopMode
 import com.asmrhelper.domain.model.PlaybackBackgroundMode
@@ -152,6 +153,7 @@ fun MusicNormalScreen(
     val eqCurrentPreset by viewModel.eqCurrentPreset.collectAsStateWithLifecycle()
     val currentV3Reverb by viewModel.currentV3Reverb.collectAsStateWithLifecycle()
     val songNotes by viewModel.songNotes.collectAsStateWithLifecycle()
+    val currentPlayStat by viewModel.currentPlayStat.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricCaptionMode by viewModel.lyricCaptionMode.collectAsStateWithLifecycle()
     val captionLines = when (lyricCaptionMode) {
@@ -273,6 +275,7 @@ fun MusicNormalScreen(
                     audio = currentAudio,
                     eqCurrentPreset = eqCurrentPreset,
                     currentV3Reverb = currentV3Reverb,
+                    playStat = currentPlayStat,
                     savedNote = songKey?.let { songNotes[it] } ?: "",
                     onApplyHeadphonePreset = { viewModel.applyEqPreset(it.toEqPreset()) },
                     onResetEq = { viewModel.resetEq() },
@@ -1050,6 +1053,7 @@ private fun EqualizerPanel(
     audio: com.asmrhelper.domain.model.Audio?,
     eqCurrentPreset: String,
     currentV3Reverb: V3ReverbPreset,
+    playStat: PlayStatEntity?,
     savedNote: String,
     onApplyHeadphonePreset: (HeadphonePreset) -> Unit,
     onResetEq: () -> Unit,
@@ -1165,6 +1169,14 @@ private fun EqualizerPanel(
                     onClick = audio?.album?.takeIf { it.isNotBlank() }?.let { album -> { onSearch(album) } }
                 )
                 InfoRow(stringResource(R.string.song_info_source), sourceText)
+                InfoRow(
+                    stringResource(R.string.song_info_listen_count),
+                    playStat?.takeIf { it.listenCount > 0 }?.listenCount?.toString()
+                )
+                InfoRow(
+                    stringResource(R.string.song_info_first_listen),
+                    playStat?.takeIf { it.firstListenAt > 0 }?.let { formatDateTime(it.firstListenAt) }
+                )
             }
         }
 
@@ -1549,6 +1561,9 @@ private fun formatTime(ms: Long): String {
 
 private fun formatDate(ms: Long): String =
     java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(ms))
+
+private fun formatDateTime(ms: Long): String =
+    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(ms))
 
 /** 菜单行：左标签 + 可选右值，整行可点。 */
 @Composable

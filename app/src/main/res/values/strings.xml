@@ -151,6 +151,8 @@
     <string name="song_info_album">专辑</string>
     <string name="song_info_source">来源</string>
     <string name="song_info_publish">发行时间</string>
+    <string name="song_info_listen_count">收听次数</string>
+    <string name="song_info_first_listen">首次收听</string>
     <string name="song_info_source_local">本地</string>
     <string name="bg_blurred_cover">模糊封面</string>
     <string name="bg_folia_duotone">双色流动</string>

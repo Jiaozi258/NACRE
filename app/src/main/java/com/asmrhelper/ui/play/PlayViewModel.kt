@@ -13,11 +13,13 @@ import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.PlaybackQuality
 import com.asmrhelper.domain.model.PlayerState
 import com.asmrhelper.domain.repository.AudioRepository
+import com.asmrhelper.domain.repository.PlayStatRepository
 import com.asmrhelper.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.asmrhelper.data.local.db.entity.BookmarkEntity
+import com.asmrhelper.data.local.db.entity.PlayStatEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
 import com.asmrhelper.data.repository.BookmarkRepository
 import com.asmrhelper.data.repository.SceneRepository
@@ -147,7 +149,8 @@ class PlayViewModel @Inject constructor(
     private val musicSourceManager: MusicSourceManager,
     private val remoteFavoritesStore: RemoteFavoritesStore,
     private val audioDeviceMonitor: AudioDeviceMonitor,
-    private val songNoteStore: SongNoteStore
+    private val songNoteStore: SongNoteStore,
+    private val playStatRepository: PlayStatRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayUiState())
@@ -174,6 +177,13 @@ class PlayViewModel @Inject constructor(
     // 歌曲笔记（歌评）：以歌曲稳定标识为键
     val songNotes: StateFlow<Map<String, String>> = songNoteStore.notes
     fun setSongNote(songKey: String, note: String) = songNoteStore.setNote(songKey, note)
+
+    // 当前歌曲播放统计（收听次数 / 首次收听时间），随切歌实时更新。
+    val currentPlayStat: StateFlow<PlayStatEntity?> = playerManager.state
+        .map { it.currentAudio?.let { a -> audioSongKey(a) } }
+        .distinctUntilChanged()
+        .flatMapLatest { key -> if (key == null) flowOf(null) else playStatRepository.observe(key) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // Ambiance effects (particles + glow)
     private val _ambianceEffectsEnabled = MutableStateFlow(true)
@@ -557,6 +567,23 @@ class PlayViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { audio -> loadLyricsFor(audio) }
         }
+
+        // 播放统计：每首新歌开始播放时记一次收听（暂停/续播不重复计数）。
+        viewModelScope.launch {
+            var lastCountedKey: String? = null
+            playerManager.state.collect { state ->
+                val audio = state.currentAudio
+                if (audio == null) {
+                    lastCountedKey = null
+                    return@collect
+                }
+                val key = audioSongKey(audio)
+                if (state.isPlaying && key != lastCountedKey) {
+                    lastCountedKey = key
+                    playStatRepository.recordListen(key, audio.title, audio.artist, System.currentTimeMillis())
+                }
+            }
+        }
     }
 
     private fun loadLyricsFor(audio: Audio?) {
@@ -634,6 +661,11 @@ class PlayViewModel @Inject constructor(
             }
         }
     }
+
+    /** 歌曲稳定标识：远程用 sourceId:songId，本地用 filePath。播放统计/歌评共用。 */
+    private fun audioSongKey(audio: Audio): String =
+        if (audio.isRemoteSong()) "remote:${audio.sourceId}:${audio.sourceSongId ?: audio.id}"
+        else "local:${audio.filePath}"
 
     /** 在线歌曲 → 重新解析流 URL 作为 filePath；本地歌曲/解析失败原样返回。 */
     private suspend fun resolveRemoteUrl(audio: Audio): Audio {

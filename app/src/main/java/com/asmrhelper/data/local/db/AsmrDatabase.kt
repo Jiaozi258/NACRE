@@ -12,6 +12,7 @@ import com.asmrhelper.data.local.db.dao.TriggerPadDao
 import com.asmrhelper.data.local.db.dao.ImageAlbumDao
 import com.asmrhelper.data.local.db.dao.ImageLibraryDao
 import com.asmrhelper.data.local.db.dao.PlayHistoryDao
+import com.asmrhelper.data.local.db.dao.PlayStatDao
 import com.asmrhelper.data.local.db.dao.VideoAudioDao
 import com.asmrhelper.data.local.db.entity.AudioBgBinding
 import com.asmrhelper.data.local.db.entity.AudioEntity
@@ -20,6 +21,7 @@ import com.asmrhelper.data.local.db.entity.BookmarkEntity
 import com.asmrhelper.data.local.db.entity.ImageAlbumEntity
 import com.asmrhelper.data.local.db.entity.ImageLibraryEntity
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
+import com.asmrhelper.data.local.db.entity.PlayStatEntity
 import com.asmrhelper.data.local.db.entity.PlaylistAudioCrossRef
 import com.asmrhelper.data.local.db.entity.PlaylistEntity
 import com.asmrhelper.data.local.db.entity.SceneEntity
@@ -41,9 +43,10 @@ import com.asmrhelper.data.local.db.entity.VideoAudioEntity
         VideoAudioEntity::class,
         PlayHistoryEntity::class,
         ImageLibraryEntity::class,
-        ImageAlbumEntity::class
+        ImageAlbumEntity::class,
+        PlayStatEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AsmrDatabase : RoomDatabase() {
@@ -58,4 +61,5 @@ abstract class AsmrDatabase : RoomDatabase() {
     abstract fun playHistoryDao(): PlayHistoryDao
     abstract fun imageLibraryDao(): ImageLibraryDao
     abstract fun imageAlbumDao(): ImageAlbumDao
+    abstract fun playStatDao(): PlayStatDao
 }
