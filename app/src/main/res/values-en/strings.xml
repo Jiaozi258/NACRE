@@ -659,6 +659,8 @@
     <string name="settings_ambient_imported">Ambient sound imported</string>
 
     <!-- Lyrics settings -->
+    <string name="settings_lyrics_mode_immersive">Immersive mode</string>
+    <string name="settings_lyrics_mode_normal">Normal mode</string>
     <string name="settings_lyrics_font_size">Font size: %d sp</string>
     <string name="settings_lyrics_line_spacing">Line spacing: %sx</string>
     <string name="settings_lyrics_shadow">Font shadow</string>

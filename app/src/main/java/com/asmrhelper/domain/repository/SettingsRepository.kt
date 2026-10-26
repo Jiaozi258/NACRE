@@ -107,12 +107,13 @@ interface SettingsRepository {
     suspend fun setVolumeFadeMs(ms: Int)
 
     // ── 歌词设置 ───────────────────────────────────────
-    fun getLyricsFontSize(): Flow<Int>
-    suspend fun setLyricsFontSize(sp: Int)
+    // 字体大小/行间距按播放页风格区分：0 = 沉浸模式，1 = 正常模式
+    fun getLyricsFontSize(mode: Int): Flow<Int>
+    suspend fun setLyricsFontSize(mode: Int, sp: Int)
     fun getLyricsShadowEnabled(): Flow<Boolean>
     suspend fun setLyricsShadowEnabled(enabled: Boolean)
-    fun getLyricsLineSpacing(): Flow<Float>
-    suspend fun setLyricsLineSpacing(spacing: Float)
+    fun getLyricsLineSpacing(mode: Int): Flow<Float>
+    suspend fun setLyricsLineSpacing(mode: Int, spacing: Float)
     fun getLyricsDisplayArea(): Flow<Int> // 0=上三分之一, 1=全屏
     suspend fun setLyricsDisplayArea(area: Int)
     fun getLyricsAlignment(): Flow<Int> // 0=居中, 1=左对齐, 2=右对齐

@@ -659,6 +659,8 @@
     <string name="settings_ambient_imported">已导入环境音</string>
 
     <!-- 歌词设置 -->
+    <string name="settings_lyrics_mode_immersive">沉浸模式</string>
+    <string name="settings_lyrics_mode_normal">正常模式</string>
     <string name="settings_lyrics_font_size">字体大小：%d sp</string>
     <string name="settings_lyrics_line_spacing">行间距：%sx</string>
     <string name="settings_lyrics_shadow">字体阴影</string>

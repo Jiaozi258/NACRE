@@ -1784,9 +1784,11 @@ private fun LyricsSettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel
 ) {
-    val lyricsFontSize by viewModel.lyricsFontSize.collectAsStateWithLifecycle()
+    val lyricsFontSizeImmersive by viewModel.lyricsFontSizeImmersive.collectAsStateWithLifecycle()
+    val lyricsFontSizeNormal by viewModel.lyricsFontSizeNormal.collectAsStateWithLifecycle()
     val lyricsShadow by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
-    val lyricsLineSpacing by viewModel.lyricsLineSpacing.collectAsStateWithLifecycle()
+    val lyricsLineSpacingImmersive by viewModel.lyricsLineSpacingImmersive.collectAsStateWithLifecycle()
+    val lyricsLineSpacingNormal by viewModel.lyricsLineSpacingNormal.collectAsStateWithLifecycle()
     val lyricsDisplayArea by viewModel.lyricsDisplayArea.collectAsStateWithLifecycle()
     val lyricsAlignment by viewModel.lyricsAlignment.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
@@ -1866,19 +1868,50 @@ private fun LyricsSettingsScreen(
 
                 HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
 
-                Text(stringResource(R.string.settings_lyrics_font_size, lyricsFontSize), color = TextPrimary, fontSize = 14.sp)
+                Text(
+                    stringResource(R.string.settings_lyrics_mode_immersive),
+                    color = LocalAccentColor.current,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(stringResource(R.string.settings_lyrics_font_size, lyricsFontSizeImmersive), color = TextPrimary, fontSize = 14.sp)
                 Slider(
-                    value = lyricsFontSize.toFloat(),
-                    onValueChange = { viewModel.setLyricsFontSize(it.toInt()) },
+                    value = lyricsFontSizeImmersive.toFloat(),
+                    onValueChange = { viewModel.setLyricsFontSize(0, it.toInt()) },
                     valueRange = 10f..32f,
                     steps = 21,
                     colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                 )
 
-                Text(stringResource(R.string.settings_lyrics_line_spacing, "%.1f".format(lyricsLineSpacing)), color = TextPrimary, fontSize = 14.sp)
+                Text(stringResource(R.string.settings_lyrics_line_spacing, "%.1f".format(lyricsLineSpacingImmersive)), color = TextPrimary, fontSize = 14.sp)
                 Slider(
-                    value = lyricsLineSpacing,
-                    onValueChange = { viewModel.setLyricsLineSpacing(it) },
+                    value = lyricsLineSpacingImmersive,
+                    onValueChange = { viewModel.setLyricsLineSpacing(0, it) },
+                    valueRange = 1f..3f,
+                    colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                )
+
+                HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    stringResource(R.string.settings_lyrics_mode_normal),
+                    color = LocalAccentColor.current,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(stringResource(R.string.settings_lyrics_font_size, lyricsFontSizeNormal), color = TextPrimary, fontSize = 14.sp)
+                Slider(
+                    value = lyricsFontSizeNormal.toFloat(),
+                    onValueChange = { viewModel.setLyricsFontSize(1, it.toInt()) },
+                    valueRange = 10f..32f,
+                    steps = 21,
+                    colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
+                )
+
+                Text(stringResource(R.string.settings_lyrics_line_spacing, "%.1f".format(lyricsLineSpacingNormal)), color = TextPrimary, fontSize = 14.sp)
+                Slider(
+                    value = lyricsLineSpacingNormal,
+                    onValueChange = { viewModel.setLyricsLineSpacing(1, it) },
                     valueRange = 1f..3f,
                     colors = SliderDefaults.colors(thumbColor = LocalAccentColor.current, activeTrackColor = LocalAccentColor.current)
                 )

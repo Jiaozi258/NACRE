@@ -394,12 +394,26 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // ── 歌词设置 ───────────────────────────────────────
+    // 字体大小/行间距按播放页风格区分：0 = 沉浸模式，1 = 正常模式。
+    // 旧版本只有单一值（lyrics_font_size / lyrics_line_spacing），迁移时作为两模式的初始值。
 
-    private val _lyricsFontSize = MutableStateFlow(prefs.getInt("lyrics_font_size", 16))
-    override fun getLyricsFontSize(): Flow<Int> = _lyricsFontSize
-    override suspend fun setLyricsFontSize(sp: Int) {
-        prefs.edit().putInt("lyrics_font_size", sp.coerceIn(10, 32)).apply()
-        _lyricsFontSize.value = sp.coerceIn(10, 32)
+    private val _lyricsFontSizeImmersive = MutableStateFlow(
+        prefs.getInt("lyrics_font_size_immersive", prefs.getInt("lyrics_font_size", 16))
+    )
+    private val _lyricsFontSizeNormal = MutableStateFlow(
+        prefs.getInt("lyrics_font_size_normal", prefs.getInt("lyrics_font_size", 16))
+    )
+    override fun getLyricsFontSize(mode: Int): Flow<Int> =
+        if (mode == 1) _lyricsFontSizeNormal else _lyricsFontSizeImmersive
+    override suspend fun setLyricsFontSize(mode: Int, sp: Int) {
+        val clamped = sp.coerceIn(10, 32)
+        if (mode == 1) {
+            prefs.edit().putInt("lyrics_font_size_normal", clamped).apply()
+            _lyricsFontSizeNormal.value = clamped
+        } else {
+            prefs.edit().putInt("lyrics_font_size_immersive", clamped).apply()
+            _lyricsFontSizeImmersive.value = clamped
+        }
     }
 
     private val _lyricsShadow = MutableStateFlow(prefs.getBoolean("lyrics_shadow", false))
@@ -409,11 +423,23 @@ class SettingsRepositoryImpl @Inject constructor(
         _lyricsShadow.value = enabled
     }
 
-    private val _lyricsLineSpacing = MutableStateFlow(prefs.getFloat("lyrics_line_spacing", 1.5f))
-    override fun getLyricsLineSpacing(): Flow<Float> = _lyricsLineSpacing
-    override suspend fun setLyricsLineSpacing(spacing: Float) {
-        prefs.edit().putFloat("lyrics_line_spacing", spacing.coerceIn(1f, 3f)).apply()
-        _lyricsLineSpacing.value = spacing.coerceIn(1f, 3f)
+    private val _lyricsLineSpacingImmersive = MutableStateFlow(
+        prefs.getFloat("lyrics_line_spacing_immersive", prefs.getFloat("lyrics_line_spacing", 1.5f))
+    )
+    private val _lyricsLineSpacingNormal = MutableStateFlow(
+        prefs.getFloat("lyrics_line_spacing_normal", prefs.getFloat("lyrics_line_spacing", 1.5f))
+    )
+    override fun getLyricsLineSpacing(mode: Int): Flow<Float> =
+        if (mode == 1) _lyricsLineSpacingNormal else _lyricsLineSpacingImmersive
+    override suspend fun setLyricsLineSpacing(mode: Int, spacing: Float) {
+        val clamped = spacing.coerceIn(1f, 3f)
+        if (mode == 1) {
+            prefs.edit().putFloat("lyrics_line_spacing_normal", clamped).apply()
+            _lyricsLineSpacingNormal.value = clamped
+        } else {
+            prefs.edit().putFloat("lyrics_line_spacing_immersive", clamped).apply()
+            _lyricsLineSpacingImmersive.value = clamped
+        }
     }
 
     private val _lyricsDisplayArea = MutableStateFlow(prefs.getInt("lyrics_display_area", 0))

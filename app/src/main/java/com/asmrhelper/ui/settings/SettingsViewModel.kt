@@ -407,12 +407,17 @@ class SettingsViewModel @Inject constructor(
     }
 
     // ── 歌词设置 ──────────────────────────────────────
+    // 字体大小/行间距按播放页风格区分：0 = 沉浸模式，1 = 正常模式
 
-    val lyricsFontSize: StateFlow<Int> = settingsRepository.getLyricsFontSize()
+    val lyricsFontSizeImmersive: StateFlow<Int> = settingsRepository.getLyricsFontSize(0)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16)
+    val lyricsFontSizeNormal: StateFlow<Int> = settingsRepository.getLyricsFontSize(1)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16)
     val lyricsShadowEnabled: StateFlow<Boolean> = settingsRepository.getLyricsShadowEnabled()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-    val lyricsLineSpacing: StateFlow<Float> = settingsRepository.getLyricsLineSpacing()
+    val lyricsLineSpacingImmersive: StateFlow<Float> = settingsRepository.getLyricsLineSpacing(0)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.5f)
+    val lyricsLineSpacingNormal: StateFlow<Float> = settingsRepository.getLyricsLineSpacing(1)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.5f)
     val lyricsDisplayArea: StateFlow<Int> = settingsRepository.getLyricsDisplayArea()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -425,14 +430,14 @@ class SettingsViewModel @Inject constructor(
     val appFontPath: StateFlow<String?> = settingsRepository.getAppFontPath()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun setLyricsFontSize(sp: Int) {
-        viewModelScope.launch { settingsRepository.setLyricsFontSize(sp) }
+    fun setLyricsFontSize(mode: Int, sp: Int) {
+        viewModelScope.launch { settingsRepository.setLyricsFontSize(mode, sp) }
     }
     fun setLyricsShadowEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setLyricsShadowEnabled(enabled) }
     }
-    fun setLyricsLineSpacing(spacing: Float) {
-        viewModelScope.launch { settingsRepository.setLyricsLineSpacing(spacing) }
+    fun setLyricsLineSpacing(mode: Int, spacing: Float) {
+        viewModelScope.launch { settingsRepository.setLyricsLineSpacing(mode, spacing) }
     }
     fun setLyricsDisplayArea(area: Int) {
         viewModelScope.launch { settingsRepository.setLyricsDisplayArea(area) }
