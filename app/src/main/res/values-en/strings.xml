@@ -860,4 +860,17 @@
     <string name="listen_together_room_hint">Share the invite with friends to enter the same room</string>
     <string name="listen_together_invite_copied">Invite copied</string>
     <string name="listen_together_join_failed">No valid room ID found. Check the clipboard or enter it manually.</string>
+
+    <!-- Mini games -->
+    <string name="play_mini_game">Mini games</string>
+    <string name="mini_game_title">Mini games</string>
+    <string name="mini_game_2048">2048</string>
+    <string name="mini_game_minesweeper">Minesweeper</string>
+    <string name="mini_game_score">Score %1$d</string>
+    <string name="mini_game_restart">Restart</string>
+    <string name="mini_game_2048_hint">Swipe to merge equal tiles</string>
+    <string name="mini_game_flag_mode">Flag</string>
+    <string name="mini_game_reveal_mode">Reveal</string>
+    <string name="mini_game_won">You win!</string>
+    <string name="mini_game_lost">Game over</string>
 </resources>

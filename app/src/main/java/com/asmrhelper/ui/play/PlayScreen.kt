@@ -99,6 +99,8 @@ import com.asmrhelper.ui.components.HypnosisBgType
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
+import com.asmrhelper.ui.games.MiniGame
+import com.asmrhelper.ui.games.MiniGameOverlay
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.ErrorRed
@@ -130,6 +132,8 @@ fun PlayScreen(
     var showBookmarkDialog by remember { mutableStateOf(false) }
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
+    var showGameDialog by remember { mutableStateOf(false) }
+    var activeGame by remember { mutableStateOf<MiniGame?>(null) }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -454,6 +458,14 @@ fun PlayScreen(
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(onClick = { showGameDialog = true }) {
+                    Text(
+                        text = stringResource(R.string.play_mini_game),
+                        color = TextHint,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
 
             // 场景 + 书签
@@ -573,6 +585,11 @@ fun PlayScreen(
                         interactionSource = remember { MutableInteractionSource() }
                     ) { viewModel.showHypnosisUi() }
             )
+        }
+
+        // 小游戏全屏浮层（覆盖在播放页之上，音频继续播放）
+        activeGame?.let { game ->
+            MiniGameOverlay(game = game, onClose = { activeGame = null })
         }
     }
 
@@ -1226,6 +1243,50 @@ fun PlayScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showBookmarkDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
+            containerColor = FrostedSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // 小游戏选择对话框（2048 / 扫雷）
+    if (showGameDialog) {
+        FrostedAlertDialog(
+            onDismissRequest = { showGameDialog = false },
+            title = { Text(stringResource(R.string.mini_game_title), color = TextPrimary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.mini_game_2048),
+                        color = LocalAccentColor.current,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                activeGame = MiniGame.GAME_2048
+                                showGameDialog = false
+                            }
+                            .padding(vertical = 12.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.mini_game_minesweeper),
+                        color = LocalAccentColor.current,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                activeGame = MiniGame.MINESWEEPER
+                                showGameDialog = false
+                            }
+                            .padding(vertical = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showGameDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) } },
             containerColor = FrostedSurface,
             shape = RoundedCornerShape(16.dp)
         )

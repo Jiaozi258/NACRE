@@ -860,4 +860,17 @@
     <string name="listen_together_room_hint">将邀请分享给好友，一起进入同一房间</string>
     <string name="listen_together_invite_copied">邀请已复制</string>
     <string name="listen_together_join_failed">未找到有效房间号，请检查剪贴板或手动输入</string>
+
+    <!-- 小游戏 -->
+    <string name="play_mini_game">小游戏</string>
+    <string name="mini_game_title">小游戏</string>
+    <string name="mini_game_2048">2048</string>
+    <string name="mini_game_minesweeper">扫雷</string>
+    <string name="mini_game_score">得分 %1$d</string>
+    <string name="mini_game_restart">重新开始</string>
+    <string name="mini_game_2048_hint">滑动合并相同数字</string>
+    <string name="mini_game_flag_mode">标记</string>
+    <string name="mini_game_reveal_mode">翻开</string>
+    <string name="mini_game_won">你赢了！</string>
+    <string name="mini_game_lost">游戏结束</string>
 </resources>
