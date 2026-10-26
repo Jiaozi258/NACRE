@@ -695,6 +695,19 @@ class PlayViewModel @Inject constructor(
         }
     }
 
+    /** 在指定队列中播放某首：以该队列为播放队列，点的那首定位其中（用于歌单内点歌）。 */
+    fun playInQueue(audio: Audio, queue: List<Audio>) {
+        viewModelScope.launch {
+            val resolved = queue.map { async { resolveRemoteUrl(it) } }.awaitAll()
+            // 在解析后的队列里定位被点的歌曲；本地按 filePath，远程按稳定 id 兜底。
+            val tapped = resolved.firstOrNull {
+                it.filePath == audio.filePath || (audio.id != 0L && it.id == audio.id)
+            } ?: resolveRemoteUrl(audio)
+            playerManager.handleEvent(PlayerEvent.Play(tapped, resolved))
+            loadBackgroundForAudio(tapped.id)
+        }
+    }
+
     /** 歌曲稳定标识：远程用 sourceId:songId，本地用 filePath。播放统计/歌评共用。 */
     private fun audioSongKey(audio: Audio): String =
         if (audio.isRemoteSong()) "remote:${audio.sourceId}:${audio.sourceSongId ?: audio.id}"

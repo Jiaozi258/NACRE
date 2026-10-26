@@ -50,6 +50,9 @@ class PlayerManager @Inject constructor(
     private var currentPlaylist: List<Audio> = emptyList()
     private var currentIndex: Int = -1
 
+    // 随机播放历史栈：记录每次随机切歌前的索引，「上一首」据此回到真正听过的上一首。
+    private val shuffleHistory = ArrayDeque<Int>()
+
     // 音频焦点丢失前的播放状态，用于重新获得焦点后恢复
     private var resumeMainOnFocus = false
     private var resumeBackgroundOnFocus = false
@@ -621,6 +624,11 @@ class PlayerManager @Inject constructor(
         // Reset volume in case a previous crossfade was cancelled mid-fade,
         // leaving the volume at a partial value.
         mainPlayer.volume = 1f
+        // 队列变化（用户重新起播，而非随机/顺序切歌）时清空随机历史栈，
+        // 避免残留的旧索引在新队列里跳到错误的曲目。
+        if (playlist !== currentPlaylist) {
+            shuffleHistory.clear()
+        }
         currentPlaylist = playlist.ifEmpty { listOf(audio) }
         // 优先按 filePath（稳定唯一）匹配，其次按 id 兜底——避免多个 id==0
         // 的音频（记忆播放/历史/触发器）互相碰撞导致下一首/上一首定位错位。
@@ -697,6 +705,8 @@ class PlayerManager @Inject constructor(
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
         val nextIndex = when (_state.value.loopMode) {
             LoopMode.SHUFFLE -> {
+                // 记录当前索引，供「上一首」回退到真正听过的那首
+                shuffleHistory.addLast(currentIndex)
                 // Random track, avoid repeating the same one when possible
                 if (currentPlaylist.size <= 1) 0
                 else {
@@ -716,10 +726,18 @@ class PlayerManager @Inject constructor(
 
     private fun skipToPrevious() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
-        // 随机模式没有"上一首"的顺序概念，回到本曲开头即可。
+        // 随机模式下「上一首」应回到上一次随机切歌前的曲目，而非回到本曲开头。
+        if (_state.value.loopMode == LoopMode.SHUFFLE) {
+            val prev = shuffleHistory.removeLastOrNull()
+            if (prev != null && prev in currentPlaylist.indices) {
+                play(currentPlaylist[prev], currentPlaylist)
+            } else {
+                mainPlayer.seekTo(0)
+            }
+            return
+        }
         // 超过 3 秒：回到本曲开头；否则跳到上一首，但在第一首时不再回绕到最后。
-        if (_state.value.loopMode == LoopMode.SHUFFLE ||
-            mainPlayer.currentPosition > 3000L || currentIndex == 0) {
+        if (mainPlayer.currentPosition > 3000L || currentIndex == 0) {
             mainPlayer.seekTo(0)
             return
         }

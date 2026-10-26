@@ -299,7 +299,7 @@ private fun PlayPage(
                 Box(modifier = Modifier.weight(1f)) {
                     PlaylistScreen(
                         onBack = { onOpenSubScreen(null) },
-                        onPlayAudio = { audio -> playViewModel.play(audio) },
+                        onPlayAudio = { audio, queue -> playViewModel.playInQueue(audio, queue) },
                         onPlayAll = { audios -> playViewModel.playPlaylist(audios) }
                     )
                 }

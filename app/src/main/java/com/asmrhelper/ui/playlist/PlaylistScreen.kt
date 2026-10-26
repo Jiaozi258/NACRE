@@ -83,7 +83,7 @@ import com.asmrhelper.ui.theme.TextSecondary
 @Composable
 fun PlaylistScreen(
     onBack: () -> Unit = {},
-    onPlayAudio: (Audio) -> Unit = {},
+    onPlayAudio: (Audio, List<Audio>) -> Unit = { _, _ -> },
     onPlayAll: (List<Audio>) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: PlaylistViewModel = hiltViewModel()
@@ -458,7 +458,7 @@ private fun PlaylistCard(
     onDeleteRequest: () -> Unit,
     onAddAudioRequest: () -> Unit,
     onRemoveAudio: (Long) -> Unit,
-    onPlayAudio: (Audio) -> Unit = {},
+    onPlayAudio: (Audio, List<Audio>) -> Unit = { _, _ -> },
     onExport: () -> Unit = {},
     onPlayAll: () -> Unit = {}
 ) {
@@ -588,7 +588,7 @@ private fun PlaylistCard(
                         audios.forEach { audio ->
                             AudioItemRow(
                                 audio = audio,
-                                onPlay = { onPlayAudio(audio) },
+                                onPlay = { onPlayAudio(audio, audios) },
                                 onRemove = { onRemoveAudio(audio.id) }
                             )
                         }
