@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -64,6 +65,8 @@ class VideoAudioExtractor @Inject constructor(
     companion object {
         private const val CONNECT_TIMEOUT = 15_000
         private const val READ_TIMEOUT = 300_000
+        // 下载最大重试次数：解决 CDN 提前断流导致的 ProtocolException: unexpected end of stream
+        private const val MAX_DOWNLOAD_ATTEMPTS = 3
         private val CN_UA =
             "Mozilla/5.0 (Linux; Android 14; zh-CN) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
@@ -599,78 +602,97 @@ class VideoAudioExtractor @Inject constructor(
         urlString: String, dest: File, referer: String,
         onProgress: (Float) -> Unit, startPct: Float, endPct: Float
     ) {
-        val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = READ_TIMEOUT
-            instanceFollowRedirects = true
-            setRequestProperty("Referer", referer)
-            setRequestProperty("User-Agent", CN_UA)
-        }
-        conn.connect()
-        // Check HTTP status BEFORE reading the stream — HttpURLConnection
-        // throws a raw FileNotFoundException for 403/404, which surfaced as
-        // an unhelpful "FileNotFoundException" to the user.
-        val code = conn.responseCode
-        if (code !in 200..299) {
-            conn.disconnect()
-            lastError = httpErrorMessage(code)
-            android.util.Log.e("Extractor", "下载HTTP错误: $code, $lastError")
-            throw IOException(lastError)
-        }
-        val total = conn.contentLengthLong
-        val input = conn.inputStream ?: throw IOException(context.getString(R.string.video_extract_download_stream_empty))
-        activeConnection = conn
-        try {
-            input.use { s -> dest.outputStream().use { o ->
-                    val buf = ByteArray(65536); var dl = 0L; var n: Int
-                    while (s.read(buf).also { n = it } != -1) {
-                        o.write(buf, 0, n); dl += n
-                        if (total > 0L) {
-                            val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
-                            onProgress(pct.coerceAtMost(endPct))
-                        }
-                    }
-            } }
-        } finally {
-            activeConnection = null
-            conn.disconnect()
-        }
+        downloadStream(
+            urlString, dest,
+            mapOf("Referer" to referer, "User-Agent" to CN_UA),
+            onProgress, startPct, endPct
+        )
     }
 
     private fun downloadFileGeneric(
         urlString: String, dest: File,
         onProgress: (Float) -> Unit, startPct: Float = 0f, endPct: Float = 1f
     ) {
-        val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = READ_TIMEOUT
-            instanceFollowRedirects = true
-            setRequestProperty("User-Agent", CN_UA)
-        }
-        conn.connect()
-        val code = conn.responseCode
-        if (code !in 200..299) {
-            conn.disconnect()
-            lastError = httpErrorMessage(code)
-            android.util.Log.e("Extractor", "下载HTTP错误: $code, $lastError")
-            throw IOException(lastError)
-        }
-        val total = conn.contentLengthLong
-        val input = conn.inputStream ?: throw IOException(context.getString(R.string.video_extract_download_stream_empty))
-        activeConnection = conn
-        try {
-            input.use { s -> dest.outputStream().use { o ->
-                    val buf = ByteArray(16384); var dl = 0L; var n: Int
-                    while (s.read(buf).also { n = it } != -1) {
-                        o.write(buf, 0, n); dl += n
-                        if (total > 0L) {
-                            val pct = startPct + (endPct - startPct) * (dl.toFloat() / total)
-                            onProgress(pct.coerceAtMost(endPct))
+        downloadStream(
+            urlString, dest,
+            mapOf("User-Agent" to CN_UA),
+            onProgress, startPct, endPct
+        )
+    }
+
+    /** 带断点续传与重试的下载。B站/代理 CDN 有时会提前断开连接，直接读写
+     *  HttpURLConnection 流会抛 ProtocolException: unexpected end of stream。
+     *  这里用 Range 头续传，最多重试 [MAX_DOWNLOAD_ATTEMPTS] 次。 */
+    private fun downloadStream(
+        urlString: String,
+        dest: File,
+        headers: Map<String, String>,
+        onProgress: (Float) -> Unit,
+        startPct: Float,
+        endPct: Float
+    ) {
+        var lastCause: Exception? = null
+        for (attempt in 1..MAX_DOWNLOAD_ATTEMPTS) {
+            val downloaded = if (dest.exists()) dest.length() else 0L
+            val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"; connectTimeout = CONNECT_TIMEOUT; readTimeout = READ_TIMEOUT
+                instanceFollowRedirects = true
+                // 禁用透明 gzip，避免 Content-Length 与实际字节数不一致导致提前断流
+                setRequestProperty("Accept-Encoding", "identity")
+                headers.forEach { (k, v) -> setRequestProperty(k, v) }
+                if (downloaded > 0L) setRequestProperty("Range", "bytes=$downloaded-")
+            }
+            try {
+                conn.connect()
+                // Check HTTP status BEFORE reading the stream — HttpURLConnection
+                // throws a raw FileNotFoundException for 403/404, which surfaced as
+                // an unhelpful "FileNotFoundException" to the user.
+                val code = conn.responseCode
+                // 206 表示服务端接受续传；否则（200）从头重新下载
+                val resumed = code == 206 && downloaded > 0L
+                if (code !in 200..299) {
+                    val msg = httpErrorMessage(code)
+                    lastError = msg
+                    android.util.Log.e("Extractor", "下载HTTP错误: $code, $msg")
+                    throw IOException(msg)
+                }
+                val remaining = conn.contentLengthLong
+                val input = conn.inputStream
+                    ?: throw IOException(context.getString(R.string.video_extract_download_stream_empty))
+                activeConnection = conn
+                try {
+                    FileOutputStream(dest, resumed).use { o ->
+                        input.use { s ->
+                            val buf = ByteArray(65536)
+                            var written = 0L
+                            var n: Int
+                            while (s.read(buf).also { n = it } != -1) {
+                                o.write(buf, 0, n)
+                                written += n
+                                val fullTotal = if (resumed) downloaded + remaining else remaining
+                                if (fullTotal > 0L) {
+                                    val done = if (resumed) downloaded + written else written
+                                    val pct = startPct + (endPct - startPct) * (done.toFloat() / fullTotal)
+                                    onProgress(pct.coerceAtMost(endPct))
+                                }
+                            }
                         }
                     }
-            } }
-        } finally {
-            activeConnection = null
-            conn.disconnect()
+                } finally {
+                    activeConnection = null
+                    conn.disconnect()
+                }
+                // 正常读完整个流即视为成功
+                return
+            } catch (e: IOException) {
+                lastCause = e
+                activeConnection = null
+                try { conn.disconnect() } catch (_: Exception) { }
+                android.util.Log.w("Extractor", "下载中断(第${attempt}次): ${e.javaClass.simpleName}: ${e.message}")
+            }
         }
+        if (lastCause != null) throw lastCause
+        throw IOException(context.getString(R.string.video_extract_network_error, ""))
     }
 
     /** Translate an HTTP status code into a human-readable Chinese message. */
