@@ -5,6 +5,8 @@ import com.asmrhelper.domain.model.LoopMode
 
 sealed interface PlayerEvent {
     data class Play(val audio: Audio, val playlist: List<Audio> = emptyList()) : PlayerEvent
+    /** 电台（私人FM）播放：队列播完自动拉取新一批歌曲续播，而非循环固定几首。 */
+    data class PlayRadio(val audio: Audio, val playlist: List<Audio> = emptyList()) : PlayerEvent
     data object Pause : PlayerEvent
     data object Resume : PlayerEvent
     data object Next : PlayerEvent

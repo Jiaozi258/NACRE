@@ -53,6 +53,11 @@ class PlayerManager @Inject constructor(
     // 随机播放历史栈：记录每次随机切歌前的索引，「上一首」据此回到真正听过的上一首。
     private val shuffleHistory = ArrayDeque<Int>()
 
+    // 电台（私人FM）自动续播：当前队列是否为电台队列，以及播完/接近末尾时拉新歌的回调。
+    private var isRadioQueue = false
+    private var radioRefiller: (suspend () -> List<Audio>)? = null
+    private var radioRefillInProgress = false
+
     // 音频焦点丢失前的播放状态，用于重新获得焦点后恢复
     private var resumeMainOnFocus = false
     private var resumeBackgroundOnFocus = false
@@ -67,6 +72,11 @@ class PlayerManager @Inject constructor(
 
     fun setStateListener(listener: ((PlayerState) -> Unit)?) {
         onStateChanged = listener
+    }
+
+    /** 设置电台（私人FM）续播回调：队列接近末尾时调用它拉取新一批已解析好 URL 的歌曲。 */
+    fun setRadioRefiller(refiller: (suspend () -> List<Audio>)?) {
+        radioRefiller = refiller
     }
 
     // ── Playback state persistence ──────────────────────────
@@ -495,6 +505,7 @@ class PlayerManager @Inject constructor(
     fun handleEvent(event: PlayerEvent) {
         when (event) {
             is PlayerEvent.Play -> play(event.audio, event.playlist)
+            is PlayerEvent.PlayRadio -> playRadio(event.audio, event.playlist)
             PlayerEvent.Pause -> {
                 pauseWithVolumeFade()
                 audioFocusManager.abandonFocus()
@@ -604,6 +615,18 @@ class PlayerManager @Inject constructor(
     }
 
     private fun play(audio: Audio, playlist: List<Audio>) {
+        isRadioQueue = false
+        playInternal(audio, playlist)
+    }
+
+    /** 电台（私人FM）起播：标记为电台队列，播到末尾自动找新歌续播。 */
+    private fun playRadio(audio: Audio, playlist: List<Audio>) {
+        isRadioQueue = true
+        playInternal(audio, playlist)
+    }
+
+    /** 底层起播：不改变「是否电台队列」标记，供切歌/上一首内部导航复用（保持电台模式）。 */
+    private fun playInternal(audio: Audio, playlist: List<Audio>) {
         // 恢复队列里的在线歌曲 filePath 已清空：先重解析流 URL 再播，避免空 URI 报错。
         if (audio.isRemoteSong() && audio.filePath.isBlank()) {
             scope.launch {
@@ -614,6 +637,35 @@ class PlayerManager @Inject constructor(
             return
         }
         playResolved(audio, playlist)
+    }
+
+    /** 电台队列接近末尾时拉新一批歌追加，保证能一直找歌播放。 */
+    private fun maybeRefillRadio() {
+        if (!isRadioQueue || radioRefillInProgress) return
+        val refiller = radioRefiller ?: return
+        // 当前曲目之后还剩 0 或 1 首时提前补齐（留出网络拉取的时间余量）
+        val remaining = currentPlaylist.size - currentIndex - 1
+        if (remaining > 1) return
+        radioRefillInProgress = true
+        scope.launch {
+            try {
+                val newSongs = runCatching { refiller() }.getOrDefault(emptyList())
+                appendToQueue(newSongs)
+            } finally {
+                radioRefillInProgress = false
+            }
+        }
+    }
+
+    /** 把新一批歌曲追加到队尾并同步到 UI 状态（按歌曲稳定 id 去重，避免 FM 返回重复曲目）。 */
+    private fun appendToQueue(newSongs: List<Audio>) {
+        if (newSongs.isEmpty()) return
+        val existing = currentPlaylist.map { it.sourceSongId ?: it.filePath }.toSet()
+        val fresh = newSongs.filter { (it.sourceSongId ?: it.filePath) !in existing }
+        if (fresh.isEmpty()) return
+        currentPlaylist = currentPlaylist + fresh
+        _state.update { it.copy(playlist = currentPlaylist) }
+        savePlaylistState()
     }
 
     private fun playResolved(audio: Audio, playlist: List<Audio>) {
@@ -672,6 +724,8 @@ class PlayerManager @Inject constructor(
         }
         saveLastPlayback(audio) // survive process death
         savePlaylistState()     // 持久化完整队列 + 索引 + 循环模式
+        // 电台每起播一首都检查一次是否要补齐，保证始终有足够缓冲、不会播到队尾断流。
+        if (isRadioQueue) maybeRefillRadio()
         // Record playback history (fire-and-forget)
         scope.launch(Dispatchers.IO) {
             try {
@@ -703,6 +757,18 @@ class PlayerManager @Inject constructor(
 
     private fun skipToNext() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
+        // 电台：顺序前进，接近末尾自动补齐（私人FM 应能一直找歌，而非循环固定几首）
+        if (isRadioQueue) {
+            maybeRefillRadio()
+            if (currentIndex < currentPlaylist.size - 1) {
+                playInternal(currentPlaylist[currentIndex + 1], currentPlaylist)
+            } else {
+                // 已到末尾且暂无新歌（补齐中/断网）：回到本曲开头继续，避免中断
+                mainPlayer.seekTo(0)
+                mainPlayer.play()
+            }
+            return
+        }
         val nextIndex = when (_state.value.loopMode) {
             LoopMode.SHUFFLE -> {
                 // 记录当前索引，供「上一首」回退到真正听过的那首
@@ -721,16 +787,17 @@ class PlayerManager @Inject constructor(
                 idx
             }
         }
-        play(currentPlaylist[nextIndex], currentPlaylist)
+        playInternal(currentPlaylist[nextIndex], currentPlaylist)
     }
 
     private fun skipToPrevious() {
         if (currentPlaylist.isEmpty() || currentIndex < 0) return
         // 随机模式下「上一首」应回到上一次随机切歌前的曲目，而非回到本曲开头。
-        if (_state.value.loopMode == LoopMode.SHUFFLE) {
+        // （电台队列始终顺序前进，不适用随机历史栈）
+        if (_state.value.loopMode == LoopMode.SHUFFLE && !isRadioQueue) {
             val prev = shuffleHistory.removeLastOrNull()
             if (prev != null && prev in currentPlaylist.indices) {
-                play(currentPlaylist[prev], currentPlaylist)
+                playInternal(currentPlaylist[prev], currentPlaylist)
             } else {
                 mainPlayer.seekTo(0)
             }
@@ -741,10 +808,20 @@ class PlayerManager @Inject constructor(
             mainPlayer.seekTo(0)
             return
         }
-        play(currentPlaylist[currentIndex - 1], currentPlaylist)
+        playInternal(currentPlaylist[currentIndex - 1], currentPlaylist)
     }
 
     private fun handlePlaybackEnded() {
+        // 电台无终点：单曲循环除外，其余情况顺序续播并自动找新歌
+        if (isRadioQueue) {
+            if (_state.value.loopMode == LoopMode.SINGLE) {
+                mainPlayer.seekTo(0)
+                mainPlayer.play()
+            } else {
+                skipToNext()
+            }
+            return
+        }
         when (_state.value.loopMode) {
             LoopMode.SINGLE -> {
                 mainPlayer.seekTo(0)

@@ -397,7 +397,7 @@ fun MusicNormalScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.playPlaylist(playlist.drop(index)) }
+                                .clickable { viewModel.playInQueue(playlist[index], playlist) }
                                 .padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {

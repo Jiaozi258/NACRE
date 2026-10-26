@@ -388,6 +388,40 @@ class DiscoverViewModel @Inject constructor(
         }
     }
 
+    /** 播放电台（私人FM）：初始一批歌成为队列，播到末尾自动拉新一批续播，而非循环固定几首。 */
+    fun playRadio(songs: List<RemoteSong>) {
+        if (songs.isEmpty()) return
+        val source = activeSource.value
+        _fetchingSongId.value = songs.first().id
+        viewModelScope.launch {
+            try {
+                val quality = settingsRepository.getPlaybackQuality().first()
+                val resolved = songs.map { song ->
+                    async {
+                        val url = runCatching { source.getSongUrl(song.id, quality).first() }.getOrDefault("")
+                        if (url.isBlank()) null else song.toAudio(url)
+                    }
+                }.awaitAll().filterNotNull()
+                if (resolved.isEmpty()) {
+                    _messageRes.value = R.string.discover_play_failed
+                    return@launch
+                }
+                // 续播回调：每次再拉一批电台歌并解析出流地址
+                playerManager.setRadioRefiller {
+                    source.getRadio().first().mapNotNull { song ->
+                        runCatching {
+                            val url = source.getSongUrl(song.id, quality).first()
+                            if (url.isBlank()) null else song.toAudio(url)
+                        }.getOrNull()
+                    }
+                }
+                playerManager.handleEvent(PlayerEvent.PlayRadio(resolved.first(), resolved))
+            } finally {
+                _fetchingSongId.value = null
+            }
+        }
+    }
+
     /** 播放最近播放里的本地文件：整段最近列表成为队列。 */
     fun playRecent(entries: List<PlayHistoryEntity>, index: Int) {
         if (index !in entries.indices) return

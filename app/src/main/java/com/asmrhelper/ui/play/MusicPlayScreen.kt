@@ -580,7 +580,7 @@ fun MusicPlayScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .appleClickable { viewModel.playPlaylist(playlist.drop(index)) }
+                                .appleClickable { viewModel.playInQueue(playlist[index], playlist) }
                                 .padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {

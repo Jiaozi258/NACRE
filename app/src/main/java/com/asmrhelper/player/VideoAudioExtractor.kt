@@ -173,19 +173,37 @@ class VideoAudioExtractor @Inject constructor(
             return null
         }
         val audioItem = audioArray.getJSONObject(0)
-        var audioUrl = audioItem.optString("baseUrl", "")
-        if (audioUrl.isEmpty()) {
-            val backups = audioItem.optJSONArray("backupUrl")
-            if (backups != null && backups.length() > 0) audioUrl = backups.getString(0)
+        // 收集所有候选音频源：主 baseUrl + 全部 backupUrl（去重）。
+        // B站 CDN 常会提前断流（ProtocolException: unexpected end of stream），
+        // 单靠重试不够 —— 一个源反复断流时需切换下一个源续传，全部失败才报错。
+        val candidateUrls = mutableListOf<String>()
+        audioItem.optString("baseUrl", "").takeIf { it.isNotEmpty() }?.let { candidateUrls.add(it) }
+        audioItem.optJSONArray("backupUrl")?.let { backups ->
+            for (i in 0 until backups.length()) {
+                backups.optString(i, "").takeIf { it.isNotEmpty() }?.let { u ->
+                    if (u !in candidateUrls) candidateUrls.add(u)
+                }
+            }
         }
-        if (audioUrl.isEmpty()) { lastError = context.getString(R.string.video_extract_audio_url_empty); return null }
+        if (candidateUrls.isEmpty()) { lastError = context.getString(R.string.video_extract_audio_url_empty); return null }
 
-        android.util.Log.d("Extractor", "B站音频URL: ${audioUrl.take(80)}...")
         val dir = outputDir(platform)
         val outputFile = File(dir, safeFileName(title) + ".m4a")
 
         onProgress(0.05f)
-        downloadWithHeaders(audioUrl, outputFile, "https://www.bilibili.com", onProgress, startPct = 0.05f, endPct = 0.95f)
+        var lastCause: Exception? = null
+        for ((i, audioUrl) in candidateUrls.withIndex()) {
+            android.util.Log.d("Extractor", "B站音频源[$i/${candidateUrls.size}]: ${audioUrl.take(80)}...")
+            try {
+                downloadWithHeaders(audioUrl, outputFile, "https://www.bilibili.com", onProgress, startPct = 0.05f, endPct = 0.95f)
+                lastCause = null
+                break
+            } catch (e: Exception) {
+                lastCause = e
+                android.util.Log.w("Extractor", "B站音频源[$i]下载失败，尝试下一个源: ${e.javaClass.simpleName}: ${e.message}")
+            }
+        }
+        if (lastCause != null) throw lastCause
 
         android.util.Log.d("Extractor", "B站下载完成: exists=${outputFile.exists()} size=${outputFile.length()}")
         return finalizeResult(outputFile, title, platform, url, durSec)

@@ -160,6 +160,10 @@ fun DiscoverScreen(
         viewModel.playRecent(entries, index)
         onPlayRequested()
     }
+    val playRadio: (List<RemoteSong>) -> Unit = { songs ->
+        viewModel.playRadio(songs)
+        onPlayRequested()
+    }
 
     Box(
         modifier = modifier
@@ -259,7 +263,7 @@ fun DiscoverScreen(
                         ) { selectedTab = it }
                         when (selectedTab) {
                             0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
-                            1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
+                            1 -> DailyTab(dailyRecommend, radio, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs, playRadio)
                             2 -> ChartsTab(
                                 charts = charts,
                                 expandedChartId = expandedChartId,
@@ -708,7 +712,8 @@ private fun DailyTab(
     loading: Boolean,
     loadFailed: Boolean,
     onRetry: () -> Unit,
-    onPlay: (List<RemoteSong>, Int) -> Unit
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onPlayRadio: (List<RemoteSong>) -> Unit
 ) {
     val daily = if (DiscoverModule.DAILY in hiddenModules) emptyList() else dailyRecommend
     val radioList = if (DiscoverModule.RADIO in hiddenModules) emptyList() else radio
@@ -724,7 +729,7 @@ private fun DailyTab(
     ) {
         // 电台：长椭圆按钮，点进去自动进入电台播放（不再在下方展开歌曲）
         if (radioList.isNotEmpty()) {
-            item { RadioPlayButton(onClick = { onPlay(radioList, 0) }) }
+            item { RadioPlayButton(onClick = { onPlayRadio(radioList) }) }
         }
         // 每日推荐：电台下方的歌曲列表
         if (daily.isNotEmpty()) {
