@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -711,8 +712,7 @@ private fun DailyTab(
 ) {
     val daily = if (DiscoverModule.DAILY in hiddenModules) emptyList() else dailyRecommend
     val radioList = if (DiscoverModule.RADIO in hiddenModules) emptyList() else radio
-    val combined = daily + radioList
-    if (combined.isEmpty()) {
+    if (daily.isEmpty() && radioList.isEmpty()) {
         // 两个子模块都被用户隐藏 → 空态；否则是加载失败/未登录/暂无数据
         if (DiscoverModule.DAILY in hiddenModules && DiscoverModule.RADIO in hiddenModules) EmptyTab()
         else ModuleEmptyState(loading, loadFailed, onRetry)
@@ -722,18 +722,38 @@ private fun DailyTab(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
     ) {
+        // 电台：长椭圆按钮，点进去自动进入电台播放（不再在下方展开歌曲）
+        if (radioList.isNotEmpty()) {
+            item { RadioPlayButton(onClick = { onPlay(radioList, 0) }) }
+        }
+        // 每日推荐：电台下方的歌曲列表
         if (daily.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.discover_daily_recommend)) }
             itemsIndexed(daily, key = { _, it -> "daily:${it.sourceId}:${it.id}" }) { index, song ->
-                SongRow(song = song, onPlay = { onPlay(combined, index) })
+                SongRow(song = song, onPlay = { onPlay(daily, index) })
             }
         }
-        if (radioList.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.discover_radio)) }
-            itemsIndexed(radioList, key = { _, it -> "radio:${it.sourceId}:${it.id}" }) { index, song ->
-                SongRow(song = song, onPlay = { onPlay(combined, daily.size + index) })
-            }
-        }
+    }
+}
+
+/** 电台入口：长椭圆按钮，点击后自动进入电台并从第一首开始播放。 */
+@Composable
+private fun RadioPlayButton(onClick: () -> Unit) {
+    val accent = LocalAccentColor.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(accent.copy(alpha = 0.18f))
+            .appleClickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Filled.PlayArrow, stringResource(R.string.discover_radio), tint = accent, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.discover_radio), color = accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
