@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music.netease
 
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
@@ -58,6 +59,34 @@ object NeteaseJson {
             )
         }
         list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 搜索专辑（cloudsearch type=10 → result.albums[]，名称/歌手/封面）。 */
+    fun parseAlbumSearch(json: String): List<RemoteAlbum> = try {
+        val arr = JSONObject(json).optJSONObject("result")?.optJSONArray("albums")
+            ?: return emptyList()
+        val list = mutableListOf<RemoteAlbum>()
+        for (i in 0 until arr.length()) {
+            val a = arr.optJSONObject(i) ?: continue
+            list.add(
+                RemoteAlbum(
+                    id = a.optLong("id").toString(),
+                    name = a.optString("name"),
+                    artist = a.optJSONObject("artist")?.optString("name") ?: "",
+                    coverUrl = a.optString("picUrl").takeIf { it.isNotBlank() }?.let { https(it) }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 专辑歌曲（`/weapi/v1/album/{id}` → songs[]）。 */
+    fun parseAlbumSongs(json: String): List<RemoteSong> = try {
+        parseSongArray(JSONObject(json).optJSONArray("songs"))
     } catch (_: Exception) {
         emptyList()
     }

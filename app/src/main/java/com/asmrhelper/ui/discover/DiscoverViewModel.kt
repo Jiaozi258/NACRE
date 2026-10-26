@@ -7,6 +7,7 @@ import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
 import com.asmrhelper.data.music.MusicSourceManager
 import com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 import com.asmrhelper.domain.model.Audio
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -70,7 +71,10 @@ class DiscoverViewModel @Inject constructor(
     private val _playlistResults = MutableStateFlow<List<RemotePlaylist>>(emptyList())
     val playlistResults: StateFlow<List<RemotePlaylist>> = _playlistResults.asStateFlow()
 
-    /** 搜索类型标签：0=歌曲，1=歌手，2=歌单。 */
+    private val _albumResults = MutableStateFlow<List<RemoteAlbum>>(emptyList())
+    val albumResults: StateFlow<List<RemoteAlbum>> = _albumResults.asStateFlow()
+
+    /** 搜索类型标签：0=歌曲，1=歌手，2=歌单，3=专辑。 */
     private val _searchTab = MutableStateFlow(0)
     val searchTab: StateFlow<Int> = _searchTab.asStateFlow()
 
@@ -87,6 +91,13 @@ class DiscoverViewModel @Inject constructor(
 
     private val _playlistDetailSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
     val playlistDetailSongs: StateFlow<List<RemoteSong>> = _playlistDetailSongs.asStateFlow()
+
+    /** 点开的专辑详情及其歌曲。 */
+    private val _albumDetail = MutableStateFlow<RemoteAlbum?>(null)
+    val albumDetail: StateFlow<RemoteAlbum?> = _albumDetail.asStateFlow()
+
+    private val _albumDetailSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val albumDetailSongs: StateFlow<List<RemoteSong>> = _albumDetailSongs.asStateFlow()
 
     /** 初始/刷新加载中：发现页首次进入或重试时显示加载态。 */
     private val _loading = MutableStateFlow(true)
@@ -179,12 +190,15 @@ class DiscoverViewModel @Inject constructor(
             _searchResults.value = emptyList()
             _artistResults.value = emptyList()
             _playlistResults.value = emptyList()
+            _albumResults.value = emptyList()
             _searching.value = false
             _searchTab.value = 0
             _artistDetail.value = null
             _artistDetailSongs.value = emptyList()
             _playlistDetail.value = null
             _playlistDetailSongs.value = emptyList()
+            _albumDetail.value = null
+            _albumDetailSongs.value = emptyList()
             return
         }
         search(value)
@@ -198,6 +212,7 @@ class DiscoverViewModel @Inject constructor(
                 launch { source.search(query, 1).collect { list -> _searchResults.value = list } }
                 launch { source.searchArtists(query).collect { list -> _artistResults.value = list } }
                 launch { source.searchPlaylists(query).collect { list -> _playlistResults.value = list } }
+                launch { source.searchAlbums(query).collect { list -> _albumResults.value = list } }
             }
             _searching.value = false
         }
@@ -237,6 +252,23 @@ class DiscoverViewModel @Inject constructor(
     fun closePlaylist() {
         _playlistDetail.value = null
         _playlistDetailSongs.value = emptyList()
+    }
+
+    /** 点开搜索结果中的专辑：拉取歌曲并进入详情。 */
+    fun openAlbum(album: RemoteAlbum) {
+        _albumDetail.value = album
+        _albumDetailSongs.value = album.songs
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getAlbumSongs(album.id).collect { songs ->
+                if (songs.isNotEmpty()) _albumDetailSongs.value = songs
+            }
+        }
+    }
+
+    fun closeAlbum() {
+        _albumDetail.value = null
+        _albumDetailSongs.value = emptyList()
     }
 
     fun loadRecommendations() {

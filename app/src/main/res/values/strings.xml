@@ -107,6 +107,7 @@
     <string name="discover_search_tab_songs">歌曲</string>
     <string name="discover_search_tab_artists">歌手</string>
     <string name="discover_search_tab_playlists">歌单</string>
+    <string name="discover_search_tab_albums">专辑</string>
     <string name="discover_search_tab_video">视频</string>
     <string name="discover_search_tab_uploader">博主</string>
     <string name="discover_switch_platform">换平台</string>

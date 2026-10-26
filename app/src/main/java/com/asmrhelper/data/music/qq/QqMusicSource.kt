@@ -2,6 +2,7 @@ package com.asmrhelper.data.music.qq
 
 import android.content.Context
 import com.asmrhelper.R
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -57,6 +58,23 @@ class QqMusicSource(
             .put("highlight", 1)
             .put("grp", 1)
         emit(QqMusicJson.parseSearch(post("music.adaptor.SearchAdaptor", "do_search_v2", param)))
+    }
+
+    override fun searchAlbums(keyword: String): Flow<List<RemoteAlbum>> = flow {
+        val param = JSONObject()
+            .put("searchid", "12345678901234567890")
+            .put("query", keyword)
+            .put("search_type", 2)
+            .put("page_num", 30)
+            .put("page_id", 1)
+            .put("highlight", 1)
+            .put("grp", 1)
+        emit(QqMusicJson.parseAlbumSearch(post("music.adaptor.SearchAdaptor", "do_search_v2", param)))
+    }
+
+    override fun getAlbumSongs(albumId: String): Flow<List<RemoteSong>> = flow {
+        val param = JSONObject().put("albumMid", albumId)
+        emit(QqMusicJson.parseAlbumSongs(post("music.musichallAlbum.AlbumInfoServer", "GetAlbumDetail", param)))
     }
 
     override fun getSongUrl(songId: String, quality: String): Flow<String> = flow {

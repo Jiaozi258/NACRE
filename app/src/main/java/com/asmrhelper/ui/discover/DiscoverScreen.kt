@@ -66,6 +66,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -94,11 +95,14 @@ fun DiscoverScreen(
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
     val artistResults by viewModel.artistResults.collectAsStateWithLifecycle()
     val playlistResults by viewModel.playlistResults.collectAsStateWithLifecycle()
+    val albumResults by viewModel.albumResults.collectAsStateWithLifecycle()
     val searchTab by viewModel.searchTab.collectAsStateWithLifecycle()
     val artistDetail by viewModel.artistDetail.collectAsStateWithLifecycle()
     val artistDetailSongs by viewModel.artistDetailSongs.collectAsStateWithLifecycle()
     val playlistDetail by viewModel.playlistDetail.collectAsStateWithLifecycle()
     val playlistDetailSongs by viewModel.playlistDetailSongs.collectAsStateWithLifecycle()
+    val albumDetail by viewModel.albumDetail.collectAsStateWithLifecycle()
+    val albumDetailSongs by viewModel.albumDetailSongs.collectAsStateWithLifecycle()
     val musicSources by viewModel.musicSources.collectAsStateWithLifecycle()
     val activeSourceId by viewModel.activeSourceId.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
@@ -177,6 +181,7 @@ fun DiscoverScreen(
                 query.isNotBlank() -> {
                     val openedArtist = artistDetail
                     val openedPlaylist = playlistDetail
+                    val openedAlbum = albumDetail
                     when {
                         openedArtist != null -> ArtistDetail(
                             artist = openedArtist,
@@ -190,6 +195,12 @@ fun DiscoverScreen(
                             onBack = viewModel::closePlaylist,
                             onPlay = playSongs
                         )
+                        openedAlbum != null -> AlbumDetail(
+                            album = openedAlbum,
+                            songs = albumDetailSongs,
+                            onBack = viewModel::closeAlbum,
+                            onPlay = playSongs
+                        )
                         else -> SearchResults(
                             searching = searching,
                             searchTab = searchTab,
@@ -198,9 +209,11 @@ fun DiscoverScreen(
                             songs = searchResults,
                             artists = artistResults,
                             playlists = playlistResults,
+                            albums = albumResults,
                             onPlay = playSongs,
                             onOpenArtist = viewModel::openArtist,
-                            onOpenPlaylist = viewModel::openPlaylist
+                            onOpenPlaylist = viewModel::openPlaylist,
+                            onOpenAlbum = viewModel::openAlbum
                         )
                     }
                 }
@@ -429,7 +442,8 @@ private fun DiscoverTabRow(
 private val searchTabLabels = listOf(
     R.string.discover_search_tab_songs,
     R.string.discover_search_tab_artists,
-    R.string.discover_search_tab_playlists
+    R.string.discover_search_tab_playlists,
+    R.string.discover_search_tab_albums
 )
 
 /** 视频源搜索标签：只有视频 + 博主，不提供歌曲/歌手/歌单。 */
@@ -447,9 +461,11 @@ private fun SearchResults(
     songs: List<RemoteSong>,
     artists: List<RemoteArtist>,
     playlists: List<RemotePlaylist>,
+    albums: List<RemoteAlbum>,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onOpenArtist: (RemoteArtist) -> Unit,
-    onOpenPlaylist: (RemotePlaylist) -> Unit
+    onOpenPlaylist: (RemotePlaylist) -> Unit,
+    onOpenAlbum: (RemoteAlbum) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
         SearchTabRow(searchTab, labels, onTabChange)
@@ -459,6 +475,7 @@ private fun SearchResults(
             when (searchTab) {
                 1 -> SearchArtistList(artists, onOpenArtist)
                 2 -> SearchPlaylistList(playlists, onOpenPlaylist)
+                3 -> SearchAlbumList(albums, onOpenAlbum)
                 else -> SearchSongList(songs, onPlay)
             }
         }
@@ -539,6 +556,55 @@ private fun SearchPlaylistList(playlists: List<RemotePlaylist>, onOpenPlaylist: 
         itemsIndexed(playlists, key = { _, it -> "spl:${it.id}" }) { _, playlist ->
             SearchPlaylistRow(name = playlist.name, coverUrl = playlist.coverUrl, onClick = { onOpenPlaylist(playlist) })
         }
+    }
+}
+
+@Composable
+private fun SearchAlbumList(albums: List<RemoteAlbum>, onOpenAlbum: (RemoteAlbum) -> Unit) {
+    if (albums.isEmpty()) {
+        EmptyState(stringResource(R.string.discover_no_results))
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(albums, key = { _, it -> "album:${it.id}" }) { _, album ->
+            AlbumRow(album = album, onClick = { onOpenAlbum(album) })
+        }
+    }
+}
+
+@Composable
+private fun AlbumRow(album: RemoteAlbum, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .appleClickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(coverUrl = album.coverUrl)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                album.name,
+                color = TextPrimary,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (album.artist.isNotBlank()) {
+                Text(
+                    album.artist,
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -984,6 +1050,38 @@ private fun PlaylistDetail(
 ) {
     Column(Modifier.fillMaxSize()) {
         DetailHeader(title = playlist.name, coverUrl = playlist.coverUrl, onBack = onBack)
+        if (songs.isEmpty()) {
+            CenteredLoading()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+            ) {
+                itemsIndexed(songs, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(songs, index) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlbumDetail(
+    album: RemoteAlbum,
+    songs: List<RemoteSong>,
+    onBack: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    Column(Modifier.fillMaxSize()) {
+        DetailHeader(title = album.name, coverUrl = album.coverUrl, onBack = onBack)
+        if (album.artist.isNotBlank()) {
+            Text(
+                album.artist,
+                color = TextSecondary,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
+            )
+        }
         if (songs.isEmpty()) {
             CenteredLoading()
         } else {

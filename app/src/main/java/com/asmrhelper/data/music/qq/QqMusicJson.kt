@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music.qq
 
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemoteLyricLine
@@ -40,6 +41,55 @@ object QqMusicJson {
     } catch (_: Exception) {
         ""
     }
+
+    /** 搜索专辑（`do_search_v2` search_type=2 → body.item_album.items[]，字段做多重兼容）。 */
+    fun parseAlbumSearch(json: String): List<RemoteAlbum> = try {
+        val body = JSONObject(json).optJSONObject("req_0")?.optJSONObject("data")
+            ?.optJSONObject("body") ?: return emptyList()
+        val items = body.optJSONObject("item_album")?.optJSONArray("items")
+            ?: body.optJSONObject("album")?.optJSONArray("items")
+            ?: body.optJSONArray("album")
+            ?: return emptyList()
+        val list = mutableListOf<RemoteAlbum>()
+        for (i in 0 until items.length()) {
+            val a = items.optJSONObject(i) ?: continue
+            val mid = a.optString("mid").ifBlank { a.optString("albumMID").ifBlank { a.optString("album_mid") } }
+            if (mid.isBlank()) continue
+            val name = a.optString("name").ifBlank { a.optString("albumName").ifBlank { a.optString("album_name") } }
+            val artist = a.optString("singerName").ifBlank {
+                a.optJSONArray("singer")?.let { arr ->
+                    (0 until arr.length())
+                        .mapNotNull { j -> arr.optJSONObject(j)?.optString("name")?.takeIf { it.isNotBlank() } }
+                        .joinToString(" / ")
+                } ?: ""
+            }
+            val cover = a.optString("pic").ifBlank { a.optString("picUrl").ifBlank { a.optString("albumPic") } }
+                .ifBlank { "https://y.gtimg.cn/music/photo_new/T002R300x300M000$mid.jpg" }
+            list.add(RemoteAlbum(id = mid, name = name, artist = artist, coverUrl = cover))
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 专辑歌曲（`music.musichallAlbum.AlbumInfoServer.GetAlbumDetail`，多个可能路径）。 */
+    fun parseAlbumSongs(json: String): List<RemoteSong> = try {
+        val data = JSONObject(json).optJSONObject("req_0")?.optJSONObject("data") ?: return emptyList()
+        val arr = data.optJSONArray("songList")
+            ?: data.optJSONObject("data")?.optJSONArray("songList")
+            ?: data.optJSONObject("data")?.optJSONArray("getSongList")
+            ?: data.optJSONObject("getAlbumDetail")?.optJSONObject("data")?.optJSONArray("songList")
+            ?: data.optJSONObject("getAlbumDetail")?.optJSONObject("data")?.optJSONArray("getSongList")
+            ?: return emptyList()
+        val songs = mutableListOf<RemoteSong>()
+        for (i in 0 until arr.length()) {
+            arr.optJSONObject(i)?.let { songs.add(parseSong(it)) }
+        }
+        songs
+    } catch (_: Exception) {
+        emptyList()
+    }
+
 
     /** Android 默认禁明文 HTTP；QQ 流地址返回 `http://`（CDN 支持 https），统一转 https。 */
     private fun https(url: String): String =
@@ -120,8 +170,8 @@ object QqMusicJson {
         val cover = albumMid.takeIf { it.isNotBlank() }
             ?.let { "https://y.gtimg.cn/music/photo_new/T002R300x300M000$it.jpg" }
         return RemoteSong(
-            id = s.optString("mid"),
-            title = s.optString("title").ifBlank { s.optString("name") },
+            id = s.optString("mid").ifBlank { s.optString("songMid") },
+            title = s.optString("title").ifBlank { s.optString("name").ifBlank { s.optString("songName") } },
             artist = artists,
             album = album?.optString("name") ?: "",
             durationMs = s.optLong("interval", 0L) * 1000L,

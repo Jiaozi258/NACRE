@@ -1,6 +1,7 @@
 package com.asmrhelper.domain.music
 
 import androidx.annotation.StringRes
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
@@ -46,8 +47,14 @@ interface MusicSource {
     /** 搜索歌单；不支持时返回空。 */
     fun searchPlaylists(keyword: String): Flow<List<RemotePlaylist>> = flowOf(emptyList())
 
+    /** 搜索专辑；不支持时返回空。 */
+    fun searchAlbums(keyword: String): Flow<List<RemoteAlbum>> = flowOf(emptyList())
+
     /** 歌手的歌曲列表（热门歌曲）；不支持时返回空。 */
     fun getArtistSongs(artistId: String): Flow<List<RemoteSong>> = flowOf(emptyList())
+
+    /** 专辑歌曲列表；不支持时返回空。 */
+    fun getAlbumSongs(albumId: String): Flow<List<RemoteSong>> = flowOf(emptyList())
 
     fun getSongUrl(songId: String, quality: String = "standard"): Flow<String>
     fun getLyric(songId: String): Flow<RemoteLyric>

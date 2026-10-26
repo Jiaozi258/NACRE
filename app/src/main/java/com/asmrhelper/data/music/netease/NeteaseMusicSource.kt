@@ -6,6 +6,7 @@ import com.asmrhelper.data.music.neteaselib.Eapi
 import com.asmrhelper.data.music.neteaselib.PublicKeyState
 import com.asmrhelper.data.music.neteaselib.Weapi
 import com.asmrhelper.data.music.neteaselib.Xeapi
+import com.asmrhelper.domain.model.music.RemoteAlbum
 import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
@@ -99,6 +100,23 @@ class NeteaseMusicSource(
             .put("offset", 0)
             .put("total", true)
         emit(NeteaseJson.parsePlaylistSearch(eapiPost(SEARCH_URI, data)))
+    }
+
+    override fun searchAlbums(keyword: String): Flow<List<RemoteAlbum>> = flow {
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("s", keyword)
+            .put("type", 10)
+            .put("limit", 30)
+            .put("offset", 0)
+            .put("total", true)
+        emit(NeteaseJson.parseAlbumSearch(eapiPost(SEARCH_URI, data)))
+    }
+
+    override fun getAlbumSongs(albumId: String): Flow<List<RemoteSong>> = flow {
+        ensureAnonymousSession()
+        val body = json(mapOf("id" to albumId))
+        emit(NeteaseJson.parseAlbumSongs(weapiPost("/weapi/v1/album/$albumId", body)))
     }
 
     override fun getArtistSongs(artistId: String): Flow<List<RemoteSong>> = flow {

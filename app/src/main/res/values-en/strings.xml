@@ -107,6 +107,7 @@
     <string name="discover_search_tab_songs">Songs</string>
     <string name="discover_search_tab_artists">Artists</string>
     <string name="discover_search_tab_playlists">Playlists</string>
+    <string name="discover_search_tab_albums">Albums</string>
     <string name="discover_search_tab_video">Video</string>
     <string name="discover_search_tab_uploader">Uploader</string>
     <string name="discover_switch_platform">Switch</string>

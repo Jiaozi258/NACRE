@@ -47,3 +47,12 @@ data class RemoteArtist(
     val name: String,
     val coverUrl: String? = null
 )
+
+/** 在线专辑。 */
+data class RemoteAlbum(
+    val id: String,
+    val name: String,
+    val artist: String = "",
+    val coverUrl: String? = null,
+    val songs: List<RemoteSong> = emptyList()
+)
