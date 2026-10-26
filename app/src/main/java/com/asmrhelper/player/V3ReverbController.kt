@@ -1,6 +1,6 @@
 package com.asmrhelper.player
 
-import android.media.audiofx.EnvironmentalReverb
+import android.media.audiofx.PresetReverb
 import androidx.annotation.StringRes
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -13,8 +13,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * V3 混响预设：基于 [EnvironmentalReverb]（环境混响，独立于场景效果的 [android.media.audiofx.PresetReverb]），
- * 通过房间体积/衰减/早期反射/扩散等物理参数合成更真实、更立体的空间感。
+ * 混响预设（正常模式均衡器用，独立于沉浸模式场景效果）。
  */
 enum class V3ReverbPreset(@StringRes val labelRes: Int) {
     NONE(R.string.v3_reverb_none),
@@ -25,29 +24,21 @@ enum class V3ReverbPreset(@StringRes val labelRes: Int) {
     PLATE(R.string.v3_reverb_plate),         // 板式：明亮稠密
 }
 
-/** EnvironmentalReverb 物理参数。mB = dB×100，per mille = 千分比。 */
-private data class V3Params(
-    val roomLevel: Int,
-    val roomHFLevel: Int,
-    val decayTime: Int,
-    val decayHFRatio: Int,
-    val reflectionsLevel: Int,
-    val reflectionsDelay: Int,
-    val reverbLevel: Int,
-    val reverbDelay: Int,
-    val diffusion: Int,
-    val density: Int,
-)
-
 /**
- * V3 混响控制器。挂载时机与 [SceneEffectsController] 一致：监听
- * `onAudioSessionIdChanged`，sessionId 真正可用时重建混响对象并重放当前预设。
+ * 混响控制器。改用 [PresetReverb]（与沉浸模式场景效果同源）：此前用
+ * [android.media.audiofx.EnvironmentalReverb] 是「干声原样通过 + 湿声叠加」的
+ * 加法式全局效果，只要开启就会抬高整体响度、切换预设瞬间突然大声；其湿声电平参数
+ * 无法抵消干声叠加。PresetReverb 预置由音频 HAL 调校为干湿均衡、开启不炸响度，
+ * 用户选中预设不会再有「音量突然被放大」的问题。
+ *
+ * 挂载时机与 [SceneEffectsController] 一致：监听 `onAudioSessionIdChanged`，
+ * sessionId 真正可用时重建混响对象并重放当前预设。
  */
 @Singleton
 class V3ReverbController @Inject constructor(
     @MainPlayer private val mainPlayer: ExoPlayer
 ) {
-    private var reverb: EnvironmentalReverb? = null
+    private var reverb: PresetReverb? = null
 
     private val _currentPreset = MutableStateFlow(V3ReverbPreset.NONE)
     val currentPreset: StateFlow<V3ReverbPreset> = _currentPreset.asStateFlow()
@@ -74,7 +65,10 @@ class V3ReverbController @Inject constructor(
         if (sessionId <= 0) return
         release()
         try {
-            reverb = EnvironmentalReverb(0, sessionId).apply { enabled = false }
+            reverb = PresetReverb(0, sessionId).apply {
+                enabled = false
+                preset = PresetReverb.PRESET_NONE
+            }
             _isReady.value = true
         } catch (_: Exception) {
             reverb = null
@@ -83,43 +77,31 @@ class V3ReverbController @Inject constructor(
         apply(_currentPreset.value)
     }
 
-    /** 应用 V3 混响预设（NONE 关闭混响）。 */
+    /** 应用混响预设（NONE 关闭混响）。 */
     fun apply(preset: V3ReverbPreset) {
         _currentPreset.value = preset
         val r = reverb ?: return
         try {
-            if (preset == V3ReverbPreset.NONE) {
-                r.enabled = false
-                return
-            }
-            val p = paramsOf(preset)
-            // 先关闭、再设参数、最后开启：避免开启后参数逐个跳变产生爆音/电流声。
+            // 先关闭、再设预置、最后开启：避免开启后预置跳变产生爆音/电流声。
             r.enabled = false
-            r.setRoomLevel(p.roomLevel.toShort())
-            r.setRoomHFLevel(p.roomHFLevel.toShort())
-            r.setDecayTime(p.decayTime)
-            r.setDecayHFRatio(p.decayHFRatio.toShort())
-            r.setReflectionsLevel(p.reflectionsLevel.toShort())
-            r.setReflectionsDelay(p.reflectionsDelay)
-            r.setReverbLevel(p.reverbLevel.toShort())
-            r.setReverbDelay(p.reverbDelay)
-            r.setDiffusion(p.diffusion.toShort())
-            r.setDensity(p.density.toShort())
-            r.enabled = true
+            if (preset == V3ReverbPreset.NONE) {
+                r.preset = PresetReverb.PRESET_NONE
+            } else {
+                r.preset = presetOf(preset)
+                r.enabled = true
+            }
         } catch (_: Exception) {
             r.enabled = false
         }
     }
 
-    private fun paramsOf(preset: V3ReverbPreset): V3Params = when (preset) {
-        V3ReverbPreset.NONE -> V3Params(0, 0, 0, 1000, 0, 0, 0, 0, 1000, 1000)
-        // 混响湿声（room/reflections/reverb 电平）刻意压到 -8～-22 dB，避免湿声叠在干声上
-        // 造成「响度被调大」、切换预设瞬间突然大声吓到用户；衰减时间保留以区分各预设空间感。
-        V3ReverbPreset.STUDIO -> V3Params(-2200, -2400, 250, 500, -1800, 5, -2200, 15, 800, 800)
-        V3ReverbPreset.CHAMBER -> V3Params(-2000, -2200, 450, 600, -1600, 8, -2000, 12, 750, 850)
-        V3ReverbPreset.HALL -> V3Params(-1300, -1500, 1500, 600, -1100, 25, -1400, 35, 900, 1000)
-        V3ReverbPreset.CATHEDRAL -> V3Params(-900, -1100, 3500, 700, -800, 40, -1000, 50, 1000, 1000)
-        V3ReverbPreset.PLATE -> V3Params(-1700, -1400, 700, 900, -1500, 5, -1900, 8, 1000, 1000)
+    private fun presetOf(preset: V3ReverbPreset): Short = when (preset) {
+        V3ReverbPreset.NONE -> PresetReverb.PRESET_NONE
+        V3ReverbPreset.STUDIO -> PresetReverb.PRESET_SMALLROOM
+        V3ReverbPreset.CHAMBER -> PresetReverb.PRESET_MEDIUMROOM
+        V3ReverbPreset.HALL -> PresetReverb.PRESET_MEDIUMHALL
+        V3ReverbPreset.CATHEDRAL -> PresetReverb.PRESET_LARGEHALL
+        V3ReverbPreset.PLATE -> PresetReverb.PRESET_PLATE
     }
 
     private fun release() {

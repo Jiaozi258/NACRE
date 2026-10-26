@@ -197,6 +197,10 @@ fun MusicNormalScreen(
     var showPlaylistDialog by remember { mutableStateOf(false) }
     var showToolboxDialog by remember { mutableStateOf(false) }
     var showSliceDialog by remember { mutableStateOf(false) }
+    var showEffectsDialog by remember { mutableStateOf(false) }
+    var showBinauralDialog by remember { mutableStateOf(false) }
+    var showNoiseDialog by remember { mutableStateOf(false) }
+    var showAmbientDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -296,7 +300,7 @@ fun MusicNormalScreen(
     if (showMenuDialog) {
         FrostedAlertDialog(
             onDismissRequest = { showMenuDialog = false },
-            title = { Text(stringResource(R.string.menu_title), color = TextPrimary) },
+            title = { Text(title, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             text = {
                 Column(
                     modifier = Modifier
@@ -333,10 +337,7 @@ fun MusicNormalScreen(
                         MenuRow(stringResource(R.string.menu_playlist), "", Icons.Filled.PlaylistPlay) { showMenuDialog = false; showPlaylistDialog = true }
                     }
                     MenuRow(stringResource(R.string.menu_toolbox), "", Icons.Filled.Build) { showMenuDialog = false; showToolboxDialog = true }
-                    MenuRow(stringResource(R.string.menu_effects), "", Icons.Filled.GraphicEq) {
-                        showMenuDialog = false
-                        scope.launch { pagerState.animateScrollToPage(2) }
-                    }
+                    MenuRow(stringResource(R.string.menu_effects), "", Icons.Filled.GraphicEq) { showMenuDialog = false; showEffectsDialog = true }
                     MenuRow(stringResource(R.string.menu_slice), "", Icons.Filled.ContentCut) { showMenuDialog = false; showSliceDialog = true }
                 }
             },
@@ -753,50 +754,36 @@ fun MusicNormalScreen(
         )
     }
 
-    // ── 工具箱（精简版）────────────────────────────────
+    // ── 工具箱（与沉浸模式一致）─────────────────────────
     if (showToolboxDialog) {
-        FrostedAlertDialog(
-            onDismissRequest = { showToolboxDialog = false },
-            title = { Text(stringResource(R.string.play_toolbox_title), color = TextPrimary) },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .height(300.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    val tools = listOf(
-                        Triple(stringResource(R.string.play_ambient), state.playerState.isBackgroundPlaying) { viewModel.toggleBackground() },
-                        Triple(stringResource(R.string.play_haptic_feedback), state.hapticEnabled) { viewModel.toggleHaptic() },
-                        Triple(stringResource(R.string.play_fade_out), false) { showToolboxDialog = false; viewModel.fadeOut(5000L) },
-                        Triple(stringResource(R.string.play_stop_fully), false) { showToolboxDialog = false; viewModel.stopPlayback() }
-                    )
-                    tools.forEach { (label, active, action) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { action() }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (active) "▶ $label" else label,
-                                color = if (active) LocalAccentColor.current else TextPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        HorizontalDivider(color = DarkSurfaceVariant.copy(alpha = 0.3f))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showToolboxDialog = false }) { Text(stringResource(R.string.common_close), color = TextSecondary) }
-            },
-            containerColor = FrostedSurface,
-            shape = RoundedCornerShape(16.dp)
+        MusicToolboxDialog(
+            viewModel = viewModel,
+            state = state,
+            onOpenAmbient = { showToolboxDialog = false; showAmbientDialog = true },
+            onOpenBinaural = { showToolboxDialog = false; showBinauralDialog = true },
+            onOpenNoise = { showToolboxDialog = false; showNoiseDialog = true },
+            onDismiss = { showToolboxDialog = false }
         )
+    }
+
+    // ── 音效器（与沉浸模式一致）─────────────────────────
+    if (showEffectsDialog) {
+        MusicEffectsDialog(viewModel = viewModel, onDismiss = { showEffectsDialog = false })
+    }
+
+    // ── 双耳节拍 ──────────────────────────────────────
+    if (showBinauralDialog) {
+        MusicBinauralDialog(viewModel = viewModel, state = state, onDismiss = { showBinauralDialog = false })
+    }
+
+    // ── 噪音生成 ──────────────────────────────────────
+    if (showNoiseDialog) {
+        MusicNoiseDialog(viewModel = viewModel, state = state, onDismiss = { showNoiseDialog = false })
+    }
+
+    // ── 环境音 ────────────────────────────────────────
+    if (showAmbientDialog) {
+        MusicAmbientDialog(viewModel = viewModel, state = state, onDismiss = { showAmbientDialog = false })
     }
 
     // ── 切片 ───────────────────────────────────────────

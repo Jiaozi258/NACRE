@@ -173,7 +173,7 @@ object NeteaseJson {
                 RemotePlaylist(
                     id = p.optLong("id").toString(),
                     name = p.optString("name"),
-                    coverUrl = p.optString("coverImgUrl").takeIf { it.isNotBlank() }
+                    coverUrl = p.optString("coverImgUrl").takeIf { it.isNotBlank() }?.let { https(it) }
                 )
             )
         }

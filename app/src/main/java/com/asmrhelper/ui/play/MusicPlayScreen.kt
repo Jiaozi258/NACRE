@@ -307,7 +307,7 @@ fun MusicPlayScreen(
     if (showMoreDialog) {
         FrostedAlertDialog(
             onDismissRequest = { showMoreDialog = false },
-            title = { Text(stringResource(R.string.more), color = TextPrimary) },
+            title = { Text(state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) }, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             text = {
                 Column(
                     modifier = Modifier
