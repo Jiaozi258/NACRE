@@ -508,7 +508,7 @@
     <string name="profile_login_success">登录成功</string>
     <string name="profile_has_account">已有账号？切换为登录</string>
     <string name="profile_no_account">没有账号？切换为注册</string>
-    <string name="profile_online_music">在线音乐平台</string>
+    <string name="profile_online_music">在线平台</string>
     <string name="profile_statistics">数据统计</string>
     <string name="profile_stat_favorites">本地音频</string>
     <string name="profile_stat_playlists">播放列表</string>

@@ -100,7 +100,6 @@ import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
 import com.asmrhelper.ui.games.MiniGame
-import com.asmrhelper.ui.games.MiniGameOverlay
 import com.asmrhelper.ui.theme.LocalAccentColor
 import com.asmrhelper.ui.theme.DarkBackground
 import com.asmrhelper.ui.theme.ErrorRed
@@ -133,7 +132,6 @@ fun PlayScreen(
     var showNoiseDialog by remember { mutableStateOf(false) }
     var showAmbientDialog by remember { mutableStateOf(false) }
     var showGameDialog by remember { mutableStateOf(false) }
-    var activeGame by remember { mutableStateOf<MiniGame?>(null) }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -585,11 +583,6 @@ fun PlayScreen(
                         interactionSource = remember { MutableInteractionSource() }
                     ) { viewModel.showHypnosisUi() }
             )
-        }
-
-        // 小游戏全屏浮层（覆盖在播放页之上，音频继续播放）
-        activeGame?.let { game ->
-            MiniGameOverlay(game = game, onClose = { activeGame = null })
         }
     }
 
@@ -1264,7 +1257,7 @@ fun PlayScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
-                                activeGame = MiniGame.GAME_2048
+                                viewModel.setActiveGame(MiniGame.GAME_2048)
                                 showGameDialog = false
                             }
                             .padding(vertical = 12.dp)
@@ -1278,7 +1271,7 @@ fun PlayScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
-                                activeGame = MiniGame.MINESWEEPER
+                                viewModel.setActiveGame(MiniGame.MINESWEEPER)
                                 showGameDialog = false
                             }
                             .padding(vertical = 12.dp)

@@ -53,6 +53,7 @@ import com.asmrhelper.util.LyricScrollStyle
 import com.asmrhelper.util.WordLyricLine
 import com.asmrhelper.util.toWordLyricLines
 import com.asmrhelper.util.LyricsStore
+import com.asmrhelper.ui.games.MiniGame
 import com.asmrhelper.util.maskPrivacy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -196,6 +197,14 @@ class PlayViewModel @Inject constructor(
     val volumeThreshold: StateFlow<Int> = _volumeThreshold
     private val _hapticThreshold = MutableStateFlow(40)
     val hapticThreshold: StateFlow<Int> = _hapticThreshold
+
+    // 小游戏浮层（ASMR 界面）：提升到 ViewModel，供 AsmrNavHost 在模式切换按钮之上叠加渲染。
+    private val _activeGame = MutableStateFlow<MiniGame?>(null)
+    val activeGame: StateFlow<MiniGame?> = _activeGame
+
+    fun setActiveGame(game: MiniGame?) {
+        _activeGame.value = game
+    }
     private val _triggerColor = MutableStateFlow(0xFFFFFFFFL)
     private val _triggerEmoji = MutableStateFlow("")
     private val _triggerAnimType = MutableStateFlow(0)

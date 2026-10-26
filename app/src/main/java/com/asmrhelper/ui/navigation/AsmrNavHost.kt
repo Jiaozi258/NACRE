@@ -30,6 +30,7 @@ import com.asmrhelper.ui.components.BatteryOptimizationDialog
 import com.asmrhelper.ui.components.MiniPlayer
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.discover.DiscoverScreen
+import com.asmrhelper.ui.games.MiniGameOverlay
 import com.asmrhelper.ui.history.HistoryScreen
 import com.asmrhelper.ui.library.LibraryScreen
 import com.asmrhelper.ui.play.MusicPlayScreen
@@ -281,6 +282,12 @@ private fun PlayPage(
                                 .statusBarsPadding()
                                 .padding(top = 6.dp, start = 16.dp)
                         )
+                    }
+
+                    // 小游戏浮层：渲染在最上层，覆盖左上角模式切换按钮，避免游戏时露出按钮。
+                    val activeGame by playViewModel.activeGame.collectAsStateWithLifecycle()
+                    activeGame?.let { game ->
+                        MiniGameOverlay(game = game, onClose = { playViewModel.setActiveGame(null) })
                     }
                 }
             }

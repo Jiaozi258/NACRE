@@ -508,7 +508,7 @@
     <string name="profile_login_success">Signed in successfully</string>
     <string name="profile_has_account">Have an account? Switch to sign in</string>
     <string name="profile_no_account">No account? Switch to sign up</string>
-    <string name="profile_online_music">Online music platforms</string>
+    <string name="profile_online_music">Online platforms</string>
     <string name="profile_statistics">Statistics</string>
     <string name="profile_stat_favorites">Local audio</string>
     <string name="profile_stat_playlists">Playlists</string>
