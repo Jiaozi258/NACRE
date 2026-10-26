@@ -50,7 +50,7 @@ import com.asmrhelper.util.Cookies
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** 登录 WebView 的移动端 User-Agent，避免音源返回桌面版登录页。 */
+/** 登录 WebView 的默认移动端 User-Agent，避免音源返回桌面版登录页。 */
 private const val MOBILE_UA =
     "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
@@ -180,11 +180,11 @@ private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone:
     val context = LocalContext.current
     var status by remember { mutableStateOf(context.getString(R.string.login_loading)) }
 
-    // 轮询 WebView cookie，检测到任一鉴权键即完成登录。
+    // 轮询 WebView cookie，检测到任一鉴权键即完成登录（按 name 精确匹配，避免误命中子串）。
     LaunchedEffect(config) {
         while (true) {
             val all = CookieManager.getInstance().getCookie(config.cookieDomain) ?: ""
-            if (config.cookieKeys.any { all.contains(it) }) {
+            if (config.cookieKeys.any { Cookies.hasKey(all, it) }) {
                 source.importLogin(Cookies.select(all, config.cookieKeys), "")
                 Toast.makeText(context, context.getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                 onDone()
@@ -205,12 +205,12 @@ private fun QrWebLoginPanel(source: MusicSource, config: WebLoginConfig, onDone:
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
-                    // 强制移动端 UA，避免 y.qq.com 等返回桌面版页面导致无法登录
-                    settings.userAgentString = MOBILE_UA
+                    // 桌面登录页（如 QQ 音乐）需桌面 UA 才渲染「登录」入口；config.userAgent 为空时用移动 UA。
+                    settings.userAgentString = config.userAgent ?: MOBILE_UA
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
-                            status = context.getString(R.string.login_qr_hint)
+                            status = context.getString(config.hintRes ?: R.string.login_qr_hint)
                         }
                     }
                     // 打开登录页前清空旧 Cookie，避免退出后再次扫码自动登回上个账号

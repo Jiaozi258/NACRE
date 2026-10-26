@@ -111,7 +111,10 @@ class BilibiliMusicSource(
 
     override fun getPlaylist(playlistId: String): Flow<RemotePlaylist> = flow {
         // 收藏夹（media_id）内视频；普通歌单/榜单无此概念，返回空。
-        val songs = BilibiliJson.parseFavMedia(get("x/v3/fav/resource/list", "media_id=$playlistId&pn=1&ps=50"))
+        // 收藏夹接口已强制要求 WBI 签名，否则返回 -352 风控、打不开。
+        val songs = BilibiliJson.parseFavMedia(
+            wbiGet("x/v3/fav/resource/list", mapOf("media_id" to playlistId, "pn" to "1", "ps" to "50"))
+        )
         emit(RemotePlaylist(playlistId, "", songs = songs))
     }
 
@@ -122,7 +125,8 @@ class BilibiliMusicSource(
             emit(emptyList())
             return@flow
         }
-        emit(BilibiliJson.parseFavFolders(get("x/v3/fav/folder/created/list-all", "up_mid=$mid")))
+        // 收藏夹列表接口同样需要 WBI 签名，否则返回 -352 风控、列表为空。
+        emit(BilibiliJson.parseFavFolders(wbiGet("x/v3/fav/folder/created/list-all", mapOf("up_mid" to mid.toString()))))
     }
 
     /** 动态（feed）视频（需登录）；匿名/失败返回空。最多展示 25 条。 */

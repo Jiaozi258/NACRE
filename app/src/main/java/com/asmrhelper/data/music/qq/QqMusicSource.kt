@@ -45,8 +45,16 @@ class QqMusicSource(
     private fun hasLoginCookie(c: String): Boolean =
         QqMusicJson.uin(c).toLongOrNull()?.let { it > 0L } == true
 
+    // QQ 音乐登录必须用桌面 UA：移动 UA 下 y.qq.com 会跳到 App 下载页/报错；
+    // 桌面 UA 才会渲染顶部「登录」按钮，扫码后 Cookie（uin/qm_keyst/qqmusic_key）落在 y.qq.com。
     override val webLogin: WebLoginConfig =
-        WebLoginConfig("https://y.qq.com/", "https://y.qq.com", setOf("qm_keyst", "uin"))
+        WebLoginConfig(
+            "https://y.qq.com/",
+            "https://y.qq.com",
+            setOf("qm_keyst", "qqmusic_key", "uin"),
+            userAgent = USER_AGENT,
+            hintRes = R.string.login_qq_hint
+        )
 
     override fun search(keyword: String, page: Int): Flow<List<RemoteSong>> = flow {
         val param = JSONObject()

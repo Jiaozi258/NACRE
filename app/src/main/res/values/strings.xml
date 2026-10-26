@@ -531,6 +531,7 @@
     <string name="login_in_progress">登录中…</string>
     <string name="login_loading">正在加载登录页…</string>
     <string name="login_qr_hint">请扫码或使用网页登录</string>
+    <string name="login_qq_hint">请点击右上角「登录」后扫码，或使用账号密码登录</string>
 
     <!-- 播放历史 -->
     <string name="history_clear_all">清除全部</string>

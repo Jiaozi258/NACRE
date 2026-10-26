@@ -15,11 +15,15 @@ import kotlinx.coroutines.flow.flowOf
  * 音乐音源统一接口。由各平台的原生实现（如 `NeteaseMusicSource`）直接请求
  * 官方接口（weapi 加密等）并归一化为这些方法。
  */
-/** WebView 网页登录配置：登录页 URL、抓 Cookie 的域、判定登录态的鉴权键。 */
+/** WebView 网页登录配置：登录页 URL、抓 Cookie 的域、判定登录态的鉴权键。
+ *  [userAgent] 为 null 时用移动端 UA；桌面登录页（如 y.qq.com 需桌面 UA 才渲染「登录」按钮）
+ *  显式传入桌面 UA。[hintRes] 为加载完成后的操作提示（null 用通用提示）。 */
 data class WebLoginConfig(
     val url: String,
     val cookieDomain: String,
-    val cookieKeys: Set<String>
+    val cookieKeys: Set<String>,
+    val userAgent: String? = null,
+    val hintRes: Int? = null
 )
 
 interface MusicSource {

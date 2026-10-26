@@ -14,4 +14,12 @@ object Cookies {
         }
         return result.entries.joinToString("; ") { "${it.key}=${it.value}" }
     }
+
+    /** 精确判断 Cookie 串中是否存在指定 name（按 `name=` 边界匹配，避免 `uin` 误匹配 `wxuin`）。 */
+    fun hasKey(raw: String?, key: String): Boolean {
+        if (raw.isNullOrBlank()) return false
+        return raw.split(';').any { part ->
+            part.trim().substringBefore('=').trim() == key
+        }
+    }
 }
