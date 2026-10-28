@@ -96,6 +96,7 @@ import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.FrostedAlertDialog
 import com.asmrhelper.ui.components.HypnosisBackground
 import com.asmrhelper.ui.components.HypnosisBgType
+import com.asmrhelper.ui.components.MarqueeText
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.PlayPauseButton
 import com.asmrhelper.ui.settings.SettingsViewModel
@@ -135,7 +136,7 @@ fun PlayScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(SettingsViewModel.bgColorOptions.getOrElse(state.backgroundColorIndex) { SettingsViewModel.bgColorOptions[0] }.second)
+            .background(SettingsViewModel.bgColorOptions.getOrElse(state.backgroundColorIndex) { SettingsViewModel.bgColorOptions[0] }.brush)
     ) {
         // Hypnosis background
         if (state.hypnosisEnabled) {
@@ -199,21 +200,19 @@ fun PlayScreen(
             items = listOf(
                 MenuItem("library", stringResource(R.string.library_title)),
                 MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
-                MenuItem("background", stringResource(R.string.play_menu_background)),
                 MenuItem("slideshow", stringResource(R.string.play_menu_images)),
+                MenuItem("background", stringResource(R.string.play_menu_background)),
                 MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
-                MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
-                MenuItem("settings", stringResource(R.string.play_menu_settings))
+                MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal))
             ),
             onItemClick = { item ->
                 when (item.id) {
                     "library" -> onNavigateToLibrary(0)
                     "playlist" -> onNavigateToPlaylist()
-                    "trigger_pad" -> onNavigateToTriggerPad()
-                    "background" -> onNavigateToBackground()
                     "slideshow" -> onNavigateToSlideshow()
+                    "background" -> onNavigateToBackground()
+                    "trigger_pad" -> onNavigateToTriggerPad()
                     "sleep_journal" -> onNavigateToSleepJournal()
-                    "settings" -> onNavigateToSettings()
                 }
             },
             modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding()
@@ -267,12 +266,10 @@ fun PlayScreen(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Text(
+                MarqueeText(
                     text = state.displayTitle.ifEmpty { stringResource(R.string.play_not_playing) },
                     style = MaterialTheme.typography.headlineMedium,
                     color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

@@ -106,6 +106,7 @@ import com.asmrhelper.player.HeadphonePreset
 import com.asmrhelper.player.HeadphonePresets
 import com.asmrhelper.player.V3ReverbPreset
 import com.asmrhelper.ui.components.FrostedAlertDialog
+import com.asmrhelper.ui.components.HeartbeatEcgOverlay
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.AudioReactiveBackground
 import com.asmrhelper.ui.play.folia.rememberCoverPalette
@@ -173,6 +174,8 @@ fun MusicNormalScreen(
     val waveform by viewModel.waveformBytes.collectAsStateWithLifecycle()
     val fft by viewModel.fftMagnitudes.collectAsStateWithLifecycle()
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
+    val favoritePulse by viewModel.favoritePulse.collectAsStateWithLifecycle()
+    val effectsEnabled by viewModel.ambianceEffectsEnabled.collectAsStateWithLifecycle()
 
     val currentAudio = state.playerState.currentAudio
     val context = LocalContext.current
@@ -227,6 +230,13 @@ fun MusicNormalScreen(
             coverFilePath = coverFilePath,
             customImagePath = state.backgroundImagePath,
             blurCustomImage = blurBackgroundImage,
+            modifier = Modifier.fillMaxSize()
+        )
+        // 收藏歌曲时闪过的心率图心跳指示符（播放界面特效）
+        HeartbeatEcgOverlay(
+            trigger = favoritePulse,
+            enabled = effectsEnabled,
+            color = LocalAccentColor.current,
             modifier = Modifier.fillMaxSize()
         )
         VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->

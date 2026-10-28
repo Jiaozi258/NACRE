@@ -321,6 +321,11 @@ class PlayViewModel @Inject constructor(
     // init 里的协程会立即运行并写这些 StateFlow，声明在 init 之后会导致 NPE
     private val _currentFavorite = MutableStateFlow(false)
     val currentFavorite: StateFlow<Boolean> = _currentFavorite
+
+    // 收藏时触发心率图闪光（播放界面特效），每次收藏 +1 以触发一次动画
+    private val _favoritePulse = MutableStateFlow(0L)
+    val favoritePulse: StateFlow<Long> = _favoritePulse
+
     private val _seekTimeSeconds = MutableStateFlow(15)
     val seekTimeSeconds: StateFlow<Int> = _seekTimeSeconds
 
@@ -778,6 +783,7 @@ class PlayViewModel @Inject constructor(
         val audio = uiState.value.playerState.currentAudio ?: return
         val newFav = !_currentFavorite.value
         _currentFavorite.value = newFav
+        if (newFav) _favoritePulse.value++
         viewModelScope.launch {
             if (audio.isRemoteSong()) {
                 remoteFavoritesStore.setFavorite(

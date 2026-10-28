@@ -751,8 +751,15 @@ class PlayerManager @Inject constructor(
      *  whether the service itself runs. Skipping the service when notifications
      *  are "disabled" would guarantee the app gets killed by OEMs. */
     private fun startMediaServiceIfNeeded() {
-        val intent = Intent(context, AsmrMediaService::class.java)
-        ContextCompat.startForegroundService(context, intent)
+        try {
+            val intent = Intent(context, AsmrMediaService::class.java)
+            ContextCompat.startForegroundService(context, intent)
+        } catch (_: Exception) {
+            // Android 12+ 后台启动前台服务受限：若解析在线流地址耗时较长、
+            // 用户此时已退到后台，startForegroundService 会抛
+            // ForegroundServiceStartNotAllowedException。播放由用户在前台触发，
+            // 这里吞掉异常避免崩溃，前台音频仍可正常播放。
+        }
     }
 
     private fun skipToNext() {
@@ -840,26 +847,12 @@ class PlayerManager @Inject constructor(
     private fun toggleBackground() {
         val wasPlaying = _state.value.isBackgroundPlaying
         if (wasPlaying) {
-            // 停止环境音：若开启渐入渐出则先淡出再暂停
-            if (isAmbientFadeEnabled()) {
-                scope.launch {
-                    val steps = 20
-                    for (i in steps downTo 1) {
-                        backgroundPlayer.volume = i.toFloat() / steps
-                        delay(50L)
-                    }
-                    backgroundPlayer.pause()
-                    backgroundPlayer.volume = 1f
-                }
-            } else {
-                backgroundPlayer.pause()
-            }
+            // 停止环境音：直接暂停，不在此处渐出——渐入渐出只在循环边界生效
+            backgroundPlayer.pause()
+            backgroundPlayer.volume = 1f
         } else {
+            backgroundPlayer.volume = 1f
             backgroundPlayer.play()
-            if (isAmbientFadeEnabled()) {
-                backgroundPlayer.volume = 0f
-                fadeBackgroundIn()
-            }
             audioFocusManager.requestFocus()
         }
         _state.update { it.copy(isBackgroundPlaying = !wasPlaying) }
@@ -874,11 +867,8 @@ class PlayerManager @Inject constructor(
         backgroundPlayer.prepare()
         backgroundPlayer.repeatMode = currentRepeatMode
         backgroundPlayer.playWhenReady = true
-        if (isAmbientFadeEnabled()) {
-            fadeBackgroundIn()
-        } else {
-            backgroundPlayer.volume = 1f
-        }
+        // 渐入渐出只在循环边界生效，切换音源时直接满音量起播
+        backgroundPlayer.volume = 1f
         audioFocusManager.requestFocus()
     }
 

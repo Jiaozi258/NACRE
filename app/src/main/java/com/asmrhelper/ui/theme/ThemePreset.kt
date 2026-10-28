@@ -18,7 +18,9 @@ enum class ThemePreset(@StringRes val labelRes: Int, val accent: Color, val acce
     MINT_GREEN(R.string.theme_mint_green, Color(0xFF00C853), Color(0xFF00A84A)),
     CYAN_TEAL(R.string.theme_cyan_teal, Color(0xFF00BCD4), Color(0xFF0097A7)),
     LAVENDER(R.string.theme_lavender, Color(0xFFCE93D8), Color(0xFFAB47BC)),
-    SAKURA_PINK(R.string.theme_sakura_pink, Color(0xFFFF80AB), Color(0xFFF06292));
+    SAKURA_PINK(R.string.theme_sakura_pink, Color(0xFFFF80AB), Color(0xFFF06292)),
+    ROSE_RED(R.string.theme_rose_red, Color(0xFFE91E63), Color(0xFFC2185B)),
+    DARK_GENTIAN_PURPLE(R.string.theme_dark_gentian_purple, Color(0xFF7B1FA2), Color(0xFF4A148C));
 
     companion object {
         fun fromOrdinalOrDefault(ordinal: Int): ThemePreset =

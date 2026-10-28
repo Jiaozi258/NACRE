@@ -1,6 +1,9 @@
 package com.asmrhelper.ui.settings
 
 import android.content.Context
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.Coil
@@ -581,11 +584,30 @@ class SettingsViewModel @Inject constructor(
             0xFF69F0AEL
         )
 
+        /** 纯色/多色背景选项：单色为 1 个颜色，双色/三色为渐变。 */
+        data class BgColorOption(val labelRes: Int, val colors: List<Color>) {
+            val brush: Brush
+                get() = if (colors.size == 1) SolidColor(colors[0]) else Brush.verticalGradient(colors)
+        }
+
         val bgColorOptions = listOf(
-            R.string.settings_bg_deep_black to androidx.compose.ui.graphics.Color(0xFF0D0D0D),
-            R.string.settings_bg_deep_blue to androidx.compose.ui.graphics.Color(0xFF1A1A2E),
-            R.string.settings_bg_dark_purple to androidx.compose.ui.graphics.Color(0xFF1A0A2E),
-            R.string.settings_bg_dark_green to androidx.compose.ui.graphics.Color(0xFF0A1A1A)
+            // 深色单色
+            BgColorOption(R.string.settings_bg_deep_black, listOf(Color(0xFF0D0D0D))),
+            BgColorOption(R.string.settings_bg_deep_blue, listOf(Color(0xFF1A1A2E))),
+            BgColorOption(R.string.settings_bg_dark_purple, listOf(Color(0xFF1A0A2E))),
+            BgColorOption(R.string.settings_bg_dark_green, listOf(Color(0xFF0A1A1A))),
+            // 浅色单色
+            BgColorOption(R.string.settings_bg_light_gray, listOf(Color(0xFFF5F5F7))),
+            BgColorOption(R.string.settings_bg_light_blue, listOf(Color(0xFFE3F2FD))),
+            BgColorOption(R.string.settings_bg_light_pink, listOf(Color(0xFFFCE4EC))),
+            BgColorOption(R.string.settings_bg_light_mint, listOf(Color(0xFFE8F5E9))),
+            // 双色调
+            BgColorOption(R.string.settings_bg_duo_dusk, listOf(Color(0xFF2C3E50), Color(0xFF4CA1AF))),
+            BgColorOption(R.string.settings_bg_duo_sunset, listOf(Color(0xFFFF7E5F), Color(0xFFFEB47B))),
+            BgColorOption(R.string.settings_bg_duo_lilac, listOf(Color(0xFF7F7FD5), Color(0xFF86A8E7))),
+            // 三色调
+            BgColorOption(R.string.settings_bg_tri_aurora, listOf(Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364))),
+            BgColorOption(R.string.settings_bg_tri_candy, listOf(Color(0xFFFF9A9E), Color(0xFFFAD0C4), Color(0xFFFBC2EB)))
         )
 
         /** 隐私遮罩：保留首尾字符，中间替换为星号 */

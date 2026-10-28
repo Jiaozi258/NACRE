@@ -74,9 +74,9 @@ import com.asmrhelper.data.music.isRemoteSong
 import com.asmrhelper.domain.model.PlaybackMode
 import com.asmrhelper.domain.model.PlaybackBackgroundMode
 import com.asmrhelper.domain.model.PlaybackQuality
-import com.asmrhelper.domain.model.isMenuItemVisible
 import com.asmrhelper.ui.components.AsmrDropdownMenu
 import com.asmrhelper.ui.components.FrostedAlertDialog
+import com.asmrhelper.ui.components.HeartbeatEcgOverlay
 import com.asmrhelper.ui.components.MenuItem
 import com.asmrhelper.ui.components.ModeToggleButton
 import com.asmrhelper.ui.play.folia.AudioReactiveBackground
@@ -135,6 +135,8 @@ fun MusicPlayScreen(
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
     val lyricOffsetMs by viewModel.lyricOffsetMs.collectAsStateWithLifecycle()
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
+    val favoritePulse by viewModel.favoritePulse.collectAsStateWithLifecycle()
+    val effectsEnabled by viewModel.ambianceEffectsEnabled.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricsFontSize by viewModel.lyricsFontSizeImmersive.collectAsStateWithLifecycle()
     val lyricsShadowEnabled by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
@@ -191,6 +193,14 @@ fun MusicPlayScreen(
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
         AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath, customImagePath = state.backgroundImagePath, blurCustomImage = blurBackgroundImage)
+
+        // 收藏歌曲时闪过的心率图心跳指示符（播放界面特效）
+        HeartbeatEcgOverlay(
+            trigger = favoritePulse,
+            enabled = effectsEnabled,
+            color = LocalAccentColor.current,
+            modifier = Modifier.fillMaxSize()
+        )
 
         Column(
             modifier = Modifier
@@ -284,23 +294,21 @@ fun MusicPlayScreen(
         ) {
             AsmrDropdownMenu(
                 items = listOf(
-                    MenuItem("slideshow", stringResource(R.string.play_menu_images)),
                     MenuItem("library", stringResource(R.string.library_title)),
                     MenuItem("playlist", stringResource(R.string.play_menu_playlist)),
+                    MenuItem("slideshow", stringResource(R.string.play_menu_images)),
                     MenuItem("background", stringResource(R.string.play_menu_background)),
                     MenuItem("trigger_pad", stringResource(R.string.play_menu_trigger_pad)),
-                    MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal)),
-                    MenuItem("settings", stringResource(R.string.play_menu_settings))
-                ).filter { item -> PlaybackMode.MUSIC.isMenuItemVisible(item.id) },
+                    MenuItem("sleep_journal", stringResource(R.string.play_menu_sleep_journal))
+                ),
                 onItemClick = { item ->
                     when (item.id) {
-                        "slideshow" -> onNavigateToSlideshow()
                         "library" -> onNavigateToLibrary(0)
                         "playlist" -> onNavigateToPlaylist()
-                        "trigger_pad" -> onNavigateToTriggerPad()
+                        "slideshow" -> onNavigateToSlideshow()
                         "background" -> onNavigateToBackground()
+                        "trigger_pad" -> onNavigateToTriggerPad()
                         "sleep_journal" -> onNavigateToSleepJournal()
-                        "settings" -> onNavigateToSettings()
                     }
                 }
             )

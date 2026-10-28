@@ -1344,8 +1344,7 @@ private fun AppearanceSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
             border = HairlineBorder
         ) {
-            val (label, color) = SettingsViewModel.bgColorOptions[bgColorIndex]
-            val animatedColor by animateColorAsState(targetValue = color, label = "bgColor")
+            val option = SettingsViewModel.bgColorOptions[bgColorIndex]
 
             Row(
                 modifier = Modifier
@@ -1360,12 +1359,12 @@ private fun AppearanceSettingsScreen(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(animatedColor)
+                            .background(option.brush)
                     )
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(stringResource(R.string.settings_bg_solid), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                        Text(stringResource(label), color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(option.labelRes), color = LocalAccentColor.current, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Icon(Icons.Filled.ChevronRight, null, tint = TextHint)
@@ -2006,7 +2005,20 @@ private fun AudioEffectsSettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel
 ) {
+    val context = LocalContext.current
     val visualizerEnabled by viewModel.audioVisualizerEnabled.collectAsStateWithLifecycle()
+
+    // Visualizer 需要 RECORD_AUDIO（危险权限），即使读取自身音频会话也需要
+    val recordPermLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.setAudioVisualizer(true)
+        } else {
+            Toast.makeText(context, context.getString(R.string.settings_record_permission_needed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val triggerEnabled by viewModel.volumeTriggerEnabled.collectAsStateWithLifecycle()
     val triggerThreshold by viewModel.volumeTriggerThreshold.collectAsStateWithLifecycle()
     val hapticTriggerThreshold by viewModel.hapticTriggerThreshold.collectAsStateWithLifecycle()
@@ -2033,7 +2045,17 @@ private fun AudioEffectsSettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.setAudioVisualizer(!visualizerEnabled) }
+                    .clickable {
+                        if (visualizerEnabled) {
+                            viewModel.setAudioVisualizer(false)
+                        } else if (ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECORD_AUDIO)
+                            != PackageManager.PERMISSION_GRANTED) {
+                            recordPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        } else {
+                            viewModel.setAudioVisualizer(true)
+                        }
+                    }
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -2240,6 +2262,38 @@ private fun AudioEffectsSettingsScreen(
 
         SectionSpacer()
 
+        // 播放界面特效（归入音频触发特效分组）
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_play_effects), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.settings_play_effects_desc),
+                    color = TextHint,
+                    fontSize = 12.sp
+                )
+            }
+            Switch(
+                checked = playEffectsEnabled,
+                onCheckedChange = {
+                    viewModel.setPlayEffectsEnabled(it)
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = LocalAccentColor.current,
+                    checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
+                    uncheckedThumbColor = TextSecondary,
+                    uncheckedTrackColor = DarkSurfaceVariant
+                )
+            )
+        }
+
+        SectionSpacer()
+
         SectionHeader(icon = Icons.Filled.Vibration, title = stringResource(R.string.settings_haptic_trigger_section))
 
         Card(
@@ -2336,36 +2390,6 @@ private fun AudioEffectsSettingsScreen(
                     }
                 }
             }
-        }
-
-        // 播放界面特效 toggle
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_play_effects), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(
-                    stringResource(R.string.settings_play_effects_desc),
-                    color = TextHint,
-                    fontSize = 12.sp
-                )
-            }
-            Switch(
-                checked = playEffectsEnabled,
-                onCheckedChange = {
-                    viewModel.setPlayEffectsEnabled(it)
-                },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = LocalAccentColor.current,
-                    checkedTrackColor = LocalAccentColor.current.copy(alpha = 0.4f),
-                    uncheckedThumbColor = TextSecondary,
-                    uncheckedTrackColor = DarkSurfaceVariant
-                )
-            )
         }
     }
 }
