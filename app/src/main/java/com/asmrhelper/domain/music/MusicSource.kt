@@ -77,6 +77,18 @@ interface MusicSource {
     /** 每日推荐歌曲（需登录）；未登录或不支持时返回空。 */
     fun getDailyRecommendSongs(): Flow<List<RemoteSong>> = flowOf(emptyList())
 
+    /** 推荐歌单（探索模块「歌单推荐」）；不支持时返回空。 */
+    fun getRecommendPlaylists(): Flow<List<RemotePlaylist>> = flowOf(emptyList())
+
+    /** 每日播客（探索模块，电台节目归一化为可播歌曲）；不支持时返回空。 */
+    fun getDailyPodcasts(): Flow<List<RemoteSong>> = flowOf(emptyList())
+
+    /** 搜索电台/播客；不支持时返回空。 */
+    fun searchPodcasts(keyword: String): Flow<List<RemotePlaylist>> = flowOf(emptyList())
+
+    /** 电台的节目列表（播客详情）；不支持时返回空。 */
+    fun getDjPrograms(radioId: String): Flow<List<RemoteSong>> = flowOf(emptyList())
+
     fun loginAccount(username: String, password: String): Flow<Result<Unit>>
     fun importLogin(cookie: String, nickname: String)
     fun logout()

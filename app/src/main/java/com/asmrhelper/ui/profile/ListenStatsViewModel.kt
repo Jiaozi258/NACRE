@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.asmrhelper.R
 import com.asmrhelper.data.local.db.entity.PlayHistoryEntity
-import com.asmrhelper.domain.repository.PlayHistoryRepository
+import com.asmrhelper.data.repository.PlayHistoryRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +33,7 @@ data class ListenStats(
 
 @HiltViewModel
 class ListenStatsViewModel @Inject constructor(
-    private val playHistoryRepository: PlayHistoryRepository
+    private val playHistoryRepository: PlayHistoryRepositoryImpl
 ) : ViewModel() {
 
     private val _range = MutableStateFlow(StatsRange.LAST_WEEK)

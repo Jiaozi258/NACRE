@@ -203,6 +203,37 @@ class NeteaseMusicSource(
         emit(NeteaseJson.parseDailyRecommend(weapiPost("/weapi/v1/discovery/recommend/songs", "{}")))
     }
 
+    /** 推荐歌单（探索模块「歌单推荐」）；匿名可用。 */
+    override fun getRecommendPlaylists(): Flow<List<RemotePlaylist>> = flow {
+        ensureAnonymousSession()
+        emit(NeteaseJson.parseRecommendPlaylists(weapiPost("/weapi/personalized/playlist", "{}")))
+    }
+
+    /** 每日播客（探索模块，推荐电台节目归一化为可播歌曲）。 */
+    override fun getDailyPodcasts(): Flow<List<RemoteSong>> = flow {
+        ensureAnonymousSession()
+        emit(NeteaseJson.parsePersonalizedDjPrograms(weapiPost("/weapi/personalized/djprogram", "{}")))
+    }
+
+    /** 搜索电台/播客（cloudsearch type=1009 → result.djRadios）。 */
+    override fun searchPodcasts(keyword: String): Flow<List<RemotePlaylist>> = flow {
+        ensureAnonymousSession()
+        val data = JSONObject()
+            .put("s", keyword)
+            .put("type", 1009)
+            .put("limit", 30)
+            .put("offset", 0)
+            .put("total", true)
+        emit(NeteaseJson.parseDjRadioSearch(eapiPost(SEARCH_URI, data)))
+    }
+
+    /** 电台节目列表（播客详情）。 */
+    override fun getDjPrograms(radioId: String): Flow<List<RemoteSong>> = flow {
+        ensureAnonymousSession()
+        val body = json(mapOf("radioId" to radioId, "limit" to "30", "offset" to "0"))
+        emit(NeteaseJson.parseDjRadioPrograms(weapiPost("/weapi/dj/program/byradio", body)))
+    }
+
     override fun getRecommendations(): Flow<List<RemoteSong>> = flow {
         val body = json(mapOf("limit" to "30"))
         emit(NeteaseJson.parseRecommend(weapiPost("/weapi/personalized/newsong", body)))

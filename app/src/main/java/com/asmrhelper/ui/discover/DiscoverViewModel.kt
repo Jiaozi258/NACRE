@@ -74,7 +74,11 @@ class DiscoverViewModel @Inject constructor(
     private val _albumResults = MutableStateFlow<List<RemoteAlbum>>(emptyList())
     val albumResults: StateFlow<List<RemoteAlbum>> = _albumResults.asStateFlow()
 
-    /** 搜索类型标签：0=歌曲，1=歌手，2=歌单，3=专辑。 */
+    /** 播客（电台）搜索结果。 */
+    private val _podcastResults = MutableStateFlow<List<RemotePlaylist>>(emptyList())
+    val podcastResults: StateFlow<List<RemotePlaylist>> = _podcastResults.asStateFlow()
+
+    /** 搜索类型标签：0=歌曲，1=歌手，2=歌单，3=专辑，4=播客。 */
     private val _searchTab = MutableStateFlow(0)
     val searchTab: StateFlow<Int> = _searchTab.asStateFlow()
 
@@ -98,6 +102,13 @@ class DiscoverViewModel @Inject constructor(
 
     private val _albumDetailSongs = MutableStateFlow<List<RemoteSong>>(emptyList())
     val albumDetailSongs: StateFlow<List<RemoteSong>> = _albumDetailSongs.asStateFlow()
+
+    /** 点开的播客（电台）详情及其节目列表。 */
+    private val _podcastDetail = MutableStateFlow<RemotePlaylist?>(null)
+    val podcastDetail: StateFlow<RemotePlaylist?> = _podcastDetail.asStateFlow()
+
+    private val _podcastPrograms = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val podcastPrograms: StateFlow<List<RemoteSong>> = _podcastPrograms.asStateFlow()
 
     /** 初始/刷新加载中：发现页首次进入或重试时显示加载态。 */
     private val _loading = MutableStateFlow(true)
@@ -124,6 +135,14 @@ class DiscoverViewModel @Inject constructor(
     /** 用户歌单（需登录）。 */
     private val _userPlaylists = MutableStateFlow<List<RemotePlaylist>>(emptyList())
     val userPlaylists: StateFlow<List<RemotePlaylist>> = _userPlaylists.asStateFlow()
+
+    /** 推荐歌单（探索模块「歌单推荐」，每天取前 5 个）。 */
+    private val _recommendPlaylists = MutableStateFlow<List<RemotePlaylist>>(emptyList())
+    val recommendPlaylists: StateFlow<List<RemotePlaylist>> = _recommendPlaylists.asStateFlow()
+
+    /** 每日播客（探索模块，每天取前 5 个）。 */
+    private val _dailyPodcasts = MutableStateFlow<List<RemoteSong>>(emptyList())
+    val dailyPodcasts: StateFlow<List<RemoteSong>> = _dailyPodcasts.asStateFlow()
 
     /** 当前展开的歌单 id 及其已拉取的歌曲。 */
     private val _expandedPlaylistId = MutableStateFlow<String?>(null)
@@ -174,6 +193,8 @@ class DiscoverViewModel @Inject constructor(
                 launch { source.getDailyRecommendSongs().collect { _dailyRecommend.value = it } }
                 launch { source.getRadio().collect { _radio.value = it } }
                 launch { source.getUserPlaylists().collect { _userPlaylists.value = it } }
+                launch { source.getRecommendPlaylists().collect { _recommendPlaylists.value = it.take(5) } }
+                launch { source.getDailyPodcasts().collect { _dailyPodcasts.value = it.take(5) } }
             }
             _loading.value = false
             // 推荐 + 排行榜为免登录公共模块：两者都为空即视为加载失败（大概率断网），
@@ -191,6 +212,7 @@ class DiscoverViewModel @Inject constructor(
             _artistResults.value = emptyList()
             _playlistResults.value = emptyList()
             _albumResults.value = emptyList()
+            _podcastResults.value = emptyList()
             _searching.value = false
             _searchTab.value = 0
             _artistDetail.value = null
@@ -199,6 +221,8 @@ class DiscoverViewModel @Inject constructor(
             _playlistDetailSongs.value = emptyList()
             _albumDetail.value = null
             _albumDetailSongs.value = emptyList()
+            _podcastDetail.value = null
+            _podcastPrograms.value = emptyList()
             return
         }
         search(value)
@@ -213,6 +237,7 @@ class DiscoverViewModel @Inject constructor(
                 launch { source.searchArtists(query).collect { list -> _artistResults.value = list } }
                 launch { source.searchPlaylists(query).collect { list -> _playlistResults.value = list } }
                 launch { source.searchAlbums(query).collect { list -> _albumResults.value = list } }
+                launch { source.searchPodcasts(query).collect { list -> _podcastResults.value = list } }
             }
             _searching.value = false
         }
@@ -269,6 +294,21 @@ class DiscoverViewModel @Inject constructor(
     fun closeAlbum() {
         _albumDetail.value = null
         _albumDetailSongs.value = emptyList()
+    }
+
+    /** 点开搜索结果中的播客（电台）：拉取其节目列表并进入详情。 */
+    fun openPodcast(podcast: RemotePlaylist) {
+        _podcastDetail.value = podcast
+        _podcastPrograms.value = emptyList()
+        val source = activeSource.value
+        viewModelScope.launch {
+            source.getDjPrograms(podcast.id).collect { programs -> _podcastPrograms.value = programs }
+        }
+    }
+
+    fun closePodcast() {
+        _podcastDetail.value = null
+        _podcastPrograms.value = emptyList()
     }
 
     fun loadRecommendations() {

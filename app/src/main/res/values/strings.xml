@@ -110,6 +110,11 @@
     <string name="discover_search_tab_albums">专辑</string>
     <string name="discover_search_tab_video">视频</string>
     <string name="discover_search_tab_uploader">博主</string>
+    <string name="discover_search_tab_podcast">播客</string>
+    <string name="discover_tab_explore">探索</string>
+    <string name="discover_explore_roam">漫游</string>
+    <string name="discover_explore_daily_podcast">每日播客</string>
+    <string name="discover_explore_playlist_recommend">歌单推荐</string>
     <string name="discover_switch_platform">换平台</string>
     <string name="discover_switch_platform_title">选择音乐平台</string>
     <string name="discover_login_required">请登录平台后使用相关功能</string>

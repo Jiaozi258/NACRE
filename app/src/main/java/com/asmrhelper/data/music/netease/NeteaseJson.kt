@@ -227,6 +227,82 @@ object NeteaseJson {
         emptyList()
     }
 
+    /** 推荐歌单（`/weapi/personalized/playlist` → result[]，仅名称/封面）。 */
+    fun parseRecommendPlaylists(json: String): List<RemotePlaylist> = try {
+        val arr = JSONObject(json).optJSONArray("result") ?: return emptyList()
+        val list = mutableListOf<RemotePlaylist>()
+        for (i in 0 until arr.length()) {
+            val p = arr.optJSONObject(i) ?: continue
+            list.add(
+                RemotePlaylist(
+                    id = p.optLong("id").toString(),
+                    name = p.optString("name"),
+                    coverUrl = p.optString("picUrl").takeIf { it.isNotBlank() }?.let { https(it) }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 推荐电台节目（`/weapi/personalized/djprogram` → result[].program.mainSong → 可播歌曲）。 */
+    fun parsePersonalizedDjPrograms(json: String): List<RemoteSong> = try {
+        val arr = JSONObject(json).optJSONArray("result") ?: return emptyList()
+        val list = mutableListOf<RemoteSong>()
+        for (i in 0 until arr.length()) {
+            val item = arr.optJSONObject(i) ?: continue
+            val program = item.optJSONObject("program") ?: item
+            val song = program.optJSONObject("mainSong") ?: program
+            val parsed = parseSong(song)
+            if (parsed.id.isBlank() || parsed.title.isBlank()) continue
+            val cover = item.optString("picUrl").takeIf { it.isNotBlank() }
+                ?: item.optString("coverUrl").takeIf { it.isNotBlank() }
+            val resolved = if (parsed.coverUrl.isNullOrBlank()) cover?.let { https(it) } else parsed.coverUrl
+            list.add(parsed.copy(coverUrl = resolved))
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 搜索电台（cloudsearch type=1009 → result.djRadios[]，仅名称/封面）。 */
+    fun parseDjRadioSearch(json: String): List<RemotePlaylist> = try {
+        val arr = JSONObject(json).optJSONObject("result")?.optJSONArray("djRadios")
+            ?: return emptyList()
+        val list = mutableListOf<RemotePlaylist>()
+        for (i in 0 until arr.length()) {
+            val p = arr.optJSONObject(i) ?: continue
+            list.add(
+                RemotePlaylist(
+                    id = p.optLong("id").toString(),
+                    name = p.optString("name"),
+                    coverUrl = p.optString("picUrl").takeIf { it.isNotBlank() }?.let { https(it) }
+                )
+            )
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** 电台节目列表（`/weapi/dj/program/byradio` → programs[].mainSong → 可播歌曲）。 */
+    fun parseDjRadioPrograms(json: String): List<RemoteSong> = try {
+        val arr = JSONObject(json).optJSONArray("programs") ?: return emptyList()
+        val list = mutableListOf<RemoteSong>()
+        for (i in 0 until arr.length()) {
+            val item = arr.optJSONObject(i) ?: continue
+            val program = item.optJSONObject("program") ?: item
+            val song = program.optJSONObject("mainSong") ?: program
+            val parsed = parseSong(song)
+            if (parsed.id.isBlank() || parsed.title.isBlank()) continue
+            list.add(parsed)
+        }
+        list
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     /** 登录响应中的用户 uid（account.id 或 profile.userId）。 */
     fun parseLoginUid(json: String): String = try {
         val obj = JSONObject(json)

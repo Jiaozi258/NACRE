@@ -167,6 +167,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
             1 -> DiscoverScreen(
                 modifier = Modifier.fillMaxSize(),
                 searchRequest = discoverSearchRequest,
+                onSearchConsumed = { discoverSearchRequest = null },
                 onPlayRequested = { scope.launch { pagerState.scrollToPage(0) } }
             )
 

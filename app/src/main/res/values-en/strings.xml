@@ -110,6 +110,11 @@
     <string name="discover_search_tab_albums">Albums</string>
     <string name="discover_search_tab_video">Video</string>
     <string name="discover_search_tab_uploader">Uploader</string>
+    <string name="discover_search_tab_podcast">Podcast</string>
+    <string name="discover_tab_explore">Explore</string>
+    <string name="discover_explore_roam">Roam</string>
+    <string name="discover_explore_daily_podcast">Daily podcasts</string>
+    <string name="discover_explore_playlist_recommend">Playlist picks</string>
     <string name="discover_switch_platform">Switch</string>
     <string name="discover_switch_platform_title">Choose platform</string>
     <string name="discover_login_required">Please log in to use this platform</string>

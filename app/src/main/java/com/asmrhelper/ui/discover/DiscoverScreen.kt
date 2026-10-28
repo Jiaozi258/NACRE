@@ -3,6 +3,7 @@ package com.asmrhelper.ui.discover
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import com.asmrhelper.ui.theme.appleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,7 @@ fun DiscoverScreen(
     modifier: Modifier = Modifier,
     onPlayRequested: () -> Unit = {},
     searchRequest: Pair<Long, String>? = null,
+    onSearchConsumed: () -> Unit = {},
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -104,6 +106,9 @@ fun DiscoverScreen(
     val playlistDetailSongs by viewModel.playlistDetailSongs.collectAsStateWithLifecycle()
     val albumDetail by viewModel.albumDetail.collectAsStateWithLifecycle()
     val albumDetailSongs by viewModel.albumDetailSongs.collectAsStateWithLifecycle()
+    val podcastResults by viewModel.podcastResults.collectAsStateWithLifecycle()
+    val podcastDetail by viewModel.podcastDetail.collectAsStateWithLifecycle()
+    val podcastPrograms by viewModel.podcastPrograms.collectAsStateWithLifecycle()
     val musicSources by viewModel.musicSources.collectAsStateWithLifecycle()
     val activeSourceId by viewModel.activeSourceId.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
@@ -112,6 +117,8 @@ fun DiscoverScreen(
     val dailyRecommend by viewModel.dailyRecommend.collectAsStateWithLifecycle()
     val radio by viewModel.radio.collectAsStateWithLifecycle()
     val userPlaylists by viewModel.userPlaylists.collectAsStateWithLifecycle()
+    val recommendPlaylists by viewModel.recommendPlaylists.collectAsStateWithLifecycle()
+    val dailyPodcasts by viewModel.dailyPodcasts.collectAsStateWithLifecycle()
     val expandedPlaylistId by viewModel.expandedPlaylistId.collectAsStateWithLifecycle()
     val expandedPlaylistSongs by viewModel.expandedPlaylistSongs.collectAsStateWithLifecycle()
     val expandedChartId by viewModel.expandedChartId.collectAsStateWithLifecycle()
@@ -147,6 +154,7 @@ fun DiscoverScreen(
             if (query.isNotBlank()) {
                 selectedTab = 0
                 viewModel.onQueryChange(query)
+                onSearchConsumed()
             }
         }
     }
@@ -182,52 +190,56 @@ fun DiscoverScreen(
                 onOpenSettings = { showSettingsDialog = true }
             )
 
+            val openedArtist = artistDetail
+            val openedPlaylist = playlistDetail
+            val openedAlbum = albumDetail
+            val openedPodcast = podcastDetail
             when {
-                query.isNotBlank() -> {
-                    val openedArtist = artistDetail
-                    val openedPlaylist = playlistDetail
-                    val openedAlbum = albumDetail
-                    when {
-                        openedArtist != null -> ArtistDetail(
-                            artist = openedArtist,
-                            songs = artistDetailSongs,
-                            onBack = viewModel::closeArtist,
-                            onPlay = playSongs
-                        )
-                        openedPlaylist != null -> PlaylistDetail(
-                            playlist = openedPlaylist,
-                            songs = playlistDetailSongs,
-                            onBack = viewModel::closePlaylist,
-                            onPlay = playSongs
-                        )
-                        openedAlbum != null -> AlbumDetail(
-                            album = openedAlbum,
-                            songs = albumDetailSongs,
-                            onBack = viewModel::closeAlbum,
-                            onPlay = playSongs
-                        )
-                        else -> SearchResults(
-                            searching = searching,
-                            searchTab = searchTab,
-                            labels = if (isVideo) videoSearchTabLabels else searchTabLabels,
-                            onTabChange = viewModel::setSearchTab,
-                            songs = searchResults,
-                            artists = artistResults,
-                            playlists = playlistResults,
-                            albums = albumResults,
-                            onPlay = playSongs,
-                            onOpenArtist = viewModel::openArtist,
-                            onOpenPlaylist = viewModel::openPlaylist,
-                            onOpenAlbum = viewModel::openAlbum
-                        )
-                    }
-                }
+                openedArtist != null -> ArtistDetail(
+                    artist = openedArtist,
+                    songs = artistDetailSongs,
+                    onBack = viewModel::closeArtist,
+                    onPlay = playSongs
+                )
+                openedPlaylist != null -> PlaylistDetail(
+                    playlist = openedPlaylist,
+                    songs = playlistDetailSongs,
+                    onBack = viewModel::closePlaylist,
+                    onPlay = playSongs
+                )
+                openedAlbum != null -> AlbumDetail(
+                    album = openedAlbum,
+                    songs = albumDetailSongs,
+                    onBack = viewModel::closeAlbum,
+                    onPlay = playSongs
+                )
+                openedPodcast != null -> PodcastDetail(
+                    podcast = openedPodcast,
+                    songs = podcastPrograms,
+                    onBack = viewModel::closePodcast,
+                    onPlay = playSongs
+                )
+                query.isNotBlank() -> SearchResults(
+                    searching = searching,
+                    searchTab = searchTab,
+                    labels = if (isVideo) videoSearchTabLabels else searchTabLabels,
+                    onTabChange = viewModel::setSearchTab,
+                    songs = searchResults,
+                    artists = artistResults,
+                    playlists = playlistResults,
+                    albums = albumResults,
+                    podcasts = podcastResults,
+                    onPlay = playSongs,
+                    onOpenArtist = viewModel::openArtist,
+                    onOpenPlaylist = viewModel::openPlaylist,
+                    onOpenAlbum = viewModel::openAlbum,
+                    onOpenPodcast = viewModel::openPodcast
+                )
                 else -> {
                     if (isVideo) {
                         DiscoverTabRow(
                             selectedIndex = selectedTab,
-                            labels = videoDiscoverTabLabels,
-                            onOpenPlatformSwitch = { showPlatformDialog = true }
+                            labels = videoDiscoverTabLabels
                         ) { selectedTab = it }
                         when (selectedTab) {
                             0 -> VideoHotTab(
@@ -258,8 +270,7 @@ fun DiscoverScreen(
                     } else {
                         DiscoverTabRow(
                             selectedIndex = selectedTab,
-                            labels = discoverTabLabels,
-                            onOpenPlatformSwitch = { showPlatformDialog = true }
+                            labels = discoverTabLabels
                         ) { selectedTab = it }
                         when (selectedTab) {
                             0 -> RecommendTab(recommendations, hiddenModules, loading, loadFailed, viewModel::refresh, playSongs)
@@ -275,7 +286,7 @@ fun DiscoverScreen(
                                 onPlay = playSongs,
                                 onToggleChart = viewModel::toggleChart
                             )
-                            else -> PlaylistsTab(
+                            3 -> PlaylistsTab(
                                 userPlaylists = userPlaylists,
                                 recent = recent,
                                 expandedPlaylistId = expandedPlaylistId,
@@ -287,6 +298,16 @@ fun DiscoverScreen(
                                 onPlay = playSongs,
                                 onPlayRecent = playRecentEntries,
                                 onTogglePlaylist = viewModel::toggleUserPlaylist
+                            )
+                            else -> ExploreTab(
+                                roam = radio,
+                                dailyPodcasts = dailyPodcasts,
+                                recommendPlaylists = recommendPlaylists,
+                                loading = loading,
+                                loadFailed = loadFailed,
+                                onRetry = viewModel::refresh,
+                                onPlay = playSongs,
+                                onOpenPlaylist = viewModel::openPlaylist
                             )
                         }
                     }
@@ -324,6 +345,10 @@ fun DiscoverScreen(
         DiscoverSettingsDialog(
             hiddenModules = hiddenModules,
             onToggle = viewModel::toggleModule,
+            onOpenPlatformSwitch = {
+                showSettingsDialog = false
+                showPlatformDialog = true
+            },
             onDismiss = { showSettingsDialog = false }
         )
     }
@@ -343,7 +368,8 @@ private val discoverTabLabels = listOf(
     R.string.discover_tab_recommend,
     R.string.discover_tab_daily,
     R.string.discover_tab_charts,
-    R.string.discover_tab_playlists
+    R.string.discover_tab_playlists,
+    R.string.discover_tab_explore
 )
 
 /** 视频源（B站/YouTube）发现页标签：热门 + 收藏夹 + 动态，不显示音乐向的推荐/每日/排行榜/歌单。 */
@@ -409,13 +435,13 @@ private fun SearchBar(
 private fun DiscoverTabRow(
     selectedIndex: Int,
     labels: List<Int>,
-    onOpenPlatformSwitch: () -> Unit,
     onSelect: (Int) -> Unit
 ) {
     val accent = LocalAccentColor.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -437,10 +463,6 @@ private fun DiscoverTabRow(
                 )
             }
         }
-        Spacer(Modifier.weight(1f))
-        TextButton(onClick = onOpenPlatformSwitch) {
-            Text(stringResource(R.string.discover_switch_platform), color = accent, fontSize = 13.sp)
-        }
     }
 }
 
@@ -448,7 +470,8 @@ private val searchTabLabels = listOf(
     R.string.discover_search_tab_songs,
     R.string.discover_search_tab_artists,
     R.string.discover_search_tab_playlists,
-    R.string.discover_search_tab_albums
+    R.string.discover_search_tab_albums,
+    R.string.discover_search_tab_podcast
 )
 
 /** 视频源搜索标签：只有视频 + 博主，不提供歌曲/歌手/歌单。 */
@@ -467,10 +490,12 @@ private fun SearchResults(
     artists: List<RemoteArtist>,
     playlists: List<RemotePlaylist>,
     albums: List<RemoteAlbum>,
+    podcasts: List<RemotePlaylist>,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onOpenArtist: (RemoteArtist) -> Unit,
     onOpenPlaylist: (RemotePlaylist) -> Unit,
-    onOpenAlbum: (RemoteAlbum) -> Unit
+    onOpenAlbum: (RemoteAlbum) -> Unit,
+    onOpenPodcast: (RemotePlaylist) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
         SearchTabRow(searchTab, labels, onTabChange)
@@ -481,6 +506,7 @@ private fun SearchResults(
                 1 -> SearchArtistList(artists, onOpenArtist)
                 2 -> SearchPlaylistList(playlists, onOpenPlaylist)
                 3 -> SearchAlbumList(albums, onOpenAlbum)
+                4 -> SearchPodcastList(podcasts, onOpenPodcast)
                 else -> SearchSongList(songs, onPlay)
             }
         }
@@ -493,6 +519,7 @@ private fun SearchTabRow(selectedIndex: Int, labels: List<Int>, onSelect: (Int) 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -576,6 +603,22 @@ private fun SearchAlbumList(albums: List<RemoteAlbum>, onOpenAlbum: (RemoteAlbum
     ) {
         itemsIndexed(albums, key = { _, it -> "album:${it.id}" }) { _, album ->
             AlbumRow(album = album, onClick = { onOpenAlbum(album) })
+        }
+    }
+}
+
+@Composable
+private fun SearchPodcastList(podcasts: List<RemotePlaylist>, onOpenPodcast: (RemotePlaylist) -> Unit) {
+    if (podcasts.isEmpty()) {
+        EmptyState(stringResource(R.string.discover_no_results))
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        itemsIndexed(podcasts, key = { _, it -> "podcast:${it.id}" }) { _, podcast ->
+            SearchPlaylistRow(name = podcast.name, coverUrl = podcast.coverUrl, onClick = { onOpenPodcast(podcast) })
         }
     }
 }
@@ -856,6 +899,75 @@ private fun PlaylistsTab(
                     itemsIndexed(recentList, key = { _, it -> "recent:${it.id}" }) { index, entry ->
                         RecentRow(entry = entry, onPlay = { onPlayRecent(recentList, index) })
                     }
+                }
+            }
+        }
+    }
+}
+
+/** 探索标签：漫游 + 每日播客 + 歌单推荐，每类最多 5 个。 */
+@Composable
+private fun ExploreTab(
+    roam: List<RemoteSong>,
+    dailyPodcasts: List<RemoteSong>,
+    recommendPlaylists: List<RemotePlaylist>,
+    loading: Boolean,
+    loadFailed: Boolean,
+    onRetry: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit,
+    onOpenPlaylist: (RemotePlaylist) -> Unit
+) {
+    val roamList = roam.take(5)
+    if (roamList.isEmpty() && dailyPodcasts.isEmpty() && recommendPlaylists.isEmpty()) {
+        ModuleEmptyState(loading, loadFailed, onRetry)
+        return
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+    ) {
+        if (roamList.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_explore_roam)) }
+            itemsIndexed(roamList, key = { _, it -> "explore_roam:${it.sourceId}:${it.id}" }) { index, song ->
+                SongRow(song = song, onPlay = { onPlay(roam, index) })
+            }
+        }
+        if (dailyPodcasts.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_explore_daily_podcast)) }
+            itemsIndexed(dailyPodcasts, key = { _, it -> "explore_podcast:${it.sourceId}:${it.id}" }) { index, song ->
+                SongRow(song = song, onPlay = { onPlay(dailyPodcasts, index) })
+            }
+        }
+        if (recommendPlaylists.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.discover_explore_playlist_recommend)) }
+            recommendPlaylists.forEach { playlist ->
+                item(key = "explore_pl:${playlist.id}") {
+                    SearchPlaylistRow(name = playlist.name, coverUrl = playlist.coverUrl, onClick = { onOpenPlaylist(playlist) })
+                }
+            }
+        }
+    }
+}
+
+/** 播客详情：电台节目列表（可播放）。 */
+@Composable
+private fun PodcastDetail(
+    podcast: RemotePlaylist,
+    songs: List<RemoteSong>,
+    onBack: () -> Unit,
+    onPlay: (List<RemoteSong>, Int) -> Unit
+) {
+    Column(Modifier.fillMaxSize()) {
+        DetailHeader(title = podcast.name, coverUrl = podcast.coverUrl, onBack = onBack)
+        if (songs.isEmpty()) {
+            CenteredLoading()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
+            ) {
+                itemsIndexed(songs, key = { _, it -> "${it.sourceId}:${it.id}" }) { index, song ->
+                    SongRow(song = song, onPlay = { onPlay(songs, index) })
                 }
             }
         }
@@ -1180,6 +1292,7 @@ private fun BigCover(coverUrl: String?) {
 private fun DiscoverSettingsDialog(
     hiddenModules: Set<String>,
     onToggle: (String) -> Unit,
+    onOpenPlatformSwitch: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val modules = listOf(
@@ -1195,6 +1308,22 @@ private fun DiscoverSettingsDialog(
         title = { Text(stringResource(R.string.discover_settings_title), color = TextPrimary) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                // 「换平台」从标签栏迁入设置：点击关闭本对话框并打开平台选择。
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .appleClickable(onClick = onOpenPlatformSwitch)
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.discover_switch_platform),
+                        color = TextPrimary,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                }
                 modules.forEach { (key, labelRes) ->
                     val visible = key !in hiddenModules
                     Row(
