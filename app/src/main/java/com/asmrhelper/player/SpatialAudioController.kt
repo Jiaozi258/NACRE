@@ -53,10 +53,15 @@ class SpatialAudioController @Inject constructor(
         if (audioSessionId == 0) return
 
         try {
-            virtualizer = Virtualizer(0, audioSessionId)
+            val v = Virtualizer(0, audioSessionId)
+            v.enabled = true
+            virtualizer = v
+            applyStrength(v, 0)
             // 重新应用当前模式强度（此时 virtualizer 已就绪）
-            applyModeStrength()
-            isActive = currentMode != SpatialMode.OFF
+            if (currentMode != SpatialMode.OFF) {
+                isActive = true
+                applyModeStrength()
+            }
         } catch (_: Exception) {
             // Audio effects not supported on this device
             virtualizer = null
@@ -72,34 +77,34 @@ class SpatialAudioController @Inject constructor(
         if (mode == SpatialMode.OFF) {
             isActive = false
             val v = virtualizer
-            if (v != null) {
-                fadeJob = scope.launch { fadeOutAndDisable(v) }
-            }
+            // 关闭时只把强度渐变归零、保持 effect 启用，避免 enable/disable 突变爆音
+            if (v != null) fadeJob = scope.launch { fadeStrengthTo(v, 0) }
             return
         }
         // 若 virtualizer 尚未创建（尚未 attach），这里先不置 isActive=true，
         // 让 ViewModel 的 attach 守卫能触发 attach()；attach() 完成后会
         // 通过 applyModeStrength() 应用 currentMode。
-        if (virtualizer == null) return
-        applyModeStrength()
+        val v = virtualizer ?: return
         isActive = true
+        when (mode) {
+            SpatialMode.D3 -> fadeJob = scope.launch { fadeStrengthTo(v, 300) }
+            SpatialMode.WIDE -> fadeJob = scope.launch { fadeStrengthTo(v, 800) }
+            SpatialMode.SWEEP, SpatialMode.CIRCLE -> {
+                applyStrength(v, 400)
+                startPanAnimation(mode == SpatialMode.CIRCLE)
+            }
+            SpatialMode.OFF -> {}
+        }
     }
 
-    /** 将 currentMode 的强度应用到 virtualizer（virtualizer 非空时有效）。 */
+    /** attach 时恢复用户已选模式：直接应用强度（首次创建，无爆音风险）。 */
     private fun applyModeStrength() {
         val v = virtualizer ?: return
         when (currentMode) {
-            SpatialMode.OFF -> v.enabled = false
-            SpatialMode.D3 -> {
-                v.enabled = true
-                applyStrength(v, 300)
-            }
-            SpatialMode.WIDE -> {
-                v.enabled = true
-                applyStrength(v, 800)
-            }
+            SpatialMode.OFF -> applyStrength(v, 0)
+            SpatialMode.D3 -> applyStrength(v, 300)
+            SpatialMode.WIDE -> applyStrength(v, 800)
             SpatialMode.SWEEP, SpatialMode.CIRCLE -> {
-                v.enabled = true
                 applyStrength(v, 400)
                 startPanAnimation(currentMode == SpatialMode.CIRCLE)
             }
@@ -113,16 +118,16 @@ class SpatialAudioController @Inject constructor(
         try { v.setStrength(s) } catch (_: Exception) { }
     }
 
-    /** 关闭前把强度渐变到 0 再禁用，避免高增益（如「扩展」800）直接关闭产生爆音。 */
-    private suspend fun fadeOutAndDisable(v: Virtualizer) {
+    /** 平滑地把强度渐变到目标值，全程保持 effect 启用，避免 enable/disable 突变爆音。 */
+    private suspend fun fadeStrengthTo(v: Virtualizer, target: Int) {
         val start = lastStrength.toInt()
+        val end = target.coerceIn(0, 1000)
         val steps = 10
         repeat(steps) { i ->
-            val s = (start * (steps - 1 - i) / steps).coerceIn(0, 1000)
+            val s = (start + (end - start) * (i + 1) / steps).coerceIn(0, 1000)
             applyStrength(v, s)
             delay(16L)
         }
-        try { v.enabled = false } catch (_: Exception) { }
     }
 
     /** 设置左右平衡 (-1.0 = 全左, 0 = 居中, 1 = 全右)。
