@@ -39,6 +39,7 @@ import com.asmrhelper.ui.play.PlayScreen
 import com.asmrhelper.ui.play.PlayViewModel
 import com.asmrhelper.ui.playlist.PlaylistScreen
 import com.asmrhelper.ui.profile.ProfileScreen
+import com.asmrhelper.ui.profile.ListenStatsScreen
 import com.asmrhelper.ui.settings.MusicSourceSettingsScreen
 import com.asmrhelper.ui.settings.SettingsScreen
 import com.asmrhelper.ui.slideshow.ImageSlideshowContent
@@ -92,6 +93,12 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
     fun backFromSettings() {
         playSubScreen = null
         if (settingsFromProfile) scope.launch { pagerState.scrollToPage(2) }
+    }
+
+    // 听歌统计页退出：始终回到个人页
+    fun backFromListenStats() {
+        playSubScreen = null
+        scope.launch { pagerState.scrollToPage(2) }
     }
 
     // Observe share intents and auto-navigate to video audio tab
@@ -152,6 +159,7 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
                 onSetLibraryTab = { libraryInitialTab = it },
                 onOpenSettings = { openSettingsFromPlay() },
                 onBackFromSettings = { backFromSettings() },
+                onBackFromListenStats = { backFromListenStats() },
                 onSearch = ::searchFromPlay
             )
 
@@ -163,7 +171,10 @@ fun AsmrNavHost(modifier: Modifier = Modifier) {
             )
 
             // ── 主页 ────────────────────────────────────
-            2 -> ProfileScreen(onNavigateToSettings = { openSettingsFromProfile() })
+            2 -> ProfileScreen(
+                onNavigateToSettings = { openSettingsFromProfile() },
+                onNavigateToListenStats = { openSubScreen(SubScreen.ListenStats) }
+            )
         }
     }
 
@@ -188,6 +199,7 @@ private fun PlayPage(
     onSetLibraryTab: (Int) -> Unit,
     onOpenSettings: () -> Unit,
     onBackFromSettings: () -> Unit,
+    onBackFromListenStats: () -> Unit,
     onSearch: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -421,6 +433,10 @@ private fun PlayPage(
         SubScreen.History -> HistoryScreen(
             onBack = { onOpenSubScreen(SubScreen.Settings) },
             onPlayAudio = { audio -> playViewModel.play(audio) }
+        )
+
+        SubScreen.ListenStats -> ListenStatsScreen(
+            onBack = onBackFromListenStats
         )
     }
 }

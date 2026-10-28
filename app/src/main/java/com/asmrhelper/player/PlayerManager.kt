@@ -735,6 +735,7 @@ class PlayerManager @Inject constructor(
                         audioArtist = audio.artist,
                         filePath = audio.filePath,
                         durationMs = audio.durationMs,
+                        album = audio.album,
                         playedAt = System.currentTimeMillis()
                     )
                 )

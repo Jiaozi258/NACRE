@@ -46,7 +46,7 @@ import com.asmrhelper.data.local.db.entity.VideoAudioEntity
         ImageAlbumEntity::class,
         PlayStatEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AsmrDatabase : RoomDatabase() {

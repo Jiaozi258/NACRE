@@ -514,6 +514,16 @@
     <string name="profile_stat_favorites">Local audio</string>
     <string name="profile_stat_playlists">Playlists</string>
     <string name="profile_stat_backgrounds">Backgrounds</string>
+    <string name="profile_listen_stats">Listening stats</string>
+    <string name="stats_title">Listening stats</string>
+    <string name="stats_range_last_week">Last week</string>
+    <string name="stats_range_last_month">Last month</string>
+    <string name="stats_range_last_quarter">Last quarter</string>
+    <string name="stats_range_last_year">Last year</string>
+    <string name="stats_total_listens">Plays</string>
+    <string name="stats_artist_count">Artists</string>
+    <string name="stats_album_count">Albums</string>
+    <string name="stats_empty">No listening history</string>
     <string name="profile_version">Version</string>
     <string name="profile_github">GitHub repository</string>
 

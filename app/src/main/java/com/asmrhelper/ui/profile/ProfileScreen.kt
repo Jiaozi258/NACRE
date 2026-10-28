@@ -93,7 +93,8 @@ import kotlinx.coroutines.withContext
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToListenStats: () -> Unit = {}
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
@@ -447,6 +448,45 @@ fun ProfileScreen(
                     color = LocalAccentColor.current
                 )
                 Spacer(Modifier.weight(1f))
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // 听歌统计入口：统计本地与在线音乐的听歌次数/歌手次数/专辑次数
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .appleClickable { onNavigateToListenStats() },
+                shape = CardShape,
+                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                border = HairlineBorder
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(LocalAccentColor.current.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.MusicNote, null, tint = LocalAccentColor.current, modifier = Modifier.size(22.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(stringResource(R.string.profile_listen_stats), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.stats_title), color = TextHint, fontSize = 12.sp)
+                        }
+                    }
+                    Icon(Icons.Filled.ChevronRight, null, tint = TextHint, modifier = Modifier.size(18.dp))
+                }
             }
 
         }

@@ -10,5 +10,6 @@ data class PlayHistoryEntity(
     val audioArtist: String,
     val filePath: String,
     val playedAt: Long = System.currentTimeMillis(),
-    val durationMs: Long = 0L
+    val durationMs: Long = 0L,
+    val album: String = ""
 )

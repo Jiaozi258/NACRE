@@ -41,4 +41,5 @@ sealed class SubScreen(val route: String) {
     data object Slideshow : SubScreen("slideshow")
     data object Settings : SubScreen("settings")
     data object MusicSources : SubScreen("music_sources")
+    data object ListenStats : SubScreen("listen_stats")
 }

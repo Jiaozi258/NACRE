@@ -514,6 +514,16 @@
     <string name="profile_stat_favorites">本地音频</string>
     <string name="profile_stat_playlists">播放列表</string>
     <string name="profile_stat_backgrounds">背景图</string>
+    <string name="profile_listen_stats">听歌统计</string>
+    <string name="stats_title">听歌统计</string>
+    <string name="stats_range_last_week">上一周</string>
+    <string name="stats_range_last_month">上个月</string>
+    <string name="stats_range_last_quarter">上个季度</string>
+    <string name="stats_range_last_year">去年</string>
+    <string name="stats_total_listens">听歌次数</string>
+    <string name="stats_artist_count">歌手次数</string>
+    <string name="stats_album_count">专辑次数</string>
+    <string name="stats_empty">暂无听歌记录</string>
     <string name="profile_version">版本</string>
     <string name="profile_github">GitHub 仓库</string>
 
