@@ -137,6 +137,7 @@ fun MusicPlayScreen(
     val currentFavorite by viewModel.currentFavorite.collectAsStateWithLifecycle()
     val favoritePulse by viewModel.favoritePulse.collectAsStateWithLifecycle()
     val effectsEnabled by viewModel.ambianceEffectsEnabled.collectAsStateWithLifecycle()
+    val visualizerEnabled by viewModel.visualizerEnabled.collectAsStateWithLifecycle()
     val lyricsMode by viewModel.lyricsMode.collectAsStateWithLifecycle()
     val lyricsFontSize by viewModel.lyricsFontSizeImmersive.collectAsStateWithLifecycle()
     val lyricsShadowEnabled by viewModel.lyricsShadowEnabled.collectAsStateWithLifecycle()
@@ -192,7 +193,7 @@ fun MusicPlayScreen(
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { interactionTick++ } }
     ) {
-        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath, customImagePath = state.backgroundImagePath, blurCustomImage = blurBackgroundImage)
+        AudioReactiveBackground(coverUrl, waveform, fft, backgroundMode, Modifier.fillMaxSize(), contrastMode = backgroundContrastMode, coverFilePath = coverFilePath, customImagePath = state.backgroundImagePath, blurCustomImage = blurBackgroundImage, visualizerEnabled = visualizerEnabled)
 
         // 收藏歌曲时闪过的心率图心跳指示符（播放界面特效）
         HeartbeatEcgOverlay(

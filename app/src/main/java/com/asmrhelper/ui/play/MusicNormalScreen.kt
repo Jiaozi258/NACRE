@@ -176,6 +176,7 @@ fun MusicNormalScreen(
     val playbackQuality by viewModel.playbackQuality.collectAsStateWithLifecycle()
     val favoritePulse by viewModel.favoritePulse.collectAsStateWithLifecycle()
     val effectsEnabled by viewModel.ambianceEffectsEnabled.collectAsStateWithLifecycle()
+    val visualizerEnabled by viewModel.visualizerEnabled.collectAsStateWithLifecycle()
 
     val currentAudio = state.playerState.currentAudio
     val context = LocalContext.current
@@ -230,6 +231,7 @@ fun MusicNormalScreen(
             coverFilePath = coverFilePath,
             customImagePath = state.backgroundImagePath,
             blurCustomImage = blurBackgroundImage,
+            visualizerEnabled = visualizerEnabled,
             modifier = Modifier.fillMaxSize()
         )
         // 收藏歌曲时闪过的心率图心跳指示符（播放界面特效）

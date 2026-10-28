@@ -30,6 +30,10 @@ class SpatialAudioController @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var virtualizer: Virtualizer? = null
     private var animJob: Job? = null
+    private var fadeJob: Job? = null
+
+    /** 当前已应用强度，用于关闭时渐变归零，避免高增益直接禁用造成爆音。 */
+    @Volatile private var lastStrength: Short = 0
 
     /** 环绕动画速度倍率（0.5~3.0） */
     @Volatile private var surroundSpeed: Float = 1f
@@ -63,10 +67,14 @@ class SpatialAudioController @Inject constructor(
     fun setMode(mode: SpatialMode) {
         currentMode = mode
         animJob?.cancel()
+        fadeJob?.cancel()
 
         if (mode == SpatialMode.OFF) {
             isActive = false
-            virtualizer?.enabled = false
+            val v = virtualizer
+            if (v != null) {
+                fadeJob = scope.launch { fadeOutAndDisable(v) }
+            }
             return
         }
         // 若 virtualizer 尚未创建（尚未 attach），这里先不置 isActive=true，
@@ -84,18 +92,37 @@ class SpatialAudioController @Inject constructor(
             SpatialMode.OFF -> v.enabled = false
             SpatialMode.D3 -> {
                 v.enabled = true
-                v.setStrength(300.toShort())
+                applyStrength(v, 300)
             }
             SpatialMode.WIDE -> {
                 v.enabled = true
-                v.setStrength(800.toShort())
+                applyStrength(v, 800)
             }
             SpatialMode.SWEEP, SpatialMode.CIRCLE -> {
                 v.enabled = true
-                v.setStrength(400.toShort())
+                applyStrength(v, 400)
                 startPanAnimation(currentMode == SpatialMode.CIRCLE)
             }
         }
+    }
+
+    /** 应用强度并记录当前值，供关闭时渐变归零。 */
+    private fun applyStrength(v: Virtualizer, strength: Int) {
+        val s = strength.coerceIn(0, 1000).toShort()
+        lastStrength = s
+        try { v.setStrength(s) } catch (_: Exception) { }
+    }
+
+    /** 关闭前把强度渐变到 0 再禁用，避免高增益（如「扩展」800）直接关闭产生爆音。 */
+    private suspend fun fadeOutAndDisable(v: Virtualizer) {
+        val start = lastStrength.toInt()
+        val steps = 10
+        repeat(steps) { i ->
+            val s = (start * (steps - 1 - i) / steps).coerceIn(0, 1000)
+            applyStrength(v, s)
+            delay(16L)
+        }
+        try { v.enabled = false } catch (_: Exception) { }
     }
 
     /** 设置左右平衡 (-1.0 = 全左, 0 = 居中, 1 = 全右)。
@@ -107,7 +134,7 @@ class SpatialAudioController @Inject constructor(
 
     /** 设置声源距离（Virtualizer 强度 0~1000） */
     fun setDistance(strength: Int) {
-        try { virtualizer?.setStrength(strength.coerceIn(0, 1000).toShort()) } catch (_: Exception) { }
+        virtualizer?.let { applyStrength(it, strength) }
     }
 
     /** 设置环绕速度倍率 */
@@ -126,11 +153,7 @@ class SpatialAudioController @Inject constructor(
             while (isActive) {
                 if (circular) {
                     val depth = (sin(t * 1.7f) * 0.5f + 0.5f).toFloat()
-                    try {
-                        virtualizer?.setStrength(
-                            (400 + depth * 500).toInt().coerceIn(0, 1000).toShort()
-                        )
-                    } catch (_: Exception) { }
+                    virtualizer?.let { applyStrength(it, (400 + depth * 500).toInt()) }
                 }
                 t += 0.05f * surroundSpeed
                 delay((30L / surroundSpeed).toLong().coerceAtLeast(10L))
@@ -145,7 +168,7 @@ class SpatialAudioController @Inject constructor(
         // 否则后续 startPanAnimation 的 scope.launch 会落到已取消的 scope 上，
         // 导致扫掠/环绕动画静默失效。
         virtualizer?.let {
-            try { it.enabled = false; it.release() } catch (_: Exception) { }
+            try { it.setStrength(0.toShort()); it.enabled = false; it.release() } catch (_: Exception) { }
         }
         virtualizer = null
         isActive = false

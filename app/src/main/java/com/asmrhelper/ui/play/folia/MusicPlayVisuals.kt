@@ -115,6 +115,7 @@ fun AudioReactiveBackground(
     fft: FloatArray?,
     mode: PlaybackBackgroundMode = PlaybackBackgroundMode.BLURRED_COVER,
     modifier: Modifier = Modifier,
+    visualizerEnabled: Boolean = true,
     contrastMode: Boolean = false,
     coverFilePath: String? = null,
     customImagePath: String? = null,
@@ -295,8 +296,8 @@ fun AudioReactiveBackground(
                 ),
                 size = Size(w, h)
             )
-            // 底部柔光柱
-            if (bars.any { it > 0f }) {
+            // 底部柔光柱（仅在开启「音频可视化」时显示）
+            if (visualizerEnabled && bars.any { it > 0f }) {
                 val n = bars.size
                 val bw = w / n
                 bars.forEachIndexed { i, v ->

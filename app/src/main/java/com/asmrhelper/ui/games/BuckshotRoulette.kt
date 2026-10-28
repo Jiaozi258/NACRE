@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -184,7 +185,7 @@ internal fun BuckshotRouletteScreen(onClose: () -> Unit) {
     // 人机回合
     LaunchedEffect(state.phase, state.currentTurn, state.winner) {
         if (state.phase == BrPhase.PLAYING && state.currentTurn == AI && state.winner == -1) {
-            delay(550)
+            delay(2000)
             state = aiUseItems(state, difficulty)
             var shots = 0
             while (state.winner == -1 && state.currentTurn == AI && shots < 6) {
@@ -374,7 +375,11 @@ private fun ColumnScope.PlayingContent(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(stringResource(R.string.game_you), color = TextHint, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TurnDot(active = state.currentTurn == PLAYER)
+                Spacer(Modifier.width(5.dp))
+                Text(stringResource(R.string.game_you), color = TextHint, fontSize = 12.sp)
+            }
             Text("❤️ ${state.playerHp.coerceAtLeast(0)}", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
         Text(
@@ -384,7 +389,11 @@ private fun ColumnScope.PlayingContent(
             fontWeight = FontWeight.SemiBold
         )
         Column(horizontalAlignment = Alignment.End) {
-            Text(stringResource(R.string.game_ai), color = TextHint, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.game_ai), color = TextHint, fontSize = 12.sp)
+                Spacer(Modifier.width(5.dp))
+                TurnDot(active = state.currentTurn == AI)
+            }
             Text("❤️ ${state.aiHp.coerceAtLeast(0)}", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
     }
@@ -516,6 +525,16 @@ private fun ColumnScope.OverContent(state: BrState, onPlayAgain: () -> Unit, onA
         Text(stringResource(R.string.game_br_adjust), color = TextSecondary, fontSize = 14.sp)
     }
     Spacer(Modifier.height(16.dp))
+}
+
+@Composable
+private fun TurnDot(active: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .clip(CircleShape)
+            .background(if (active) LocalAccentColor.current else TextHint.copy(alpha = 0.35f))
+    )
 }
 
 @Composable
