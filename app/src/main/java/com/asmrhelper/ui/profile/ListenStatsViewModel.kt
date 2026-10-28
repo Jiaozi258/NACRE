@@ -28,8 +28,12 @@ data class ListenStats(
     val totalListens: Int,
     val artistCount: Int,
     val albumCount: Int,
-    val buckets: List<Int>
+    val buckets: List<Int>,
+    val topSongs: List<SongRank>
 )
+
+/** 单曲播放次数排行条目。 */
+data class SongRank(val title: String, val count: Int)
 
 @HiltViewModel
 class ListenStatsViewModel @Inject constructor(
@@ -47,7 +51,7 @@ class ListenStatsViewModel @Inject constructor(
         playHistoryRepository.getAll(),
         _range
     ) { history, range -> compute(history, range) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListenStats(0, 0, 0, emptyList()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListenStats(0, 0, 0, emptyList(), emptyList()))
 
     private fun compute(history: List<PlayHistoryEntity>, range: StatsRange): ListenStats {
         val now = System.currentTimeMillis()
@@ -64,8 +68,24 @@ class ListenStatsViewModel @Inject constructor(
             .filter { it.isNotEmpty() && it != UNKNOWN }
             .distinct().size
 
-        return ListenStats(totalListens, artistCount, albumCount, buildBuckets(filtered, range, now))
+        return ListenStats(
+            totalListens,
+            artistCount,
+            albumCount,
+            buildBuckets(filtered, range, now),
+            buildTopSongs(filtered)
+        )
     }
+
+    private fun buildTopSongs(history: List<PlayHistoryEntity>): List<SongRank> =
+        history.map { it.audioTitle.trim() }
+            .filter { it.isNotEmpty() && it != UNKNOWN }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .take(10)
+            .map { SongRank(it.key, it.value) }
 
     private fun buildBuckets(history: List<PlayHistoryEntity>, range: StatsRange, now: Long): List<Int> {
         val bucketCount = range.bucketCount()

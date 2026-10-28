@@ -2,6 +2,7 @@ package com.asmrhelper.data.music.bilibili
 
 import android.content.Context
 import com.asmrhelper.R
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemoteChart
 import com.asmrhelper.domain.model.music.RemoteLyric
 import com.asmrhelper.domain.model.music.RemotePlaylist
@@ -62,6 +63,16 @@ class BilibiliMusicSource(
             "page_size" to "30"
         )
         emit(BilibiliJson.parseSearch(wbiGet("x/web-interface/wbi/search/type", params)))
+    }
+
+    /** 搜索博主/UP主（`search_type=bili_user`）。 */
+    override fun searchArtists(keyword: String): Flow<List<RemoteArtist>> = flow {
+        val params = mapOf(
+            "search_type" to "bili_user",
+            "keyword" to keyword,
+            "page" to "1"
+        )
+        emit(BilibiliJson.parseUserSearch(wbiGet("x/web-interface/wbi/search/type", params)))
     }
 
     /** 热门视频（`x/web-interface/popular`）作为「热门」。拉 50 条做池子随机抽 10 条，刷新即随机重新分配。 */
@@ -137,6 +148,17 @@ class BilibiliMusicSource(
     /** 每日推荐：B站无对应匿名接口，复用热门视频作为兜底。 */
     override fun getDailyRecommendSongs(): Flow<List<RemoteSong>> = flow {
         emit(BilibiliJson.parsePopular(get("x/web-interface/popular", "ps=20&pn=1")))
+    }
+
+    /** UP主（博主）的视频列表：空间视频 `x/space/wbi/arc/search`。 */
+    override fun getArtistSongs(artistId: String): Flow<List<RemoteSong>> = flow {
+        val params = mapOf(
+            "mid" to artistId,
+            "ps" to "30",
+            "pn" to "1",
+            "order" to "pubdate"
+        )
+        emit(BilibiliJson.parseSpaceVideos(wbiGet("x/space/wbi/arc/search", params)))
     }
 
     // ── 登录 ───────────────────────────────────────────

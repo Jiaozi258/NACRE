@@ -180,6 +180,27 @@ fun ListenStatsScreen(
                     )
                 }
             }
+
+            if (stats.topSongs.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    stringResource(R.string.stats_top_songs),
+                    color = accent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
+                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = CardShape,
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    border = HairlineBorder
+                ) {
+                    TopSongsList(stats.topSongs, accent)
+                }
+            }
         }
     }
 }
@@ -208,6 +229,50 @@ private fun SummaryCard(
             Spacer(Modifier.height(6.dp))
             Text(count.toString(), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text(label, color = TextSecondary, fontSize = 11.sp, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun TopSongsList(ranks: List<SongRank>, accent: Color) {
+    Column(Modifier.padding(vertical = 4.dp)) {
+        ranks.forEachIndexed { index, rank ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (index < 3) accent.copy(alpha = 0.2f) else DarkSurfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        (index + 1).toString(),
+                        color = if (index < 3) accent else TextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    rank.title,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    rank.count.toString(),
+                    color = TextSecondary,
+                    fontSize = 13.sp
+                )
+            }
         }
     }
 }

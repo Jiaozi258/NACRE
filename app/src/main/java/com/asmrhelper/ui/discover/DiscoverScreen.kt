@@ -229,6 +229,7 @@ fun DiscoverScreen(
                     playlists = playlistResults,
                     albums = albumResults,
                     podcasts = podcastResults,
+                    isVideo = isVideo,
                     onPlay = playSongs,
                     onOpenArtist = viewModel::openArtist,
                     onOpenPlaylist = viewModel::openPlaylist,
@@ -491,6 +492,7 @@ private fun SearchResults(
     playlists: List<RemotePlaylist>,
     albums: List<RemoteAlbum>,
     podcasts: List<RemotePlaylist>,
+    isVideo: Boolean,
     onPlay: (List<RemoteSong>, Int) -> Unit,
     onOpenArtist: (RemoteArtist) -> Unit,
     onOpenPlaylist: (RemotePlaylist) -> Unit,
@@ -503,7 +505,11 @@ private fun SearchResults(
             CenteredLoading()
         } else {
             when (searchTab) {
-                1 -> SearchArtistList(artists, onOpenArtist)
+                1 -> SearchArtistList(
+                    artists,
+                    onOpenArtist,
+                    emptyText = stringResource(if (isVideo) R.string.discover_no_uploader else R.string.discover_no_artist)
+                )
                 2 -> SearchPlaylistList(playlists, onOpenPlaylist)
                 3 -> SearchAlbumList(albums, onOpenAlbum)
                 4 -> SearchPodcastList(podcasts, onOpenPodcast)
@@ -560,9 +566,9 @@ private fun SearchSongList(songs: List<RemoteSong>, onPlay: (List<RemoteSong>, I
 }
 
 @Composable
-private fun SearchArtistList(artists: List<RemoteArtist>, onOpenArtist: (RemoteArtist) -> Unit) {
+private fun SearchArtistList(artists: List<RemoteArtist>, onOpenArtist: (RemoteArtist) -> Unit, emptyText: String) {
     if (artists.isEmpty()) {
-        EmptyState(stringResource(R.string.discover_no_results))
+        EmptyState(emptyText)
         return
     }
     LazyColumn(

@@ -88,6 +88,8 @@
     <string name="discover_radio">Radio</string>
     <string name="discover_user_playlists">My playlists</string>
     <string name="discover_no_results">No results found</string>
+    <string name="discover_no_artist">No artist found</string>
+    <string name="discover_no_uploader">No uploader found</string>
     <string name="discover_play_failed">Cannot get stream URL</string>
     <string name="play_error_unplayable">Unable to play this track</string>
     <string name="discover_fetching_url">Getting song link…</string>
@@ -521,14 +523,15 @@
     <string name="profile_stat_backgrounds">Backgrounds</string>
     <string name="profile_listen_stats">Listening stats</string>
     <string name="stats_title">Listening stats</string>
-    <string name="stats_range_last_week">Last week</string>
-    <string name="stats_range_last_month">Last month</string>
-    <string name="stats_range_last_quarter">Last quarter</string>
-    <string name="stats_range_last_year">Last year</string>
+    <string name="stats_range_last_week">Past 7 days</string>
+    <string name="stats_range_last_month">Past 30 days</string>
+    <string name="stats_range_last_quarter">Past 90 days</string>
+    <string name="stats_range_last_year">Past year</string>
     <string name="stats_total_listens">Plays</string>
     <string name="stats_artist_count">Artists</string>
     <string name="stats_album_count">Albums</string>
     <string name="stats_empty">No listening history</string>
+    <string name="stats_top_songs">Top played</string>
     <string name="profile_version">Version</string>
     <string name="profile_github">GitHub repository</string>
 

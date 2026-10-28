@@ -1,5 +1,6 @@
 package com.asmrhelper.data.music.bilibili
 
+import com.asmrhelper.domain.model.music.RemoteArtist
 import com.asmrhelper.domain.model.music.RemotePlaylist
 import com.asmrhelper.domain.model.music.RemoteSong
 import org.json.JSONObject
@@ -189,6 +190,49 @@ object BilibiliJson {
             sourceId = SOURCE_ID,
             publishTime = data.optLong("pubdate", 0L) * 1000
         )
+    }
+
+    /** 用户搜索 `data.result[]`（`search_type=bili_user`）→ RemoteArtist（UP主/博主）。 */
+    fun parseUserSearch(json: JSONObject): List<RemoteArtist> {
+        val arr = json.optJSONObject("data")?.optJSONArray("result") ?: return emptyList()
+        val out = mutableListOf<RemoteArtist>()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val mid = o.optLong("mid", 0L)
+            if (mid <= 0L) continue
+            out.add(
+                RemoteArtist(
+                    id = mid.toString(),
+                    name = o.optString("uname", "").ifBlank { mid.toString() },
+                    coverUrl = https(o.optString("upic", "")).takeIf { it.isNotBlank() }
+                )
+            )
+        }
+        return out
+    }
+
+    /** UP主空间视频 `data.list.vlist[]`（`x/space/wbi/arc/search`）→ RemoteSong。 */
+    fun parseSpaceVideos(json: JSONObject): List<RemoteSong> {
+        val arr = json.optJSONObject("data")?.optJSONObject("list")?.optJSONArray("vlist")
+            ?: return emptyList()
+        val out = mutableListOf<RemoteSong>()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val bvid = o.optString("bvid", "")
+            if (bvid.isBlank()) continue
+            out.add(
+                RemoteSong(
+                    id = bvid,
+                    title = o.optString("title", "").ifBlank { bvid },
+                    artist = o.optString("author", ""),
+                    durationMs = parseDurationText(o.optString("length", "")),
+                    coverUrl = https(o.optString("pic", "")),
+                    sourceId = SOURCE_ID,
+                    publishTime = o.optLong("created", 0L) * 1000
+                )
+            )
+        }
+        return out
     }
 
     fun parseCode(json: JSONObject): Int = json.optInt("code", -1)
