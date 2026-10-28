@@ -910,4 +910,42 @@
     <string name="mini_game_reveal_mode">翻开</string>
     <string name="mini_game_won">你赢了！</string>
     <string name="mini_game_lost">游戏结束</string>
+
+    <!-- 小游戏：恶魔轮盘 & 五子棋 -->
+    <string name="game_difficulty_casual">休闲</string>
+    <string name="game_difficulty_challenge">挑战</string>
+    <string name="game_difficulty_duel">决斗</string>
+    <string name="game_new_game">新游戏</string>
+    <string name="game_you">你</string>
+    <string name="game_ai">人机</string>
+    <string name="game_your_turn">你的回合</string>
+    <string name="game_ai_turn">人机回合</string>
+    <string name="game_win">你赢了！</string>
+    <string name="game_lose">你输了</string>
+    <string name="game_draw">平局</string>
+    <string name="game_round">第 %1$d 回合</string>
+
+    <string name="game_br_title">恶魔轮盘</string>
+    <string name="game_br_hp">血量</string>
+    <string name="game_br_bullets">子弹</string>
+    <string name="game_br_live">实弹</string>
+    <string name="game_br_blank">空弹</string>
+    <string name="game_br_shoot_opponent">射击对手</string>
+    <string name="game_br_shoot_self">射击自己</string>
+    <string name="game_br_tap_item">点击道具使用</string>
+    <string name="game_br_item_0">放大镜 (A)</string>
+    <string name="game_br_item_1">烟 (2)</string>
+    <string name="game_br_item_2">啤酒 (3)</string>
+    <string name="game_br_item_3">散弹 (4)</string>
+    <string name="game_br_item_4">手铐 (5)</string>
+    <string name="game_br_item_5">肾上腺素 (6)</string>
+    <string name="game_br_item_6">转换器 (7)</string>
+    <string name="game_br_item_7">小灵通 (8)</string>
+    <string name="game_br_item_8">定时炸弹 (9)</string>
+    <string name="game_br_item_9">过期药 (10)</string>
+
+    <string name="game_gomoku_title">五子棋</string>
+    <string name="game_gomoku_you">你 · 黑子</string>
+    <string name="game_gomoku_ai">人机 · 白子</string>
+    <string name="game_gomoku_hint">点击棋盘落子，先连成五子获胜</string>
 </resources>

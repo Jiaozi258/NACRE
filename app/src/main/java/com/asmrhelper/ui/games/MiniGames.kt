@@ -50,7 +50,14 @@ import kotlin.math.abs
 import kotlin.random.Random
 
 /** ASMR 界面下方小工具里的小游戏类型。 */
-enum class MiniGame { GAME_2048, MINESWEEPER }
+enum class MiniGame { GAME_2048, MINESWEEPER, BUCKSHOT, GOMOKU }
+
+/** 人机难度（休闲=低 / 挑战=中 / 决斗=高）。 */
+enum class AiDifficulty(val labelRes: Int) {
+    CASUAL(R.string.game_difficulty_casual),
+    CHALLENGE(R.string.game_difficulty_challenge),
+    DUEL(R.string.game_difficulty_duel)
+}
 
 /** 全屏小游戏浮层（覆盖在 ASMR 播放页上，音频继续播放）。 */
 @Composable
@@ -67,6 +74,39 @@ fun MiniGameOverlay(game: MiniGame, onClose: () -> Unit) {
         when (game) {
             MiniGame.GAME_2048 -> Game2048Screen(onClose)
             MiniGame.MINESWEEPER -> MinesweeperScreen(onClose)
+            MiniGame.BUCKSHOT -> BuckshotRouletteScreen(onClose)
+            MiniGame.GOMOKU -> GomokuScreen(onClose)
+        }
+    }
+}
+
+/** 人机难度切换条（休闲 / 挑战 / 决斗）。 */
+@Composable
+internal fun DifficultySelector(selected: AiDifficulty, onSelect: (AiDifficulty) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        AiDifficulty.entries.forEach { d ->
+            val isSelected = d == selected
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isSelected) LocalAccentColor.current.copy(alpha = 0.18f) else DarkSurfaceVariant)
+                    .clickable { onSelect(d) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(d.labelRes),
+                    color = if (isSelected) LocalAccentColor.current else TextSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                )
+            }
         }
     }
 }
@@ -450,7 +490,7 @@ private fun numberColor(n: Int): Color = when (n) {
 // ────────────────────────────── 公共顶栏 ──────────────────────────────
 
 @Composable
-private fun GameTopBar(
+internal fun GameTopBar(
     title: String,
     scoreLabel: String,
     onRestart: () -> Unit,

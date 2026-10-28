@@ -910,4 +910,42 @@
     <string name="mini_game_reveal_mode">Reveal</string>
     <string name="mini_game_won">You win!</string>
     <string name="mini_game_lost">Game over</string>
+
+    <!-- Mini games: Buckshot Roulette & Gomoku -->
+    <string name="game_difficulty_casual">Casual</string>
+    <string name="game_difficulty_challenge">Challenge</string>
+    <string name="game_difficulty_duel">Duel</string>
+    <string name="game_new_game">New game</string>
+    <string name="game_you">You</string>
+    <string name="game_ai">AI</string>
+    <string name="game_your_turn">Your turn</string>
+    <string name="game_ai_turn">AI turn</string>
+    <string name="game_win">You win!</string>
+    <string name="game_lose">You lose</string>
+    <string name="game_draw">Draw</string>
+    <string name="game_round">Round %1$d</string>
+
+    <string name="game_br_title">Buckshot Roulette</string>
+    <string name="game_br_hp">HP</string>
+    <string name="game_br_bullets">Bullets</string>
+    <string name="game_br_live">Live</string>
+    <string name="game_br_blank">Blank</string>
+    <string name="game_br_shoot_opponent">Shoot opponent</string>
+    <string name="game_br_shoot_self">Shoot self</string>
+    <string name="game_br_tap_item">Tap an item to use</string>
+    <string name="game_br_item_0">Magnifier (A)</string>
+    <string name="game_br_item_1">Cigarette (2)</string>
+    <string name="game_br_item_2">Beer (3)</string>
+    <string name="game_br_item_3">Shotgun (4)</string>
+    <string name="game_br_item_4">Handcuffs (5)</string>
+    <string name="game_br_item_5">Adrenaline (6)</string>
+    <string name="game_br_item_6">Converter (7)</string>
+    <string name="game_br_item_7">Phone (8)</string>
+    <string name="game_br_item_8">Bomb (9)</string>
+    <string name="game_br_item_9">Expired meds (10)</string>
+
+    <string name="game_gomoku_title">Gomoku</string>
+    <string name="game_gomoku_you">You · Black</string>
+    <string name="game_gomoku_ai">AI · White</string>
+    <string name="game_gomoku_hint">Tap the board to place a stone; connect five in a row to win</string>
 </resources>

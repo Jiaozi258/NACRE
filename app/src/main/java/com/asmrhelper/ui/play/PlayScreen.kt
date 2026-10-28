@@ -1273,6 +1273,34 @@ fun PlayScreen(
                             }
                             .padding(vertical = 12.dp)
                     )
+                    Text(
+                        text = stringResource(R.string.game_br_title),
+                        color = LocalAccentColor.current,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                viewModel.setActiveGame(MiniGame.BUCKSHOT)
+                                showGameDialog = false
+                            }
+                            .padding(vertical = 12.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.game_gomoku_title),
+                        color = LocalAccentColor.current,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                viewModel.setActiveGame(MiniGame.GOMOKU)
+                                showGameDialog = false
+                            }
+                            .padding(vertical = 12.dp)
+                    )
                 }
             },
             confirmButton = {},
