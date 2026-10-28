@@ -943,6 +943,13 @@
     <string name="game_br_item_7">小灵通 (8)</string>
     <string name="game_br_item_8">定时炸弹 (9)</string>
     <string name="game_br_item_9">过期药 (10)</string>
+    <string name="game_br_start">开始游戏</string>
+    <string name="game_br_rules">规则说明</string>
+    <string name="game_br_play_again">再来一局</string>
+    <string name="game_br_adjust">调整参数</string>
+    <string name="game_br_setup_hint">本局随机范围</string>
+    <string name="game_br_deck_left">牌堆剩余 %1$d 张</string>
+    <string name="game_br_items">道具 ×%1$d</string>
 
     <string name="game_gomoku_title">五子棋</string>
     <string name="game_gomoku_you">你 · 黑子</string>

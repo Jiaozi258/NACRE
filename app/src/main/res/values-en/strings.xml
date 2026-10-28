@@ -943,6 +943,13 @@
     <string name="game_br_item_7">Phone (8)</string>
     <string name="game_br_item_8">Bomb (9)</string>
     <string name="game_br_item_9">Expired meds (10)</string>
+    <string name="game_br_start">Start game</string>
+    <string name="game_br_rules">Rules</string>
+    <string name="game_br_play_again">Play again</string>
+    <string name="game_br_adjust">Adjust</string>
+    <string name="game_br_setup_hint">Round ranges</string>
+    <string name="game_br_deck_left">Deck: %1$d left</string>
+    <string name="game_br_items">items ×%1$d</string>
 
     <string name="game_gomoku_title">Gomoku</string>
     <string name="game_gomoku_you">You · Black</string>
