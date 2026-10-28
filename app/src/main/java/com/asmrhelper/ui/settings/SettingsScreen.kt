@@ -2470,10 +2470,10 @@ private fun AboutSettingsScreen(onBack: () -> Unit) {
     }
 }
 
-/** 读取当前安装版本名，失败时回退 "0.2"。 */
+/** 读取当前安装版本名，失败时回退 "0.21"。 */
 private fun currentVersionName(context: android.content.Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-        .getOrNull() ?: "0.2"
+        .getOrNull() ?: "0.21"
 
 /** 拉取 GitHub latest release 的 tag 与本地版本对比，返回展示给用户的提示文案。 */
 private fun checkForUpdate(context: android.content.Context): String {

@@ -12,11 +12,11 @@
 
 ---
 
-## Foreword · About this project 🙋
+## About this project
 
 Hi there, I'm the author — a student building this in my spare time. NACRE is a personal project, and also the first time I've seriously tried to build an Android app of this size.
 
-To be honest, this is a **vibe-coding** project: a good chunk of the code was written together with Claude Code.
+This is a **vibe-coding** project: a good chunk of the code was written together with Claude Code.
 
 
 > The name comes from **NACRE (mother-of-pearl)**
@@ -43,14 +43,14 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | Feature | Description |
 |---------|-------------|
 | **Four sources** | NetEase / QQ Music / Bilibili / YouTube, implemented natively (no web shell) |
-| **Search** | Cross-platform search for songs / artists / playlists / albums |
-| **Playlists / charts / recommendations** | Leaderboards, daily recommendations, personal FM (one-tap radio), user playlists, Bilibili favorites |
+| **Search** | Cross-platform search for songs / artists / playlists / albums / podcasts (Bilibili: uploaders) |
+| **Playlists / charts / recommendations** | Leaderboards, daily recommendations, personal FM, user playlists, Bilibili favorites |
 | **Login** | NetEase account/password or QR login; QQ Music web login; Bilibili web login |
 | **Lyrics** | Word-by-word / line-by-line lyrics, scroll lyrics (flat / fisheye styles), offset calibration, per-mode font size & line spacing (immersive / normal) |
 | **Multiple qualities** | Standard / higher / very high / lossless (per-source fallback) |
 | **Favorites** | Cross-source, login-free favorites saved to a local "Liked" list |
-
-> The NetEase `weapi` / `xeapi` encryption, QQ Music `zzc` signature, and Bilibili WBI signature were implemented from scratch by reading through public documentation — this is the part of the project I'm proudest of, and also where I made the most mistakes (X25519, AES, HMAC are full of traps).
+| **Podcasts / radio** | Podcast search & details (radio programs); Bilibili uploader search and their videos |
+| **Explore module** | Discover "Explore": roaming / daily podcasts / playlist recommendations (platform switch moved into Settings) |
 
 ### 🌙 ASMR mode (sleep · relaxation)
 
@@ -58,7 +58,7 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 |---------|-------------|
 | **Local audio library** | Auto-scans device storage; manual import also supported |
 | **Built-in nature sounds** | 🌧️ Rain · 🌊 Stream · 🔥 Campfire · 💨 Wind · ⚡ Thunder · 🌊 Ocean waves (6 free OGGs) |
-| **Ambient mixing** | Ambient sound can play alongside main audio with independent volume |
+| **Ambient mixing** | Ambient sound can play alongside main audio with independent volume; crossfades at loop boundaries |
 | **Binaural beats** | Delta / Theta / Alpha / Beta / Gamma presets |
 | **Noise generator** | White / pink / brown noise, independent volume |
 | **3D spatial audio** | Left-right sweep / surround rotation / spatial expansion |
@@ -66,6 +66,7 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | **Sleep timer** | Scheduled auto-stop with countdown |
 | **Pomodoro timer** | Focus / break cycles |
 | **Sleep journal** | Record and review sleep sessions |
+| **Title marquee** | Long ASMR titles scroll horizontally |
 
 ### 🎛️ Audio effects
 
@@ -82,7 +83,7 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | Feature | Description |
 |---------|-------------|
 | **Duotone cover background** | Real color sampling from album art + FFT soft light bars, flowing with the audio |
-| **7 theme colors** | Apple Blue / Midnight Purple / Warm Orange / Forest Green / Ocean Blue / Rose Gold / Minimal Gray |
+| **16 theme colors** | Apple Blue / Night Purple / Warm Orange / Forest Green / Ocean Blue / Rose Gold / Monochrome / Klein Blue / Dark Gold / Brilliant Red / Mint Green / Cyan Teal / Lavender / Sakura Pink / Rose Red / Dark Gentian Purple |
 | **Theme mode** | Follow system / light / dark |
 | **Custom font** | Import `.ttf` / `.otf`, applied globally |
 | **Background gallery** | Import images, bind to a specific audio or use globally |
@@ -111,6 +112,8 @@ Both modes share one audio engine (Media3 ExoPlayer dual-player mixing), so you 
 | **Privacy mode** | Hides audio title in screenshots and the app switcher |
 | **Trigger pad** | Custom sound buttons, independent / parallel playback |
 | **Scene presets** | Save / restore a complete playback state in one tap |
+| **Listen stats** | Weekly / monthly / quarterly / yearly listening counts, artist & album stats, and a Top-10 most-played ranking |
+| **Favorite heartbeat effect** | Heart ECG flash when you favorite a song |
 
 ---
 
